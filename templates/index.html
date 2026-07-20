@@ -207,7 +207,8 @@
   .fin-cur.neg{color:var(--up)}
   .fin-suf{font-size:12px;color:var(--muted);font-weight:500;margin-left:3px}
   .fin-krw{font-size:12px;color:var(--accent);font-weight:600;font-variant-numeric:tabular-nums;margin:-1px 0 3px}
-  .src-tag{font-size:10.5px;color:var(--muted);margin-top:3px;font-weight:400}
+  .src-tag{display:block;font-size:10.5px;color:var(--muted);margin-top:2px;font-weight:400}
+  .kv .k{display:flex;flex-direction:column}   /* 라벨 + 출처 세로 */
   .fin-yoy{font-size:11px;font-weight:700;padding:1.5px 7px;border-radius:8px;font-variant-numeric:tabular-nums}
   .fin-yoy.up{background:rgba(240,97,109,.14);color:var(--up)}
   .fin-yoy.dn{background:rgba(62,166,255,.14);color:var(--down)}
@@ -413,7 +414,7 @@ function render(d){
     <div class="grid">
       ${kv("EPS (TTM)", fmt(d.eps_ttm))}
       ${kv("현재 PER", fmt(d.per_ttm))}
-      ${kv("예상 EPS (Fwd)", fmt(d.eps_fwd))}
+      ${kv(`예상 EPS (Fwd)${d.eps_src?`<span class="src-tag">출처: ${esc(d.eps_src)}</span>`:""}`, fmt(d.eps_fwd))}
       ${kv("예상 PER", fmt(d.per_fwd))}
       ${kv("BPS", fmt(d.bps))}
       ${kv("현재 PBR", fmt(d.pbr_ttm))}

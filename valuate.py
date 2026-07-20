@@ -861,6 +861,8 @@ def analyze_data(ticker):
                     fwd_eps = price / us_fh["per_fwd"]   # 선행EPS = 주가 ÷ 선행PER
                 if not cur:
                     cur = "USD"
+        # 상단 '데이터 출처'를 실제 소스로 정확히 표시
+        src = "Finnhub" if data_src == "Finnhub" else "야후(yfinance)"
 
     eps_series = get_annual_eps(tk)
     bps_series = get_annual_bps(tk)
