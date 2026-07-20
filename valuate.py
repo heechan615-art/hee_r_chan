@@ -676,11 +676,11 @@ def fin_ai_comment(name, fin):
 
 
 # ------------------- 요구수익률(할인율) 재료 (CAPM 확장) -------------------
-def _discount_data(hist, info, ticker):
+def _discount_data(hist, info, ticker, fh=None):
     """CAPM 요구수익률 재료 — 회귀베타·무위험이자율·ERP·CRP·시총. 실패해도 앱 계속."""
     try:
         market = "KR" if is_korean(ticker) else "US"
-        mktcap = info.get("marketCap")
+        mktcap = info.get("marketCap") or (fh or {}).get("mktcap")  # 야후→Finnhub 폴백
         if hist is None or hist.empty:
             return None
         return discount.discount_data(hist, market, mktcap)
@@ -754,6 +754,36 @@ def _fear_greed(hist_df, info, ticker, eps_series, ttm_eps, per_daily=None, news
         return None
 
 
+# ------------------- 미국 지표 Finnhub 폴백 (클라우드 야후 차단 대비) -------------------
+def _finnhub_metrics(symbol):
+    """미국 종목 기본 지표 — Finnhub basic financials (정식 API라 클라우드에서도 됨).
+    야후 .info가 데이터센터 IP에서 차단될 때 폴백."""
+    key = os.environ.get("FINNHUB_API_KEY")
+    if not key:
+        return {}
+    try:
+        r = requests.get("https://finnhub.io/api/v1/stock/metric",
+                         params={"symbol": symbol.upper(), "metric": "all", "token": key},
+                         timeout=8)
+        if r.status_code != 200:
+            return {}
+        m = r.json().get("metric", {}) or {}
+        mc = m.get("marketCapitalization")
+        return {
+            "eps_ttm": m.get("epsTTM") or m.get("epsBasicExclExtraItemsTTM"),
+            "per_ttm": m.get("peTTM") or m.get("peBasicExclExtraTTM"),
+            "per_fwd": m.get("forwardPE"),
+            "pbr": m.get("pbQuarterly") or m.get("pbAnnual"),
+            "bps": m.get("bookValuePerShareQuarterly") or m.get("bookValuePerShareAnnual"),
+            "beta": m.get("beta"),
+            "mktcap": mc * 1e6 if mc else None,
+            "roe": m.get("roeTTM"),
+            "opmargin": m.get("operatingMarginTTM"),
+        }
+    except Exception:
+        return {}
+
+
 # ----------------------------- 분석 (데이터 반환) -----------------------------
 def analyze_data(ticker):
     """모든 계산을 수행하고 구조화된 dict를 반환. 출력(CLI/웹)과 분리."""
@@ -812,6 +842,21 @@ def analyze_data(ticker):
             src = "네이버(EPS/PBR)+yfinance(밴드)"
     if price is None and not hist.empty:
         price = float(hist.iloc[-1])
+
+    # 미국: 야후 .info가 비면(클라우드 IP 차단) Finnhub로 기본 지표 보강
+    us_fh = {}
+    if not is_korean(ticker) and (ttm_eps is None or cur_per is None or info.get("beta") is None):
+        us_fh = _finnhub_metrics(ticker)
+        if us_fh:
+            ttm_eps = ttm_eps if ttm_eps is not None else us_fh.get("eps_ttm")
+            cur_per = cur_per if cur_per is not None else us_fh.get("per_ttm")
+            fwd_per = fwd_per if fwd_per is not None else us_fh.get("per_fwd")
+            cur_pbr = cur_pbr if cur_pbr is not None else us_fh.get("pbr")
+            cur_bps = cur_bps if cur_bps is not None else us_fh.get("bps")
+            if fwd_eps is None and us_fh.get("per_fwd") and price:
+                fwd_eps = price / us_fh["per_fwd"]   # 선행EPS = 주가 ÷ 선행PER
+            if not cur:
+                cur = "USD"
 
     eps_series = get_annual_eps(tk)
     bps_series = get_annual_bps(tk)
@@ -936,7 +981,7 @@ def analyze_data(ticker):
         "price": price, "eps_ttm": ttm_eps, "per_ttm": cur_per,
         "eps_fwd": fwd_eps, "per_fwd": fwd_per,
         "pbr_ttm": cur_pbr, "bps": cur_bps,
-        "beta": info.get("beta"),   # CAPM 자본비용 자동 계산용 (없으면 None)
+        "beta": info.get("beta") or us_fh.get("beta"),   # CAPM 자본비용용(야후→Finnhub 폴백)
         "bps_fwd": fwd_bps, "pbr_fwd": fwd_pbr,
         "band": band, "pbr_band": pbr_band, "targets": targets,
         "pbr_targets": pbr_targets, "sigma": sigma, "pbr_sigma": pbr_sigma,
@@ -951,7 +996,7 @@ def analyze_data(ticker):
         "target_model": {"rate": rate_info, "pbr_reg": pbr_reg,
                          "growth": growth_block(tk, nv_annual, ttm_eps, fwd_eps, eps_series),
                          "rates_both": _both_rates(),
-                         "discount": _discount_data(hist, info, ticker)},
+                         "discount": _discount_data(hist, info, ticker, us_fh)},
         "hi52": hi52, "lo52": lo52,
         "decompose": decompose(eps_series, hist, price),
         "news": news,
