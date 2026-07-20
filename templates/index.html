@@ -755,29 +755,69 @@ function tpCard(d){
       ${rateBox}
     </div>
     <div id="tp-rp-wrap" style="display:none;margin-bottom:8px">
-      <label style="font-size:12px;color:var(--muted)">리스크프리미엄
-        <span id="tp-rpv" style="color:var(--accent);font-weight:700">4.5%</span>
-        <input id="tp-rp" type="range" min="3" max="7" step="0.1" value="4.5"
-          style="width:200px;accent-color:var(--accent);vertical-align:middle"></label>
-      <span class="muted" style="font-size:12px" id="tp-drate"></span>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:6px">리스크프리미엄 정하는 법:
+        <label style="margin-left:8px;cursor:pointer"><input type="radio" name="rpmode" value="manual" checked style="vertical-align:middle;accent-color:var(--accent)"> 직접 조절</label>
+        <label style="margin-left:10px;cursor:${d.beta?'pointer':'default'}"><input type="radio" name="rpmode" value="beta" ${d.beta?'':'disabled'} style="vertical-align:middle;accent-color:var(--accent)"> 베타 자동${d.beta?` (β ${(+d.beta).toFixed(2)})`:' (데이터 없음)'}</label>
+      </div>
+      <div id="tp-rp-manual">
+        <label style="font-size:12px;color:var(--muted)">리스크프리미엄
+          <span id="tp-rpv" style="color:var(--accent);font-weight:700">4.5%</span>
+          <input id="tp-rp" type="range" min="3" max="7" step="0.1" value="4.5"
+            style="width:200px;accent-color:var(--accent);vertical-align:middle"></label>
+      </div>
+      <div id="tp-rp-beta" style="display:none">
+        <label style="font-size:12px;color:var(--muted)">시장 리스크프리미엄
+          <input id="tp-mrp" type="number" step="0.1" value="${rateLabelKR(d)?"6.0":"5.5"}"
+            style="width:64px;background:#131a28;border:1px solid var(--line);color:var(--text);border-radius:6px;padding:4px 7px;font-size:13px"> %</label>
+      </div>
+      <span class="muted" style="font-size:12px;display:block;margin-top:5px" id="tp-drate"></span>
     </div>
     <div id="tp-body"></div>
   </div>`;
 }
 
+function rateLabelKR(d){
+  const r = d.target_model && d.target_model.rate;
+  return r && r.label && r.label.includes("한국");
+}
+
+function tpCostOfEquity(d){
+  // 요구수익률(자본비용) r = 국채 + 리스크프리미엄. 정당 PBR·할인 공통.
+  // 리스크프리미엄: 직접(슬라이더) 또는 베타 자동(CAPM: β × 시장프리미엄).
+  const rate = d.target_model && d.target_model.rate;
+  if(!rate) return {r: 0.09, rp: 4.5, base: 4.5, note: "", has: false};
+  const modeEl = document.querySelector('input[name="rpmode"]:checked');
+  const mode = modeEl ? modeEl.value : "manual";
+  const mBox = $("#tp-rp-manual"), bBox = $("#tp-rp-beta");
+  let rp, note;
+  if(mode === "beta" && d.beta){
+    if(mBox) mBox.style.display = "none";
+    if(bBox) bBox.style.display = "block";
+    const mrp = parseFloat($("#tp-mrp") ? $("#tp-mrp").value : "5.5") || 5.5;
+    rp = (+d.beta) * mrp;   // CAPM
+    note = `→ 요구수익률 ${(rate.dgs10 + rp).toFixed(2)}% = 10년물 ${rate.dgs10.toFixed(2)}% `
+         + `+ (베타 ${(+d.beta).toFixed(2)} × 시장프리미엄 ${mrp.toFixed(1)}% = 리스크프리미엄 ${rp.toFixed(1)}%)`;
+  } else {
+    if(mBox) mBox.style.display = "block";
+    if(bBox) bBox.style.display = "none";
+    rp = parseFloat($("#tp-rp") ? $("#tp-rp").value : "4.5");
+    if($("#tp-rpv")) $("#tp-rpv").textContent = rp.toFixed(1) + "%";
+    note = `→ 요구수익률 ${(rate.dgs10 + rp).toFixed(2)}% = 10년물 ${rate.dgs10.toFixed(2)}% + 리스크프리미엄 ${rp.toFixed(1)}%`;
+  }
+  return {r: rate.dgs10/100 + rp/100, rp, note, has: true};
+}
+
 function tpDiscount(d){
-  // 할인율 = 10년물 + 리스크프리미엄. 반환 {df, dr, on}
+  // 현재가치 할인 여부 + 요구수익률 UI 표시. 반환 {df, dr, on, coe}
   const rate = d.target_model && d.target_model.rate;
   const disc = $("#tp-disc") && $("#tp-disc").checked && rate;
+  const coe = tpCostOfEquity(d);
+  // 요구수익률 UI는 '할인 켰을 때' 또는 'PBR-ROE 방식'일 때 표시 (둘 다 요구수익률 씀)
   const wrap = $("#tp-rp-wrap");
-  if(wrap) wrap.style.display = disc ? "block" : "none";
-  if(!disc) return {df:1, dr:0, on:false};
-  const rp = parseFloat($("#tp-rp").value);
-  $("#tp-rpv").textContent = rp.toFixed(1) + "%";
-  const dr = rate.dgs10/100 + rp/100;
-  if($("#tp-drate")) $("#tp-drate").textContent =
-    `→ 할인율 ${(dr*100).toFixed(2)}% = 10년물 ${rate.dgs10.toFixed(2)}% + RP ${rp.toFixed(1)}%`;
-  return {df:1+dr, dr, on:true};
+  const show = disc || TPMETHOD === "pbr";
+  if(wrap) wrap.style.display = show ? "block" : "none";
+  if($("#tp-drate")) $("#tp-drate").textContent = show ? coe.note : "";
+  return {df: disc ? 1 + coe.r : 1, dr: coe.r, on: disc, coe};
 }
 
 function renderTP(){
@@ -899,13 +939,14 @@ function tpManualCompute(){
 function tpPbrMethod(d, df){
   const ps = d.pbr_sigma, bpsF = d.bps_fwd || d.bps;
   const roeF = (d.eps_fwd && bpsF) ? d.eps_fwd/bpsF : null;
-  const rate = d.target_model && d.target_model.rate;
-  const rr = rate ? rate.dgs10/100 + 0.045 : 0.09;
+  // 요구수익률 = 국채 + 리스크프리미엄(직접/베타) — 정당 PBR 분모로 사용
+  const coe = tpCostOfEquity(d);
+  const rr = coe.r;
   let tpbrDef = ps ? ps.mean : (d.pbr_ttm || 1);
   if(roeF && ps) tpbrDef = Math.min(roeF/rr, ps.mean + 2*ps.std);
   const chip = (v, label, hl) => `<span class="tp-perchip tp-pbrchip" data-v="${v}"${hl?' style="border-color:var(--accent);color:var(--accent)"':''}>${label}</span>`;
   let bC = "", bpsC = "";
-  if(roeF) bC += chip((roeF/rr).toFixed(2), `정당 PBR = ROE ${(roeF*100).toFixed(0)}%÷${(rr*100).toFixed(1)}% = ${(roeF/rr).toFixed(2)}`, true);
+  if(roeF) bC += chip((roeF/rr).toFixed(2), `정당 PBR = ROE ${(roeF*100).toFixed(0)}%÷요구수익률 ${(rr*100).toFixed(1)}% = ${(roeF/rr).toFixed(2)}`, true);
   if(ps) bC += chip(ps.mean.toFixed(2), `5년 평균 ${ps.mean.toFixed(2)}`) + chip((ps.mean+ps.std).toFixed(2), `+1σ ${(ps.mean+ps.std).toFixed(2)}`) + chip((ps.mean+2*ps.std).toFixed(2), `+2σ ${(ps.mean+2*ps.std).toFixed(2)}`);
   if(d.pbr_fwd) bC += chip((+d.pbr_fwd).toFixed(2), `현재 선행 ${(+d.pbr_fwd).toFixed(2)}`);
   const na = d.naver_annual;
@@ -967,11 +1008,15 @@ function initTP(){
   const tp = $("#tp");
   if(!tp) return;
   renderTP();
+  // 요구수익률 관련 입력 id/name (변경 시 PBR 방식이면 정당PBR 칩 갱신 위해 재렌더)
+  const isRpInput = t => t && (t.name === "rpmode" || t.id === "tp-rp" || t.id === "tp-mrp" || t.id === "tp-disc");
   tp.addEventListener("change", e => {
-    if(e.target.id === "tp-method"){ TPMETHOD = e.target.value; renderTP(); }
+    if(e.target.id === "tp-method"){ TPMETHOD = e.target.value; renderTP(); return; }
+    if(isRpInput(e.target) && TPMETHOD === "pbr"){ renderTP(); }
   });
   tp.addEventListener("input", e => {
     if(e.target.id === "tp-method") return;
+    if(isRpInput(e.target) && TPMETHOD === "pbr"){ renderTP(); return; }
     tpCompute();
   });
   tp.addEventListener("click", e => {

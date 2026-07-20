@@ -901,6 +901,7 @@ def analyze_data(ticker):
         "price": price, "eps_ttm": ttm_eps, "per_ttm": cur_per,
         "eps_fwd": fwd_eps, "per_fwd": fwd_per,
         "pbr_ttm": cur_pbr, "bps": cur_bps,
+        "beta": info.get("beta"),   # CAPM 자본비용 자동 계산용 (없으면 None)
         "bps_fwd": fwd_bps, "pbr_fwd": fwd_pbr,
         "band": band, "pbr_band": pbr_band, "targets": targets,
         "pbr_targets": pbr_targets, "sigma": sigma, "pbr_sigma": pbr_sigma,
