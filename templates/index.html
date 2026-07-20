@@ -336,6 +336,8 @@
 
 <script>
 const $ = s => document.querySelector(s);
+// 입력칸 기본값 정리: 큰 수(원 단위)는 정수, 작은 수(달러)는 소수 2자리
+const inNum = v => (v==null||!isFinite(v)) ? '' : (Math.abs(v)>=1000 ? Math.round(v) : +(+v).toFixed(2));
 
 // 재무 막대 hover 툴팁 (문서 전체에 한 번만 등록 — 위임)
 document.addEventListener("mouseover", e => {
@@ -1068,7 +1070,7 @@ function tpBandMethod(d, fwd, df){
     실적 추정은 느리게 변합니다.</div>
     <div class="rp-cur" style="margin-bottom:8px">
       <label style="width:220px">추정 EPS ${fwd?"(예상, FY+1)":"(TTM)"}
-        <input id="tp-eps" type="number" step="any" value="${est ?? ''}"></label>
+        <input id="tp-eps" type="number" step="any" value="${inNum(est)}"></label>
       <div class="box" style="align-self:flex-end">현재 선행 PER
         <b>${d.per_fwd?(+d.per_fwd).toFixed(1):"N/A"}</b> · 밴드 평균 <b>${sg.mean.toFixed(1)}</b></div>
     </div><div id="tp-band-out"></div>`;
@@ -1128,7 +1130,7 @@ function tpManualMethod(d, df){
     <div class="chips" style="margin-bottom:6px"><span class="muted" style="font-size:11px;padding:4px 0">EPS:</span>${eC}</div>
     <div class="chips" style="margin-bottom:10px"><span class="muted" style="font-size:11px;padding:4px 0">PER:</span>${mC}</div>
     <div class="rp-cur" style="margin-bottom:8px">
-      <label style="width:180px">실적 (EPS)<input id="tp-e2" type="number" step="any" value="${d.eps_fwd ?? d.eps_ttm ?? ''}"></label>
+      <label style="width:180px">실적 (EPS)<input id="tp-e2" type="number" step="any" value="${inNum(d.eps_fwd ?? d.eps_ttm)}"></label>
       <label style="width:140px">멀티플 (PER)<input id="tp-m2" type="number" step="any" value="${(d.per_fwd?+d.per_fwd:d.sigma.mean).toFixed(1)}"></label>
     </div><div id="tp-man-out"></div>`;
 }
@@ -1168,7 +1170,7 @@ function tpPbrMethod(d, df){
     ${bpsC?`<div class="chips" style="margin-bottom:6px"><span class="muted" style="font-size:11px;padding:4px 0">예상 BPS:</span>${bpsC}</div>`:""}
     <div class="chips" style="margin-bottom:10px"><span class="muted" style="font-size:11px;padding:4px 0">목표 PBR:</span>${bC}</div>
     <div class="rp-cur" style="margin-bottom:8px">
-      <label style="width:180px">예상 BPS<input id="tp-bps2" type="number" step="any" value="${bpsF ?? ''}"></label>
+      <label style="width:180px">예상 BPS<input id="tp-bps2" type="number" step="any" value="${inNum(bpsF)}"></label>
       <label style="width:140px">목표 PBR<input id="tp-tpbr" type="number" step="any" value="${tpbrDef?tpbrDef.toFixed(2):''}"></label>
     </div><div id="tp-pbr-out"></div>`;
 }
@@ -1259,7 +1261,7 @@ function renderReportBody(){
       평균으로 목표주가를 계산하고, 현재값과 교차 비교(민감도)합니다.</div>
     <div class="rp-cur">
       <label>현재가<input id="rp-price" type="number" step="any" value="${d.price ?? ''}"></label>
-      <label>현재 ${cfg.curLbl}<input id="rp-eps" type="number" step="any" value="${cur0 ?? ''}"></label>
+      <label>현재 ${cfg.curLbl}<input id="rp-eps" type="number" step="any" value="${inNum(cur0)}"></label>
       <span class="muted" id="rp-curper"></span>
     </div>
     <div class="rp-head"><span>증권사 (선택)</span><span>목표 ${cfg.ind}</span><span>목표 ${cfg.val}</span><span></span></div>
