@@ -1,0 +1,15 @@
+# 절대 올리면 안 되는 것 — API 키/시크릿
+.env
+gemini_key.txt
+
+# 파이썬
+venv/
+__pycache__/
+*.pyc
+*.pyo
+
+# 맥
+.DS_Store
+
+# 로컬 실행 파일 (배포엔 불필요)
+*.command

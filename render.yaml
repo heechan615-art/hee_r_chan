@@ -1,0 +1,20 @@
+# Render.com 배포 설정 (Blueprint) — 이 파일이 있으면 대시보드에서 자동 인식.
+services:
+  - type: web
+    name: stock-valuation
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app --bind 0.0.0.0:$PORT --workers 1 --threads 4 --timeout 120
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.11.11"
+      # 아래 키들은 Render 대시보드에서 직접 입력 (코드/깃허브에 넣지 말 것)
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: FRED_API_KEY
+        sync: false
+      - key: ECOS_API_KEY
+        sync: false
+      - key: FINNHUB_API_KEY
+        sync: false
