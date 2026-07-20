@@ -755,6 +755,20 @@ def _fear_greed(hist_df, info, ticker, eps_series, ttm_eps, per_daily=None, news
 
 
 # ------------------- 미국 지표 Finnhub 폴백 (클라우드 야후 차단 대비) -------------------
+def _yahoo_fwd_eps(tk):
+    """야후 earnings_estimate에서 FY+1(다음 회계연도) 예상 EPS.
+    .info가 클라우드에서 막혀도 이 엔드포인트는 될 수 있어 야후 값을 최대한 살림."""
+    try:
+        ee = tk.earnings_estimate
+        if ee is not None and hasattr(ee, "index") and "+1y" in ee.index and "avg" in ee.columns:
+            v = ee.loc["+1y", "avg"]
+            if v and float(v) > 0:
+                return float(v)
+    except Exception:
+        pass
+    return None
+
+
 def _finnhub_metrics(symbol):
     """미국 종목 기본 지표 — Finnhub basic financials (정식 API라 클라우드에서도 됨).
     야후 .info가 데이터센터 IP에서 차단될 때 폴백."""
@@ -843,22 +857,31 @@ def analyze_data(ticker):
     if price is None and not hist.empty:
         price = float(hist.iloc[-1])
 
-    # 미국: 야후 .info가 비면(클라우드 IP 차단) Finnhub로 기본 지표 보강
+    # 미국: 야후 .info가 비면(클라우드 IP 차단) Finnhub로 기본 지표 보강.
+    # 예상 EPS는 야후 earnings_estimate(FY+1)를 최우선 — .info가 막혀도 살아있을 수 있음.
     us_fh = {}
-    data_src = None   # 미국 지표 출처 표시용: "야후" | "Finnhub"
+    data_src = None       # 전체 지표 출처: "야후" | "Finnhub"
+    eps_fwd_src = None    # 예상 EPS 출처(별도): "야후" | "Finnhub"
     if not is_korean(ticker):
         data_src = "야후" if ttm_eps is not None else None
+        if fwd_eps is not None:
+            eps_fwd_src = "야후"
+        else:                              # info.forwardEps 없으면 추정 테이블로 야후 재시도
+            ye = _yahoo_fwd_eps(tk)
+            if ye:
+                fwd_eps, eps_fwd_src = ye, "야후"
         if ttm_eps is None or cur_per is None or info.get("beta") is None:
             us_fh = _finnhub_metrics(ticker)
             if us_fh:
-                if ttm_eps is None: data_src = "Finnhub"   # 핵심 지표를 Finnhub에서 채움
+                if ttm_eps is None: data_src = "Finnhub"
                 ttm_eps = ttm_eps if ttm_eps is not None else us_fh.get("eps_ttm")
                 cur_per = cur_per if cur_per is not None else us_fh.get("per_ttm")
                 fwd_per = fwd_per if fwd_per is not None else us_fh.get("per_fwd")
                 cur_pbr = cur_pbr if cur_pbr is not None else us_fh.get("pbr")
                 cur_bps = cur_bps if cur_bps is not None else us_fh.get("bps")
                 if fwd_eps is None and us_fh.get("per_fwd") and price:
-                    fwd_eps = price / us_fh["per_fwd"]   # 선행EPS = 주가 ÷ 선행PER
+                    fwd_eps = price / us_fh["per_fwd"]   # 야후도 없을 때만 Finnhub 역산
+                    eps_fwd_src = "Finnhub"
                 if not cur:
                     cur = "USD"
         # 상단 '데이터 출처'를 실제 소스로 정확히 표시
@@ -989,7 +1012,7 @@ def analyze_data(ticker):
         "pbr_ttm": cur_pbr, "bps": cur_bps,
         "beta": info.get("beta") or us_fh.get("beta"),   # CAPM 자본비용용(야후→Finnhub 폴백)
         "bps_fwd": fwd_bps, "pbr_fwd": fwd_pbr,
-        "eps_src": ("네이버(FnGuide)" if is_korean(ticker) else (data_src or "야후")),
+        "eps_src": ("네이버(FnGuide)" if is_korean(ticker) else (eps_fwd_src or "야후")),
         "band": band, "pbr_band": pbr_band, "targets": targets,
         "pbr_targets": pbr_targets, "sigma": sigma, "pbr_sigma": pbr_sigma,
         "sigma_fwd": sigma_fwd, "pbr_sigma_fwd": pbr_sigma_fwd,
