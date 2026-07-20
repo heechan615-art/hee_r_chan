@@ -9,6 +9,7 @@
 import re
 import time
 import yfinance as yf
+import yfsess
 
 import kr_data
 from valuate import naver_eps, is_korean
@@ -43,7 +44,7 @@ def market_row(market):
         return hit[1]
     tk, name = _MARKET_ETF.get(market, _MARKET_ETF["US"])
     try:
-        info = yf.Ticker(tk).info
+        info = yfsess.ticker(tk).info
         row = {"ticker": "_MKT", "name": name,
                "fwd_per": info.get("trailingPE"), "pbr": info.get("priceToBook"),
                "roe": None, "opmargin": None, "mktcap": None,
@@ -75,7 +76,7 @@ def peer_metrics(ticker):
         yf_tk, code, nm = kr_data.resolve_query(ticker)
         if not yf_tk:
             return None
-        info = yf.Ticker(yf_tk).info
+        info = yfsess.ticker(yf_tk).info
         kr = is_korean(code or ticker)
         roe = info.get("returnOnEquity")
         om = info.get("operatingMargins")

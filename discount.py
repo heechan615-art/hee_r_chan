@@ -17,6 +17,7 @@ import time
 import numpy as np
 import pandas as pd
 import yfinance as yf
+import yfsess
 
 import rates
 import kr_data
@@ -48,7 +49,7 @@ def _bench_weekly_returns(bench):
     if hit and now - hit[0] < _BENCH_TTL:
         return hit[1]
     try:
-        b = yf.Ticker(bench).history(period="2y")["Close"]
+        b = yfsess.ticker(bench).history(period="2y")["Close"]
         b.index = b.index.tz_localize(None)
         r = b.resample("W-FRI").last().pct_change().dropna()
         _BENCH_CACHE[bench] = (now, r)

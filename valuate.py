@@ -19,6 +19,7 @@
 import sys, os, re, math, html, time, warnings
 warnings.filterwarnings("ignore")
 import yfinance as yf
+import yfsess
 import pandas as pd
 import requests
 from bs4 import BeautifulSoup
@@ -697,7 +698,7 @@ def _usdkrw():
     if _FX_CACHE[1] is not None and now - _FX_CACHE[0] < 3600:
         return _FX_CACHE[1]
     try:
-        h = yf.Ticker("KRW=X").history(period="5d")["Close"].dropna()
+        h = yfsess.ticker("KRW=X").history(period="5d")["Close"].dropna()
         if len(h):
             v = float(h.iloc[-1])
             _FX_CACHE[0], _FX_CACHE[1] = now, v
@@ -765,7 +766,7 @@ def analyze_data(ticker):
                          "이름 철자를 확인하세요 (상장폐지/거래정지 종목일 수도 있습니다).")
     if kr_code6:
         ticker = kr_code6  # 이후 네이버 조회 등은 6자리 코드 기준
-    tk = yf.Ticker(yf_ticker)
+    tk = yfsess.ticker(yf_ticker)
     try:
         info = tk.info
     except Exception:

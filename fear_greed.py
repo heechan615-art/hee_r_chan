@@ -18,6 +18,7 @@ import numpy as np
 import pandas as pd
 import requests
 import yfinance as yf
+import yfsess
 
 
 def _load_env():
@@ -232,7 +233,7 @@ def _load_vix():
     if _VIX_CACHE[1] is not None and now - _VIX_CACHE[0] < 6 * 3600:
         return _VIX_CACHE[1]
     try:
-        v = yf.Ticker("^VIX").history(period="2y")["Close"].dropna()
+        v = yfsess.ticker("^VIX").history(period="2y")["Close"].dropna()
         v.index = v.index.tz_localize(None)
         _VIX_CACHE[0], _VIX_CACHE[1] = now, v
         return v if len(v) else None
@@ -447,7 +448,7 @@ def compute_index(ticker):
     except ImportError:
         yf_ticker = ticker + ".KS" if re.fullmatch(r"\d{6}", ticker) else ticker
     ticker = ticker.upper()
-    tk = yf.Ticker(yf_ticker)
+    tk = yfsess.ticker(yf_ticker)
     hist = tk.history(period="6y", interval="1d")   # PER 밴드 지표용 5년 + 여유
     if hist.empty or len(hist) < 30:
         raise ValueError(f"'{ticker}' 주가 데이터를 찾을 수 없습니다. 티커를 확인하세요.")
