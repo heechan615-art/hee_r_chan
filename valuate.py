@@ -845,18 +845,22 @@ def analyze_data(ticker):
 
     # 미국: 야후 .info가 비면(클라우드 IP 차단) Finnhub로 기본 지표 보강
     us_fh = {}
-    if not is_korean(ticker) and (ttm_eps is None or cur_per is None or info.get("beta") is None):
-        us_fh = _finnhub_metrics(ticker)
-        if us_fh:
-            ttm_eps = ttm_eps if ttm_eps is not None else us_fh.get("eps_ttm")
-            cur_per = cur_per if cur_per is not None else us_fh.get("per_ttm")
-            fwd_per = fwd_per if fwd_per is not None else us_fh.get("per_fwd")
-            cur_pbr = cur_pbr if cur_pbr is not None else us_fh.get("pbr")
-            cur_bps = cur_bps if cur_bps is not None else us_fh.get("bps")
-            if fwd_eps is None and us_fh.get("per_fwd") and price:
-                fwd_eps = price / us_fh["per_fwd"]   # 선행EPS = 주가 ÷ 선행PER
-            if not cur:
-                cur = "USD"
+    data_src = None   # 미국 지표 출처 표시용: "야후" | "Finnhub"
+    if not is_korean(ticker):
+        data_src = "야후" if ttm_eps is not None else None
+        if ttm_eps is None or cur_per is None or info.get("beta") is None:
+            us_fh = _finnhub_metrics(ticker)
+            if us_fh:
+                if ttm_eps is None: data_src = "Finnhub"   # 핵심 지표를 Finnhub에서 채움
+                ttm_eps = ttm_eps if ttm_eps is not None else us_fh.get("eps_ttm")
+                cur_per = cur_per if cur_per is not None else us_fh.get("per_ttm")
+                fwd_per = fwd_per if fwd_per is not None else us_fh.get("per_fwd")
+                cur_pbr = cur_pbr if cur_pbr is not None else us_fh.get("pbr")
+                cur_bps = cur_bps if cur_bps is not None else us_fh.get("bps")
+                if fwd_eps is None and us_fh.get("per_fwd") and price:
+                    fwd_eps = price / us_fh["per_fwd"]   # 선행EPS = 주가 ÷ 선행PER
+                if not cur:
+                    cur = "USD"
 
     eps_series = get_annual_eps(tk)
     bps_series = get_annual_bps(tk)
@@ -983,6 +987,7 @@ def analyze_data(ticker):
         "pbr_ttm": cur_pbr, "bps": cur_bps,
         "beta": info.get("beta") or us_fh.get("beta"),   # CAPM 자본비용용(야후→Finnhub 폴백)
         "bps_fwd": fwd_bps, "pbr_fwd": fwd_pbr,
+        "eps_src": ("네이버(FnGuide)" if is_korean(ticker) else (data_src or "야후")),
         "band": band, "pbr_band": pbr_band, "targets": targets,
         "pbr_targets": pbr_targets, "sigma": sigma, "pbr_sigma": pbr_sigma,
         "sigma_fwd": sigma_fwd, "pbr_sigma_fwd": pbr_sigma_fwd,
