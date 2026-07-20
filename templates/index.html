@@ -182,6 +182,17 @@
   .lrow.now b{color:#fff}
   .sig-verdict{margin-top:11px;font-size:13.5px;color:var(--muted)}
   .sig-verdict b{color:var(--text)}
+  /* 동종업계 비교 */
+  .peert{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums;font-size:13.5px}
+  .peert th{font-size:11.5px;color:var(--muted);font-weight:600;text-align:right;padding:7px 10px;border-bottom:1px solid var(--line)}
+  .peert th:first-child{text-align:left}
+  .peert td{text-align:right;padding:8px 10px;border-bottom:1px dashed var(--line)}
+  .peert td.pn{text-align:left;font-weight:500}
+  .peert tr.base{background:rgba(79,140,255,.09)}
+  .peert tr.base td{font-weight:700}
+  .peert tr.market{background:rgba(139,151,173,.07)}
+  .peert tr.market td{color:#aab4c8}
+  .peert tr.avg td{color:var(--muted);border-top:1px solid var(--line);border-bottom:0;font-weight:600}
   /* 재무 흐름 */
   .fin-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px 18px}
   @media(max-width:900px){.fin-grid{grid-template-columns:repeat(2,1fr)}}
@@ -195,9 +206,15 @@
     display:flex;align-items:baseline;flex-wrap:wrap;gap:6px}
   .fin-cur.neg{color:var(--up)}
   .fin-suf{font-size:12px;color:var(--muted);font-weight:500;margin-left:3px}
+  .fin-krw{font-size:12px;color:var(--accent);font-weight:600;font-variant-numeric:tabular-nums;margin:-1px 0 3px}
   .fin-yoy{font-size:11px;font-weight:700;padding:1.5px 7px;border-radius:8px;font-variant-numeric:tabular-nums}
   .fin-yoy.up{background:rgba(240,97,109,.14);color:var(--up)}
   .fin-yoy.dn{background:rgba(62,166,255,.14);color:var(--down)}
+  .fin-bar{cursor:crosshair}
+  #bar-tip{position:fixed;z-index:100;background:#fff;color:#16181d;font-size:12.5px;font-weight:600;
+    padding:6px 11px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.4);pointer-events:none;
+    display:none;white-space:nowrap;font-variant-numeric:tabular-nums}
+  #bar-tip .bt-lab{color:#6b7688;font-weight:500;font-size:11px}
   /* 재무지표 호버 설명 말풍선 (흰 배경·검정 글씨) */
   .fin-cell::after{content:attr(data-tip);position:absolute;left:12px;right:12px;bottom:calc(100% - 2px);z-index:8;
     background:#fff;color:#16181d;font-size:12px;line-height:1.55;font-weight:500;padding:10px 13px;border-radius:10px;
@@ -309,6 +326,7 @@
   <div id="error"></div>
   <div id="loading"><div class="spin"></div>데이터 수집 중… (야후·네이버 조회, 5~15초)</div>
   <div id="result"></div>
+  <div id="bar-tip"></div>
 
   <div class="disclaimer">
     ⚠️ 데이터: 야후파이낸스·네이버(FnGuide 컨센서스) 기준 추정치. 예상EPS는 증권사 컨센서스이며 실제와 다를 수 있음.
@@ -318,6 +336,28 @@
 
 <script>
 const $ = s => document.querySelector(s);
+
+// 재무 막대 hover 툴팁 (문서 전체에 한 번만 등록 — 위임)
+document.addEventListener("mouseover", e => {
+  const bar = e.target.closest && e.target.closest(".fin-bar");
+  const tip = document.getElementById("bar-tip");
+  if(!bar || !tip) return;
+  tip.innerHTML = `<span class="bt-lab">${bar.getAttribute("data-lab")}</span> &nbsp;${bar.getAttribute("data-val")}`;
+  tip.style.display = "block";
+});
+document.addEventListener("mousemove", e => {
+  const tip = document.getElementById("bar-tip");
+  if(tip && tip.style.display === "block"){
+    tip.style.left = (e.clientX + 12) + "px";
+    tip.style.top = (e.clientY - 34) + "px";
+  }
+});
+document.addEventListener("mouseout", e => {
+  if(e.target.closest && e.target.closest(".fin-bar")){
+    const tip = document.getElementById("bar-tip");
+    if(tip) tip.style.display = "none";
+  }
+});
 let RCUR = "";   // 현재 종목 통화 (리포트 계산기에서 사용)
 let LAST = null; // 마지막 분석 결과 (AI 요인추정에서 사용)
 let RMODE = "PER";  // 리포트 계산기 모드: PER | PBR
@@ -383,7 +423,7 @@ function render(d){
     : headerCard;
 
   // 재무 흐름 (성장성·수익성·안정성·현금흐름) + AI 안정성 판단
-  if(d.financials && d.financials.years) h += finCard(d.financials, d.fin_comment);
+  if(d.financials && d.financials.years) h += finCard(d.financials, d.fin_comment, d.usdkrw);
 
   // 표준편차 밴드 (평균 기준 ±1σ/±2σ/±3σ, 양옆 배치)
   h += `<div class="row2">`
@@ -429,6 +469,10 @@ function render(d){
   } else { h += `<div class="muted">N/A — 연간 EPS 2개 이상 필요</div>`; }
   h += `</div>`;
 
+  // 동종업계 비교 (분석 후 별도 비동기 로드)
+  h += `<div class="card peers" id="peers"><h2>동종업계 비교 <span class="h2note">경쟁사 대비 밸류에이션·수익성</span></h2>
+    <div id="peers-body" class="muted" style="font-size:13px">불러오는 중…</div></div>`;
+
   // 뉴스
   if(d.news && d.news.length){
     h += `<div class="card news"><h2>최근 뉴스</h2>`;
@@ -445,6 +489,101 @@ function render(d){
   initReport(d);
   initSigma();
   initTP();
+  loadPeers(d.ticker, []);
+}
+
+// ---------- 동종업계 비교 ----------
+let PEER_EXTRA = [];
+function loadPeers(ticker, extra){
+  PEER_EXTRA = extra || [];
+  const box = $("#peers-body");
+  if(!box) return;
+  box.innerHTML = `<span class="muted" style="font-size:13px">경쟁사 지표 불러오는 중… (몇 초 걸려요)</span>`;
+  const q = "/api/peers?ticker=" + encodeURIComponent(ticker)
+          + (PEER_EXTRA.length ? "&extra=" + encodeURIComponent(PEER_EXTRA.join(",")) : "");
+  fetch(q).then(r => r.json()).then(d => renderPeers(ticker, d))
+    .catch(e => { box.innerHTML = `<span class="warnbox">비교 실패: ${esc(e)}</span>`; });
+}
+
+function renderPeers(ticker, d){
+  const box = $("#peers-body");
+  if(!box) return;
+  if(d.error || !d.rows || !d.rows.length){
+    box.innerHTML = `<div class="muted" style="font-size:13px">자동 비교군이 없는 종목이에요.
+      아래에 비교할 종목을 직접 추가해 보세요.</div>` + peerAddBox();
+    return;
+  }
+  const rows = d.rows;
+  const base = rows.find(r => r.is_base);
+  const peers = rows.filter(r => !r.is_base);
+  // 피어(자신 제외) 평균 — base 비교 기준
+  const avg = k => { const v = peers.map(r=>r[k]).filter(x=>x!=null && isFinite(x)); return v.length?v.reduce((a,b)=>a+b,0)/v.length:null; };
+  const A = {fwd_per:avg("fwd_per"), pbr:avg("pbr"), roe:avg("roe"), opmargin:avg("opmargin")};
+  const mc = r => r.mktcap ? (r.cur==="KRW" ? (r.mktcap/1e12).toFixed(0)+"조" : (r.mktcap/1e9).toFixed(0)+"B") : "-";
+  const num = (v,dec=1,suf="") => (v==null||!isFinite(v)) ? "-" : v.toFixed(dec)+suf;
+  // 낮을수록 좋음(PER/PBR) / 높을수록 좋음(ROE/마진) — base가 유리하면 색
+  const cell = (r,k,dec,suf,lowGood) => {
+    const v = r[k];
+    let cls = "";
+    if(r.is_base && v!=null && A[k]!=null){
+      const good = lowGood ? v < A[k] : v > A[k];
+      cls = good ? "up-pos" : "up-neg";
+    }
+    return `<td class="${cls}">${num(v,dec,suf)}</td>`;
+  };
+  let h = `<div class="muted" style="font-size:12px;margin-bottom:8px">${d.group?`섹터: <b>${esc(d.group)}</b> · `:""}
+    <b>${esc(base?base.name:ticker)}</b> vs 경쟁사. 색: 경쟁사 평균 대비 <b class="up-pos">유리</b>/<b class="up-neg">불리</b></div>
+    <div style="overflow-x:auto"><table class="peert"><tr>
+      <th>종목</th><th>선행 PER</th><th>PBR</th><th>ROE</th><th>영업이익률</th><th>시총</th></tr>`;
+  const line = (r) => `<tr class="${r.is_base?'base':(r.is_market?'market':'')}">
+    <td class="pn">${r.is_base?"★ ":(r.is_market?"📊 ":"")}${esc(r.name)}</td>
+    ${cell(r,"fwd_per",1,"배",true)}${cell(r,"pbr",1,"배",true)}
+    ${cell(r,"roe",0,"%",false)}${cell(r,"opmargin",0,"%",false)}
+    <td class="muted">${mc(r)}</td></tr>`;
+  if(base) h += line(base);
+  if(d.market) h += line(d.market);        // 시장 벤치마크 (검색 종목 바로 아래)
+  peers.forEach(r => h += line(r));
+  // 평균 행
+  h += `<tr class="avg"><td>경쟁사 평균</td><td>${num(A.fwd_per,1,"배")}</td><td>${num(A.pbr,1,"배")}</td>
+    <td>${num(A.roe,0,"%")}</td><td>${num(A.opmargin,0,"%")}</td><td>-</td></tr></table></div>`;
+  // 한 줄 해석
+  if(base){
+    const bits = [];
+    if(base.fwd_per!=null && A.fwd_per!=null) bits.push(base.fwd_per < A.fwd_per
+      ? `선행 PER(${base.fwd_per.toFixed(1)})이 경쟁사 평균(${A.fwd_per.toFixed(1)})보다 <b class="up-pos">낮아 상대적으로 저평가</b>`
+      : `선행 PER(${base.fwd_per.toFixed(1)})이 평균(${A.fwd_per.toFixed(1)})보다 <b class="up-neg">높아 프리미엄</b>`);
+    if(base.roe!=null && A.roe!=null) bits.push(base.roe > A.roe
+      ? `ROE(${base.roe.toFixed(0)}%)는 평균(${A.roe.toFixed(0)}%)보다 <b class="up-pos">높아 수익성 우위</b>`
+      : `ROE(${base.roe.toFixed(0)}%)는 평균(${A.roe.toFixed(0)}%)보다 <b class="up-neg">낮음</b>`);
+    // 시장 대비 한 줄
+    if(d.market && d.market.fwd_per && base.fwd_per){
+      bits.push(base.fwd_per < d.market.fwd_per
+        ? `시장평균 PER(${d.market.fwd_per.toFixed(1)})보다 <b class="up-pos">낮음</b>`
+        : `시장평균 PER(${d.market.fwd_per.toFixed(1)})보다 <b class="up-neg">높음</b>`);
+    }
+    if(bits.length) h += `<div class="sig-verdict" style="margin-top:10px">→ ${bits.join(" · ")}</div>`;
+  }
+  h += `<div class="muted" style="font-size:11px;margin-top:8px">※ 📊 시장평균은 대표 ETF(S&P500=SPY,
+    코스피=EWY 근사)의 후행 PER이라 개별 종목의 선행 PER과 기준이 조금 달라요(대략 비교용).
+    PBR·시총은 국내(네이버)·해외(야후) 소스가 섞여 스케일이 다를 수 있어요.</div>`;
+  h += peerAddBox();
+  box.innerHTML = h;
+}
+
+function peerAddBox(){
+  return `<div style="margin-top:12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+    <input id="peer-add" placeholder="비교 종목 추가 (예: 마이크론, TSM, 인텔)"
+      style="flex:1;min-width:200px;background:#131a28;border:1px solid var(--line);color:var(--text);border-radius:8px;padding:8px 11px;font-size:13px">
+    <button type="button" class="ai-btn" style="margin:0" onclick="addPeer()">+ 추가</button>
+    ${PEER_EXTRA.length?`<button type="button" class="rp-del" style="padding:8px 12px" onclick="loadPeers(LAST.ticker,[])">초기화</button>`:""}
+  </div>`;
+}
+
+function addPeer(){
+  const inp = $("#peer-add");
+  if(!inp || !inp.value.trim() || !LAST) return;
+  const adds = inp.value.split(",").map(s=>s.trim()).filter(Boolean);
+  loadPeers(LAST.ticker, [...PEER_EXTRA, ...adds]);
 }
 
 function initSigma(){
@@ -465,11 +604,13 @@ function initSigma(){
 }
 
 // ---------- 재무 흐름 (연도별 미니 막대 그래프) ----------
-function finCard(f, comment){
+function finCard(f, comment, fx){
   const hasE = f.years.some(y => /E$/.test(y));
   const nActual = f.years.filter(y => !/E$/.test(y)).length;
+  // 미국(달러) 재무면 환율로 원화 병기 (fx = USD→KRW)
+  const krwFx = (f.unit !== "억원" && fx) ? fx : null;
   let h = `<div class="card fin"><h2>재무 흐름
-    <span class="h2note">확정 ${nActual}년${hasE ? " + 예상 "+(f.years.length-nActual)+"년(E)" : ""} · 단위 ${f.unit==="억원"?"조원":"십억달러"} · YoY 성장률</span></h2>`;
+    <span class="h2note">확정 ${nActual}년${hasE ? " + 예상 "+(f.years.length-nActual)+"년(E)" : ""} · 단위 ${f.unit==="억원"?"조원":"십억달러"}${krwFx?` (환율 ${fmt(fx,0)}원)`:""} · YoY 성장률</span></h2>`;
   // AI 재무 안정성 코멘트 (있으면 상단에)
   if(comment && comment.text){
     const vc = comment.verdict==="안정" ? "ok" : (comment.verdict==="불안정" ? "bad" : "mid");
@@ -489,30 +630,30 @@ function finCard(f, comment){
     ocf: "영업활동 현금흐름 — 장부상 이익이 아니라 실제로 들어온 현금. 이익은 흑자인데 이 값이 마이너스면 '흑자도산' 위험. 회계 착시를 걸러내는 지표입니다.",
     fcf: "잉여현금흐름(FCF) — 영업현금에서 설비투자를 뺀, 진짜 자유롭게 쓸 수 있는 현금. 배당·자사주·부채상환의 재원이라, 플러스가 클수록 주주환원 여력이 큽니다.",
   };
-  h += finMini("매출액", "성장성", f.revenue, f.years, money, mu, T.rev);
+  h += finMini("매출액", "성장성", f.revenue, f.years, money, mu, T.rev, undefined, false, krwFx);
   h += finMini("영업이익률", "수익성", f.opmargin, f.years, v=>v, "%", T.om);
-  h += finMini("순이익", "성장성", f.netinc, f.years, money, mu, T.ni);
+  h += finMini("순이익", "성장성", f.netinc, f.years, money, mu, T.ni, undefined, false, krwFx);
   h += finMini("ROE", "수익성", f.roe, f.years, v=>v, "%", T.roe, 15);
   h += finMini("부채비율", "안정성", f.debtratio, f.years, v=>v, "%", T.debt, 100);
-  h += finMini("영업활동 현금흐름", "현금", f.ocf, f.years, money, mu, T.ocf);
-  h += finMini("잉여현금흐름 (FCF)", "현금", f.fcf, f.years, money, mu, T.fcf);
+  h += finMini("영업활동 현금흐름", "현금", f.ocf, f.years, money, mu, T.ocf, undefined, false, krwFx);
+  h += finMini("잉여현금흐름 (FCF)", "현금", f.fcf, f.years, money, mu, T.fcf, undefined, false, krwFx);
   // QoQ (분기) — 최근 확정분기 성장률
   const q = f.quarterly;
   if(q && q.quarters){
     h += finMiniQ("매출 (분기)", "QoQ", q.revenue, q.quarters, money, mu,
-      "분기 매출의 직전분기 대비(QoQ) 성장률 — 연간보다 빠르게 최근 모멘텀 변화를 포착합니다.");
+      "분기 매출의 직전분기 대비(QoQ) 성장률 — 연간보다 빠르게 최근 모멘텀 변화를 포착합니다.", krwFx);
     h += finMiniQ("영업이익 (분기)", "QoQ", q.opinc, q.quarters, money, mu,
-      "분기 영업이익 추이 — 계절성과 최근 수익성 방향을 봅니다.");
+      "분기 영업이익 추이 — 계절성과 최근 수익성 방향을 봅니다.", krwFx);
   }
   return h + `</div></div>`;
 }
 
 // 분기 미니 (QoQ 성장률 뱃지)
-function finMiniQ(title, tag, arr, quarters, conv, unit, tip){
-  return finMini(title, tag, arr, quarters, conv, unit, tip, undefined, true);
+function finMiniQ(title, tag, arr, quarters, conv, unit, tip, krwFx){
+  return finMini(title, tag, arr, quarters, conv, unit, tip, undefined, true, krwFx);
 }
 
-function finMini(title, tag, arr, years, conv, unit, tip, refLine, isQ){
+function finMini(title, tag, arr, years, conv, unit, tip, refLine, isQ, krwFx){
   if(!arr || !arr.some(v => v !== null && isFinite(v)))
     return `<div class="fin-cell"><div class="fin-t">${title} <span class="fin-tag">${tag}</span></div>
       <div class="muted" style="font-size:12px;padding:20px 0">데이터 없음</div></div>`;
@@ -550,6 +691,12 @@ function finMini(title, tag, arr, years, conv, unit, tip, refLine, isQ){
       g += `<rect x="${(cx-bw/2).toFixed(1)}" y="${top.toFixed(1)}" width="${bw.toFixed(1)}" height="${hgt.toFixed(1)}"
         rx="2" fill="${col}"${est?' stroke="var(--accent)" stroke-width="1" stroke-dasharray="2 1.5"':''}/>`;
     }
+    // 투명 hover 영역 (슬롯 전체) — 마우스 올리면 값 툴팁 (미국은 원화 병기)
+    const vd = Math.abs(v||0)<10 ? (unit==="%"?1:2) : (Math.abs(v||0)<100?1:0);
+    const krwBar = (krwFx && v!==null) ? ` ≈ ${fmt(v*krwFx/1000, Math.abs(v*krwFx/1000)<100?1:0)}조원` : "";
+    const valStr = v===null ? "데이터 없음" : `${fmt(v,vd)}${unit}${krwBar}`;
+    g += `<rect class="fin-bar" x="${(cx-gap/2).toFixed(1)}" y="0" width="${gap.toFixed(1)}" height="${H}"
+      fill="transparent" data-lab="${years[i]}${est?' (예상)':''}" data-val="${valStr}"/>`;
     g += `<text x="${cx.toFixed(1)}" y="${H-7}" text-anchor="middle" style="fill:var(--muted);font-size:8.5px">${years[i].replace(/^20/,"").replace("E","ᴱ")}</text>`;
   });
   const decs = Math.abs(cur)<10 ? (unit==="%"?1:2) : (Math.abs(cur)<100?1:0);
@@ -559,9 +706,11 @@ function finMini(title, tag, arr, years, conv, unit, tip, refLine, isQ){
     const gtxt = unit==="%" ? (growth*100>=0?"+":"")+(growth*100).toFixed(1)+"%p" : pct(growth*100);
     gBadge = `<span class="fin-yoy ${growth>=0?'up':'dn'}">${isQ?"QoQ ":"YoY "}${gtxt}</span>`;
   }
+  const krwLine = krwFx ? `<div class="fin-krw">≈ 원화 ${fmt(cur*krwFx/1000, Math.abs(cur*krwFx/1000)<100?1:0)}조원</div>` : "";
   return `<div class="fin-cell" data-tip="${esc(tip)}">
     <div class="fin-t">${title} <span class="fin-tag">${tag}</span></div>
     <div class="fin-cur ${cur<0?'neg':''}">${fmt(cur, decs)}<span class="fin-suf">${unit} · ${curYr.replace(/^20/,"")}</span>${gBadge}</div>
+    ${krwLine}
     <svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block" role="img" aria-label="${title} 추이">${g}</svg></div>`;
 }
 

@@ -16,7 +16,7 @@
   python valuate.py                # 기본 종목들
   python valuate.py NVDA 005930.KS AAPL 000660.KS
 """
-import sys, os, re, math, html, warnings
+import sys, os, re, math, html, time, warnings
 warnings.filterwarnings("ignore")
 import yfinance as yf
 import pandas as pd
@@ -687,6 +687,26 @@ def _discount_data(hist, info, ticker):
         return None
 
 
+# ------------------- USD/KRW 환율 (미국 재무 원화 병기용) -------------------
+_FX_CACHE = [0.0, None]
+
+
+def _usdkrw():
+    """USD→KRW 환율 (캐시 1시간). 실패 시 None."""
+    now = time.time()
+    if _FX_CACHE[1] is not None and now - _FX_CACHE[0] < 3600:
+        return _FX_CACHE[1]
+    try:
+        h = yf.Ticker("KRW=X").history(period="5d")["Close"].dropna()
+        if len(h):
+            v = float(h.iloc[-1])
+            _FX_CACHE[0], _FX_CACHE[1] = now, v
+            return v
+    except Exception:
+        pass
+    return None
+
+
 # ------------------- 양국 10년물 금리 (헤더 표시용) -------------------
 def _both_rates():
     """미국(FRED)·한국(ECOS) 10년물 최신 금리를 함께 반환 (캐시라 추가 조회 거의 없음).
@@ -924,6 +944,7 @@ def analyze_data(ticker):
         "cyclical": cyclical, "cyc_max": cyc_max,
         "eps_hist": [round(float(v), 4) for v in eps_hist] if eps_hist else [],
         "financials": fin_data, "fin_comment": fin_comment,
+        "usdkrw": _usdkrw() if not is_korean(ticker) else None,
         "fear_greed": _fear_greed(hist_df, info, ticker, eps_series, ttm_eps, per_daily,
                                   news_titles=[n.get("title") for n in (news or [])]),
         "target_model": {"rate": rate_info, "pbr_reg": pbr_reg,

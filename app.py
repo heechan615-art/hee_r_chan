@@ -60,6 +60,20 @@ def api_analyze():
         return jsonify({"error": f"분석 실패: {repr(e)[:150]}"}), 500
 
 
+@app.route("/api/peers")
+def api_peers():
+    """동종업계 비교 — 자동 피어 그룹 + 수동 추가(extra) 종목 지표. (무거워서 별도 호출)"""
+    import peers
+    ticker = (request.args.get("ticker") or "").strip()
+    if not ticker:
+        return jsonify({"error": "종목 코드를 입력하세요."}), 400
+    extra = [e for e in (request.args.get("extra") or "").split(",") if e.strip()]
+    try:
+        return jsonify(clean(peers.compare(ticker, extra)))
+    except Exception as e:
+        return jsonify({"error": f"비교 실패: {repr(e)[:150]}"}), 500
+
+
 @app.route("/api/ai_factor", methods=["POST"])
 def api_ai_factor():
     """멀티플(PER) 변화가 외부요인인지 내부요인인지 무료 Gemini로 추정.
