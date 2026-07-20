@@ -259,6 +259,15 @@
     font-size:11.5px;padding:5px 11px;border-radius:14px;white-space:nowrap;
     box-shadow:0 0 0 1px rgba(245,181,68,.35), 0 2px 8px rgba(245,181,68,.25)}
   .recbadge.hidden{display:none}
+  /* CAPM 구성요소 물음표 툴팁 */
+  .capm-q{display:inline-block;width:14px;height:14px;line-height:14px;text-align:center;
+    background:var(--line);color:var(--muted);border-radius:50%;font-size:9px;font-weight:700;
+    margin-left:4px;cursor:help;position:relative}
+  .capm-q::after{content:attr(data-tip);position:absolute;left:50%;transform:translateX(-50%);
+    bottom:calc(100% + 7px);z-index:10;background:#fff;color:#16181d;font-size:12px;line-height:1.5;
+    font-weight:500;padding:9px 12px;border-radius:9px;width:250px;box-shadow:0 5px 18px rgba(0,0,0,.45);
+    opacity:0;visibility:hidden;transition:opacity .15s;pointer-events:none;white-space:normal}
+  .capm-q:hover::after{opacity:1;visibility:visible}
   .fit{font-size:10.5px;font-weight:600;padding:2.5px 9px;border-radius:10px;margin-left:8px;vertical-align:2px;white-space:nowrap}
   .fit.ok{background:rgba(55,201,138,.14);color:var(--good)}
   .fit.warn{background:rgba(245,181,68,.14);color:var(--warn)}
@@ -673,13 +682,15 @@ function stockGuide(d){
   const eh = (d.eps_hist || []).filter(v => v !== null);
   let hadDown = false;
   for(let i = 1; i < eh.length; i++) if(eh[i] < eh[i-1] * 0.85) hadDown = true;
-  const hasLoss = eh.some(v => v <= 0);                 // 적자 이력
+  const hasLoss = eh.some(v => v <= 0);                 // 과거 적자 이력(사이클 바닥)
   const nowLoss = (d.eps_ttm !== null && d.eps_ttm <= 0);  // 현재 적자
-  // 진짜 시클리컬 = 이익이 널뛰고(하락연도) + 자본형 기업(장부가 비중 ≥25%).
-  const trueCyclical = d.cyclical && hadDown && assetOk;
+  // 진짜 시클리컬 = 이익이 널뛰고(하락연도) + 자본형(장부가 비중 ≥25%) 또는 과거 적자경험.
+  // (반도체처럼 사이클 피크에 주가가 올라 장부가 비중이 낮아진 종목도 과거 적자로 잡음)
+  const trueCyclical = d.cyclical && hadDown && (assetOk || hasLoss);
   let type, color, rec;
-  if(nowLoss || (hasLoss && g !== null && g > 0.5)){
-    // 적자 → 턴어라운드: 정상 밸류에이션(PER/정당PBR)이 음수/무한대로 깨짐
+  if(nowLoss){
+    // '현재' 적자일 때만 턴어라운드: 정상 밸류에이션(PER/정당PBR)이 음수/무한대로 깨짐.
+    // 과거 적자였어도 지금 흑자면 (하이닉스 등) 턴어라운드 아님 → 시클리컬로 감.
     type = "적자·턴어라운드"; color = "#c678dd";
     rec = `현재 적자라 PER·정당PBR이 깨집니다 — <b>"정상화 이익"</b>(회복 시 EPS·ROE)을 직접 가정해야 해요.
       ${assetOk ? "자본형이니 PBR-ROE 방식에서 <b>목표 PBR을 정상 ROE÷요구수익률로 직접 입력</b>" : "선행 PER에 회복 EPS를 직접 입력"}하세요`;
@@ -755,20 +766,23 @@ function tpCard(d){
       ${rateBox}
     </div>
     <div id="tp-rp-wrap" style="display:none;margin-bottom:8px">
-      <div style="font-size:12px;color:var(--muted);margin-bottom:6px">리스크프리미엄 정하는 법:
-        <label style="margin-left:8px;cursor:pointer"><input type="radio" name="rpmode" value="manual" checked style="vertical-align:middle;accent-color:var(--accent)"> 직접 조절</label>
-        <label style="margin-left:10px;cursor:${d.beta?'pointer':'default'}"><input type="radio" name="rpmode" value="beta" ${d.beta?'':'disabled'} style="vertical-align:middle;accent-color:var(--accent)"> 베타 자동${d.beta?` (β ${(+d.beta).toFixed(2)})`:' (데이터 없음)'}</label>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:6px">할인율(요구수익률):
+        <label style="margin-left:8px;cursor:pointer"><input type="radio" name="rpmode" value="auto" ${d.target_model&&d.target_model.discount?'checked':''} ${d.target_model&&d.target_model.discount?'':'disabled'} style="vertical-align:middle;accent-color:var(--accent)"> 자동 계산 (CAPM)</label>
+        <label style="margin-left:10px;cursor:pointer"><input type="radio" name="rpmode" value="manual" ${d.target_model&&d.target_model.discount?'':'checked'} style="vertical-align:middle;accent-color:var(--accent)"> 직접 입력</label>
       </div>
-      <div id="tp-rp-manual">
+      <div id="tp-rp-manual" style="display:none">
         <label style="font-size:12px;color:var(--muted)">리스크프리미엄
           <span id="tp-rpv" style="color:var(--accent);font-weight:700">4.5%</span>
           <input id="tp-rp" type="range" min="3" max="7" step="0.1" value="4.5"
             style="width:200px;accent-color:var(--accent);vertical-align:middle"></label>
       </div>
-      <div id="tp-rp-beta" style="display:none">
-        <label style="font-size:12px;color:var(--muted)">시장 리스크프리미엄
-          <input id="tp-mrp" type="number" step="0.1" value="${rateLabelKR(d)?"6.0":"5.5"}"
-            style="width:64px;background:#131a28;border:1px solid var(--line);color:var(--text);border-radius:6px;padding:4px 7px;font-size:13px"> %</label>
+      <div id="tp-rp-auto" style="display:none">
+        <label class="tp-chk" style="font-size:12px"><input type="checkbox" id="tp-size" style="accent-color:var(--accent)">
+          사이즈 프리미엄 (소형주 할증)</label>
+        <span class="muted" style="font-size:11px;margin-left:10px">ERP
+          <input id="tp-mrp" type="number" step="0.1" value="4.5"
+            style="width:52px;background:#131a28;border:1px solid var(--line);color:var(--text);border-radius:6px;padding:3px 6px;font-size:12px"> %</span>
+        <div id="tp-capm"></div>
       </div>
       <span class="muted" style="font-size:12px;display:block;margin-top:5px" id="tp-drate"></span>
     </div>
@@ -782,29 +796,77 @@ function rateLabelKR(d){
 }
 
 function tpCostOfEquity(d){
-  // 요구수익률(자본비용) r = 국채 + 리스크프리미엄. 정당 PBR·할인 공통.
-  // 리스크프리미엄: 직접(슬라이더) 또는 베타 자동(CAPM: β × 시장프리미엄).
+  // 요구수익률(자본비용) — 자동(CAPM 확장) 또는 직접(슬라이더). 정당 PBR·할인 공통.
+  // CAPM: 요구수익률 = Rf + 조정β×ERP + CRP + 사이즈 프리미엄
   const rate = d.target_model && d.target_model.rate;
-  if(!rate) return {r: 0.09, rp: 4.5, base: 4.5, note: "", has: false};
+  const dc = d.target_model && d.target_model.discount;
+  if(!rate) return {r: 0.09, note: "", has: false};
   const modeEl = document.querySelector('input[name="rpmode"]:checked');
-  const mode = modeEl ? modeEl.value : "manual";
-  const mBox = $("#tp-rp-manual"), bBox = $("#tp-rp-beta");
-  let rp, note;
-  if(mode === "beta" && d.beta){
+  const mode = modeEl ? modeEl.value : (dc ? "auto" : "manual");
+  const mBox = $("#tp-rp-manual"), aBox = $("#tp-rp-auto");
+  if(mode === "auto" && dc){
     if(mBox) mBox.style.display = "none";
-    if(bBox) bBox.style.display = "block";
-    const mrp = parseFloat($("#tp-mrp") ? $("#tp-mrp").value : "5.5") || 5.5;
-    rp = (+d.beta) * mrp;   // CAPM
-    note = `→ 요구수익률 ${(rate.dgs10 + rp).toFixed(2)}% = 10년물 ${rate.dgs10.toFixed(2)}% `
-         + `+ (베타 ${(+d.beta).toFixed(2)} × 시장프리미엄 ${mrp.toFixed(1)}% = 리스크프리미엄 ${rp.toFixed(1)}%)`;
-  } else {
-    if(mBox) mBox.style.display = "block";
-    if(bBox) bBox.style.display = "none";
-    rp = parseFloat($("#tp-rp") ? $("#tp-rp").value : "4.5");
-    if($("#tp-rpv")) $("#tp-rpv").textContent = rp.toFixed(1) + "%";
-    note = `→ 요구수익률 ${(rate.dgs10 + rp).toFixed(2)}% = 10년물 ${rate.dgs10.toFixed(2)}% + 리스크프리미엄 ${rp.toFixed(1)}%`;
+    if(aBox) aBox.style.display = "block";
+    const erp = parseFloat($("#tp-mrp") ? $("#tp-mrp").value : dc.erp) || dc.erp;
+    const sizeOn = $("#tp-size") && $("#tp-size").checked;
+    let beta = dc.beta.adjusted;
+    if(sizeOn) beta = Math.min(beta, 1.2);          // 중복방지 캡
+    const size = sizeOn ? dc.size_premium : 0;
+    const betaErp = beta * erp;
+    const total = dc.rf + betaErp + dc.crp + size;  // %
+    // 브레이크다운 스택바 + 해석
+    if($("#tp-capm")) $("#tp-capm").innerHTML = capmBreakdown(dc, {erp, beta, betaErp, size, total, sizeOn});
+    const note = `→ 요구수익률 ${total.toFixed(2)}% = Rf ${dc.rf.toFixed(2)}% + β ${beta.toFixed(2)}×ERP ${erp.toFixed(1)}%`
+      + (dc.crp ? ` + CRP ${dc.crp.toFixed(1)}%` : "") + (size ? ` + 사이즈 ${size.toFixed(1)}%` : "");
+    return {r: total/100, note, has: true, breakdown: {rf:dc.rf, betaErp, crp:dc.crp, size, total}};
   }
-  return {r: rate.dgs10/100 + rp/100, rp, note, has: true};
+  // 직접 입력
+  if(mBox) mBox.style.display = "block";
+  if(aBox) aBox.style.display = "none";
+  const rp = parseFloat($("#tp-rp") ? $("#tp-rp").value : "4.5");
+  if($("#tp-rpv")) $("#tp-rpv").textContent = rp.toFixed(1) + "%";
+  const note = `→ 요구수익률 ${(rate.dgs10 + rp).toFixed(2)}% = 10년물 ${rate.dgs10.toFixed(2)}% + 리스크프리미엄 ${rp.toFixed(1)}%`;
+  return {r: rate.dgs10/100 + rp/100, note, has: true};
+}
+
+// CAPM 구성요소 가로 스택바 + 툴팁 + 한 줄 해석
+function capmBreakdown(dc, v){
+  const b = dc.beta;
+  const tip = (t) => `<span class="capm-q" data-tip="${esc(t)}">?</span>`;
+  const segs = [
+    {label:"무위험 Rf", val:dc.rf, col:"#4f8cff",
+     tip:`무위험이자율입니다. 나라가 보장하는 ${dc.market==="KR"?"국고채":"미국채"} 10년물 금리로, 위험을 전혀 안 졌을 때 받는 기본 수익이에요.`},
+    {label:"β×ERP", val:v.betaErp, col:"#37c98a",
+     tip:`주식 위험을 감수한 대가입니다. 조정베타 ${v.beta.toFixed(2)}(이 종목이 시장보다 얼마나 출렁이는지)에 시장위험프리미엄 ${v.erp.toFixed(1)}%를 곱한 값이에요.`},
+  ];
+  if(dc.crp) segs.push({label:"CRP", val:dc.crp, col:"#f5b544",
+     tip:`국가 리스크 프리미엄입니다. 한국 시장에 투자할 때 미국 대비 추가로 요구하는 위험 보상이에요(다모다란 기준).`});
+  if(v.size) segs.push({label:"사이즈", val:v.size, col:"#c678dd",
+     tip:`소형주 할증입니다. 작은 회사일수록 변동·유동성 위험이 커서 요구수익률을 더 얹어요.`});
+  const total = v.total || 1;
+  const W=560, H=30;
+  let x=0, bars="", legend="";
+  segs.forEach(s => {
+    const w = Math.max(0, s.val/total*W);
+    bars += `<rect x="${x.toFixed(1)}" y="0" width="${w.toFixed(1)}" height="${H}" fill="${s.col}" opacity=".85"/>`
+      + (w>34 ? `<text x="${(x+w/2).toFixed(1)}" y="${H/2+4}" text-anchor="middle" style="fill:#fff;font-size:10px;font-weight:600">${s.val.toFixed(1)}</text>` : "");
+    legend += `<span style="font-size:11px;color:var(--muted);margin-right:12px"><span style="display:inline-block;width:9px;height:9px;background:${s.col};border-radius:2px;margin-right:4px"></span>${s.label} ${s.val.toFixed(1)}%${tip(s.tip)}</span>`;
+    x += w;
+  });
+  const rfPct = Math.round(dc.rf/total*100);
+  const betaPct = Math.round(v.betaErp/total*100);
+  const interp = rfPct >= 45
+    ? `현재 금리 수준이 높아 할인율의 <b>${rfPct}%가 무위험이자율</b>에서 나옵니다.`
+    : (betaPct >= 50
+       ? `할인율의 <b>${betaPct}%가 주식 위험 보상(β×ERP)</b>에서 나옵니다 — 변동성이 큰 종목이에요.`
+       : `무위험 ${rfPct}% · 주식위험 ${betaPct}%로 균형 잡힌 구성입니다.`);
+  return `<div style="margin:8px 0 4px">
+    <svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block" role="img" aria-label="할인율 구성"><g>${bars}</g></svg>
+    <div style="margin-top:7px">${legend}</div>
+    <div class="muted" style="font-size:11.5px;margin-top:6px;line-height:1.5">${interp}
+      ${b.method==="기본값"?" ⚠️ 베타 데이터 부족으로 기본값(1.0)을 썼습니다.":` (회귀베타 ${b.raw.toFixed(2)} → 조정 ${b.adjusted.toFixed(2)}, 주간 ${b.n}개)`}
+      ${v.sizeOn?" · 사이즈 프리미엄 ON이라 베타를 1.2로 캡했습니다(중복 방지).":""}</div>
+  </div>`;
 }
 
 function tpDiscount(d){
@@ -1009,7 +1071,7 @@ function initTP(){
   if(!tp) return;
   renderTP();
   // 요구수익률 관련 입력 id/name (변경 시 PBR 방식이면 정당PBR 칩 갱신 위해 재렌더)
-  const isRpInput = t => t && (t.name === "rpmode" || t.id === "tp-rp" || t.id === "tp-mrp" || t.id === "tp-disc");
+  const isRpInput = t => t && (t.name === "rpmode" || t.id === "tp-rp" || t.id === "tp-mrp" || t.id === "tp-disc" || t.id === "tp-size");
   tp.addEventListener("change", e => {
     if(e.target.id === "tp-method"){ TPMETHOD = e.target.value; renderTP(); return; }
     if(isRpInput(e.target) && TPMETHOD === "pbr"){ renderTP(); }

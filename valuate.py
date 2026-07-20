@@ -26,6 +26,7 @@ from bs4 import BeautifulSoup
 from fear_greed import compute_from_hist, timeline_from_hist
 import rates
 import kr_data
+import discount
 
 UA = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)"}
 
@@ -673,6 +674,19 @@ def fin_ai_comment(name, fin):
         return None
 
 
+# ------------------- 요구수익률(할인율) 재료 (CAPM 확장) -------------------
+def _discount_data(hist, info, ticker):
+    """CAPM 요구수익률 재료 — 회귀베타·무위험이자율·ERP·CRP·시총. 실패해도 앱 계속."""
+    try:
+        market = "KR" if is_korean(ticker) else "US"
+        mktcap = info.get("marketCap")
+        if hist is None or hist.empty:
+            return None
+        return discount.discount_data(hist, market, mktcap)
+    except Exception:
+        return None
+
+
 # ------------------- 양국 10년물 금리 (헤더 표시용) -------------------
 def _both_rates():
     """미국(FRED)·한국(ECOS) 10년물 최신 금리를 함께 반환 (캐시라 추가 조회 거의 없음).
@@ -914,7 +928,8 @@ def analyze_data(ticker):
                                   news_titles=[n.get("title") for n in (news or [])]),
         "target_model": {"rate": rate_info, "pbr_reg": pbr_reg,
                          "growth": growth_block(tk, nv_annual, ttm_eps, fwd_eps, eps_series),
-                         "rates_both": _both_rates()},
+                         "rates_both": _both_rates(),
+                         "discount": _discount_data(hist, info, ticker)},
         "hi52": hi52, "lo52": lo52,
         "decompose": decompose(eps_series, hist, price),
         "news": news,
