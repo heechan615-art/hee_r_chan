@@ -60,6 +60,23 @@ def api_analyze():
         return jsonify({"error": f"분석 실패: {repr(e)[:150]}"}), 500
 
 
+@app.route("/api/briefing")
+def api_briefing():
+    """일일 증시 브리핑. day 파라미터 있으면 과거 브리핑 불러오기, list=1이면 날짜 목록."""
+    import briefing
+    market = "US" if (request.args.get("market") or "").upper() == "US" else "KR"
+    try:
+        if request.args.get("list"):
+            return jsonify({"days": briefing.list_briefings(market)})
+        day = request.args.get("day")
+        if day:
+            data = briefing.load_briefing(day, market)
+            return jsonify(clean(data) if data else {"error": "해당 날짜 브리핑이 없습니다."})
+        return jsonify(clean(briefing.daily_briefing(market)))
+    except Exception as e:
+        return jsonify({"error": f"브리핑 실패: {repr(e)[:150]}"}), 500
+
+
 @app.route("/api/peers")
 def api_peers():
     """동종업계 비교 — 자동 피어 그룹 + 수동 추가(extra) 종목 지표. (무거워서 별도 호출)"""

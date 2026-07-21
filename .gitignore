@@ -13,3 +13,4 @@ __pycache__/
 
 # 로컬 실행 파일 (배포엔 불필요)
 *.command
+briefings/

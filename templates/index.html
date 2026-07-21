@@ -15,7 +15,52 @@
     font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Segoe UI",Roboto,sans-serif;
     line-height:1.5}
   .wrap{max-width:1180px;margin:0 auto;padding:28px 22px 80px}
-  h1{font-size:22px;margin:0 0 4px;font-weight:700}
+  h1{font-size:22px;margin:0 0 10px;font-weight:700}
+  /* 탭 */
+  .tabs{display:flex;gap:6px;margin-bottom:16px;border-bottom:1px solid var(--line)}
+  .tab-btn{background:transparent;border:0;border-bottom:2px solid transparent;color:var(--muted);
+    padding:10px 16px;font-size:15px;font-weight:600;cursor:pointer;margin-bottom:-1px}
+  .tab-btn.active{color:var(--accent);border-bottom-color:var(--accent)}
+  .tab-btn:hover{color:var(--text)}
+  .tab-gen{background:var(--accent);color:#fff;border:0;padding:11px 20px;border-radius:11px;
+    font-size:15px;font-weight:600;cursor:pointer}
+  .tab-gen:disabled{opacity:.5;cursor:default}
+  /* 브리핑 */
+  .brf-idx{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}
+  @media(max-width:640px){.brf-idx{grid-template-columns:repeat(2,1fr)}}
+  .brf-idx .box{background:#131a28;border:1px solid var(--line);border-radius:11px;padding:12px 14px;text-align:center}
+  .brf-idx .in{font-size:13px;color:var(--muted)}
+  .brf-idx .ip{font-size:19px;font-weight:700;font-variant-numeric:tabular-nums;margin:3px 0}
+  .brf-idx .ic{font-size:13px;font-weight:600;font-variant-numeric:tabular-nums}
+  .brf-macro{display:flex;gap:16px;flex-wrap:wrap;font-size:13px;color:var(--muted);margin-bottom:14px;
+    background:#131a28;border:1px solid var(--line);border-radius:11px;padding:11px 15px}
+  .brf-macro b{color:var(--text);font-variant-numeric:tabular-nums}
+  .brf-mv{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+  @media(max-width:640px){.brf-mv{grid-template-columns:1fr}}
+  .brf-mv .col{background:#131a28;border:1px solid var(--line);border-radius:11px;padding:12px 14px}
+  .brf-mv h4{font-size:13px;margin:0 0 8px;color:var(--muted)}
+  .brf-mv .row{display:flex;justify-content:space-between;font-size:13.5px;padding:4px 0;font-variant-numeric:tabular-nums}
+  .brf-ai{background:#131a28;border:1px solid var(--line);border-radius:12px;padding:16px 18px;
+    font-size:14px;line-height:1.75;white-space:pre-wrap}
+  .brf-ai b,.brf-ai strong{color:var(--accent)}
+  .brf-ai .brf-lbl{color:var(--warn)}
+  .brf-head{font-size:17px;font-weight:700;color:var(--text);margin:18px 0 4px}
+  /* 주요 이슈 카드 */
+  .issues{display:flex;flex-direction:column;gap:14px}
+  .issue-card{background:#131a28;border:1px solid var(--line);border-radius:14px;
+    padding:18px 20px;border-left:3px solid var(--accent)}
+  .issue-title{font-size:17px;font-weight:700;color:var(--text);margin-bottom:14px;
+    display:flex;align-items:center;gap:10px;line-height:1.4}
+  .issue-no{flex:none;width:26px;height:26px;background:var(--accent);color:#fff;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700}
+  .issue-sec{margin-bottom:11px}
+  .issue-sec:last-child{margin-bottom:0}
+  .issue-lbl{font-size:12.5px;font-weight:700;color:var(--warn);margin-bottom:3px}
+  .issue-txt{font-size:14.5px;line-height:1.7;color:var(--text)}
+  .issue-stocks{display:flex;flex-wrap:wrap;gap:7px;margin-top:5px}
+  .stk-chip{background:#0f1420;border:1px solid var(--line);color:var(--text);border-radius:20px;
+    padding:6px 13px;font-size:13px;cursor:pointer;transition:.15s}
+  .stk-chip:hover{border-color:var(--accent);color:var(--accent);background:rgba(79,140,255,.08)}
   .sub{color:var(--muted);font-size:13px;margin-bottom:22px}
   form{display:flex;gap:8px;margin-bottom:8px}
   input{flex:1;background:var(--card);border:1px solid var(--line);color:var(--text);
@@ -306,6 +351,14 @@
 <body>
 <div class="wrap">
   <h1>⚡ 히르찬의 밸류에이션</h1>
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="value">📊 밸류에이션</button>
+    <button class="tab-btn" data-tab="briefing" data-mkt="KR">🇰🇷 한국 브리핑</button>
+    <button class="tab-btn" data-tab="briefing" data-mkt="US">🇺🇸 미국 브리핑</button>
+  </div>
+
+  <!-- 밸류에이션 탭 -->
+  <div id="tab-value">
   <div class="sub">EPS·과거 PER 밴드로 목표주가와 고평가/저평가를 빠르게 가늠 · 국내 + 미국</div>
 
   <form id="f">
@@ -329,6 +382,14 @@
   <div id="loading"><div class="spin"></div>데이터 수집 중… (야후·네이버 조회, 5~15초)</div>
   <div id="result"></div>
   <div id="bar-tip"></div>
+  </div>
+
+  <!-- 브리핑 탭 (한국/미국 공용, BRIEF_MKT로 구분) -->
+  <div id="tab-briefing" style="display:none">
+    <div class="sub" id="brief-sub">오늘의 지수·급등락·매크로를 AI가 종합한 일일 증시 브리핑 · 참고용</div>
+    <div id="briefing-body"><div class="muted" style="padding:20px 0">아래 버튼을 눌러 브리핑을 생성하세요.</div>
+      <button type="button" id="brief-gen" class="tab-gen">📰 오늘의 브리핑 생성</button></div>
+  </div>
 
   <div class="disclaimer">
     ⚠️ 데이터: 야후파이낸스·네이버(FnGuide 컨센서스) 기준 추정치. 예상EPS는 증권사 컨센서스이며 실제와 다를 수 있음.
@@ -380,6 +441,165 @@ const pct = n => (n===null||n===undefined) ? "N/A" : (n>=0?"+":"") + Number(n).t
 
 document.querySelectorAll(".chip").forEach(c =>
   c.onclick = () => { $("#q").value = c.dataset.t; $("#f").requestSubmit(); });
+
+// ---------- 탭 전환 ----------
+let BRIEF_MKT = "KR";   // 현재 브리핑 시장
+document.querySelectorAll(".tab-btn").forEach(b => b.onclick = () => {
+  document.querySelectorAll(".tab-btn").forEach(x => x.classList.toggle("active", x === b));
+  const t = b.dataset.tab;
+  $("#tab-value").style.display = t === "value" ? "" : "none";
+  $("#tab-briefing").style.display = t === "briefing" ? "" : "none";
+  if(t === "briefing"){
+    const mkt = b.dataset.mkt || "KR";
+    if(mkt !== BRIEF_MKT || !$("#briefing-body").dataset.loaded){
+      BRIEF_MKT = mkt;
+      $("#brief-sub").textContent = (mkt==="US"?"미국":"한국")
+        + " 증시의 지수·급등락·매크로를 AI가 종합한 일일 브리핑 · 참고용";
+      // 오늘 것이 브라우저에 있으면 바로, 없으면 생성 버튼
+      const today = briefDays()[0];
+      const cached = today ? localStorage.getItem("brief_"+BRIEF_MKT+"_"+today) : null;
+      $("#briefing-body").dataset.loaded = "1";
+      if(cached) renderBriefing(JSON.parse(cached));
+      else $("#briefing-body").innerHTML = `<div class="muted" style="padding:20px 0">${mkt==="US"?"미국":"한국"} 브리핑을 생성하세요.</div>
+        <button type="button" id="brief-gen" class="tab-gen">📰 오늘의 브리핑 생성</button>`;
+    }
+  }
+});
+
+// ---------- 일일 브리핑 ----------
+const BRIEF_KEEP = 92;   // 브라우저 보관 일수
+function briefKey(mkt, day){ return "brief_"+mkt+"_"+day; }
+function briefSave(d){
+  if(!d || !d.date) return;
+  const mkt = d.market || "KR";
+  try{
+    localStorage.setItem(briefKey(mkt, d.date), JSON.stringify(d));
+    const cutoff = new Date(); cutoff.setDate(cutoff.getDate()-BRIEF_KEEP);
+    Object.keys(localStorage).filter(k=>k.startsWith("brief_")).forEach(k=>{
+      const day = k.slice(k.lastIndexOf("_")+1);
+      if(new Date(day) < cutoff) localStorage.removeItem(k);
+    });
+  }catch(e){}
+}
+function briefDays(){   // 현재 시장(BRIEF_MKT)의 저장 날짜 (최신순)
+  return Object.keys(localStorage).filter(k=>k.startsWith("brief_"+BRIEF_MKT+"_"))
+    .map(k=>k.slice(("brief_"+BRIEF_MKT+"_").length)).sort().reverse();
+}
+document.addEventListener("click", e => {
+  if(e.target && e.target.id === "brief-gen") loadBriefing();
+  // 관련 종목 칩 클릭 → 밸류에이션 탭으로 이동해 분석
+  if(e.target && e.target.classList.contains("stk-chip")){
+    const name = e.target.dataset.t;
+    document.querySelector('.tab-btn[data-tab="value"]').click();
+    $("#q").value = name;
+    $("#f").requestSubmit();
+    window.scrollTo({top:0, behavior:"smooth"});
+  }
+});
+document.addEventListener("change", e => {
+  if(e.target && e.target.id === "brief-date"){
+    const day = e.target.value;
+    if(day === "_today") return loadBriefing();
+    const cached = localStorage.getItem(briefKey(BRIEF_MKT, day));
+    if(cached) renderBriefing(JSON.parse(cached));
+  }
+});
+function loadBriefing(){
+  const box = $("#briefing-body");
+  box.innerHTML = `<div id="loading" style="display:block"><div class="spin"></div>${BRIEF_MKT==="US"?"미국":"한국"} 시장 데이터 수집·AI 분석 중… (10~20초)</div>`;
+  fetch("/api/briefing?market="+BRIEF_MKT).then(r => r.json()).then(d => { briefSave(d); renderBriefing(d); })
+    .catch(err => box.innerHTML = `<div class="warnbox">브리핑 실패: ${esc(err)}</div>
+      <button type="button" id="brief-gen" class="tab-gen" style="margin-top:12px">다시 시도</button>`);
+}
+
+// 주요 이슈 텍스트 → 카드 파싱
+function parseIssues(text){
+  const KEYS = ["핵심 배경","시장 영향","인사이트","관련 종목"];
+  return text.split(/(?=🔴)/).map(b=>b.trim()).filter(Boolean).map(b=>{
+    const tm = b.match(/🔴\s*(.+)/);
+    const title = tm ? tm[1].replace(/[*#]/g,"").replace(/^\d+\.\s*/,"").trim() : "";
+    const sec = []; let stocks = [];
+    KEYS.forEach(k=>{
+      const m = b.match(new RegExp("\\["+k+"\\]\\**\\s*([\\s\\S]*?)(?=\\s*\\**\\[(?:핵심 배경|시장 영향|인사이트|관련 종목)\\]|🔴|$)"));
+      if(m && m[1].trim()){
+        const v = m[1].replace(/[*]/g,"").trim();
+        if(k === "관련 종목"){
+          stocks = v.split(/[,·、]/)
+            .map(s=>s.replace(/\(.*?\)/g,"").replace(/[#*\-–—.]+/g,"").trim())  // 마크다운·기호 제거
+            .filter(s=>s && s.length<=12 && /[가-힣A-Za-z]/.test(s));
+        } else sec.push({k, v:v.replace(/[#*\-–—]+\s*$/,"").trim()});
+      }
+    });
+    return {title, sec, stocks};
+  }).filter(x=>x.title);
+}
+function renderBriefing(d){
+  const box = $("#briefing-body");
+  if(d.error){ box.innerHTML = `<div class="warnbox">${esc(d.error)}</div>
+    <button type="button" id="brief-gen" class="tab-gen" style="margin-top:12px">다시 시도</button>`; return; }
+  const ic = v => v==null ? "muted" : (v>=0 ? "up-pos" : "up-neg");
+  const cs = v => v==null ? "-" : (v>=0?"+":"")+v.toFixed(2)+"%";
+  // 날짜 선택 (오늘 + 저장된 과거)
+  const days = briefDays();
+  const opts = `<option value="_today">📅 오늘 새로 생성</option>` +
+    days.map(dy => `<option value="${dy}" ${dy===d.date?"selected":""}>${dy}</option>`).join("");
+  let h = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+    <span class="muted" style="font-size:12px">기준: ${esc(d.asof)}</span>
+    <select id="brief-date" style="background:#131a28;border:1px solid var(--line);color:var(--text);border-radius:8px;padding:7px 11px;font-size:13px">${opts}</select>
+  </div>`;
+  // 지수
+  h += `<div class="brf-idx">` + d.indices.map(i => `<div class="box">
+    <div class="in">${esc(i.name)}</div>
+    <div class="ip">${i.price!=null?fmt(i.price):"-"}</div>
+    <div class="ic ${ic(i.chg)}">${cs(i.chg)}</div></div>`).join("") + `</div>`;
+  // 매크로
+  const m = d.macro;
+  h += `<div class="brf-macro">
+    <span>환율 <b>${m.usdkrw?fmt(m.usdkrw,1)+"원":"-"}</b></span>
+    <span>WTI유가 <b>${m.wti?"$"+m.wti:"-"}</b> ${m.wti_chg!=null?`<span class="${ic(m.wti_chg)}">${(m.wti_chg>=0?"+":"")+m.wti_chg}%</span>`:""}</span>
+    <span>VIX <b>${m.vix??"-"}</b></span>
+    <span>VKOSPI <b>${m.vkospi??"-"}</b></span></div>`;
+  // 급등 / 거래대금
+  const mv = d.movers;
+  const list = arr => arr.map(s => `<div class="row"><span>${esc(s.name)}</span><span class="${ic(s.chg)}">${cs(s.chg)}</span></div>`).join("");
+  const us = d.market === "US";
+  h += `<div class="brf-mv">
+    <div class="col"><h4>🔥 ${us?"급등 상위":"코스피 급등"}</h4>${list(mv.kospi_up)}</div>
+    ${us ? "" : `<div class="col"><h4>🔥 코스닥 급등</h4>${list(mv.kosdaq_up)}</div>`}
+    <div class="col"><h4>💰 ${us?"거래 활발(주도주)":"코스피 거래대금 상위"}</h4>${list(mv.kospi_val)}</div>
+    <div class="col"><h4>❄️ ${us?"급락 상위":"코스피 급락"}</h4>${list(mv.kospi_down)}</div></div>`;
+  // 오늘의 주요 이슈 (카드형)
+  if(d.bignews){
+    const issues = parseIssues(d.bignews);
+    h += `<div class="brf-head">📌 오늘의 주요 이슈</div>
+      <div class="muted" style="font-size:12px;margin:-6px 0 12px">시장을 움직인 이슈 · AI 분석, 참고용</div>`;
+    if(issues.length){
+      const icons = {"핵심 배경":"🔎","시장 영향":"📈","인사이트":"💡"};
+      h += `<div class="issues">` + issues.map((it,i) => `<div class="issue-card">
+        <div class="issue-title"><span class="issue-no">${i+1}</span>${esc(it.title)}</div>
+        ${it.sec.map(s => `<div class="issue-sec">
+          <div class="issue-lbl">${icons[s.k]||""} ${s.k}</div>
+          <div class="issue-txt">${esc(s.v)}</div></div>`).join("")}
+        ${it.stocks && it.stocks.length ? `<div class="issue-sec">
+          <div class="issue-lbl">🎯 관련 종목 <span style="font-weight:400;color:var(--muted)">· 참고용, 매수 권유 아님</span></div>
+          <div class="issue-stocks">${it.stocks.map(s=>`<span class="stk-chip" data-t="${esc(s)}">${esc(s)}</span>`).join("")}</div></div>` : ""}
+      </div>`).join("") + `</div>`;
+    } else {
+      // 파싱 실패 시 원문 표시
+      h += `<div class="brf-ai">${esc(d.bignews).replace(/\*\*(.+?)\*\*/g,"<b>$1</b>")}</div>`;
+    }
+  }
+  // AI 종합 브리핑 (**볼드** → <b>)
+  if(d.ai){
+    const ai = esc(d.ai).replace(/\*\*(.+?)\*\*/g, "<b>$1</b>").replace(/^\* /gm, "· ");
+    h += `<div style="font-size:13px;color:var(--muted);margin:14px 0 6px;font-weight:600">🤖 AI 종합 브리핑 <span style="font-weight:400">· Gemini 생성, 참고용</span></div>
+      <div class="brf-ai">${ai}</div>`;
+  }
+  h += `<div class="muted" style="font-size:11px;margin-top:12px;line-height:1.6">⚠️ 데이터: 네이버·야후 기준.
+    테마·인과 분석은 AI 추정으로 부정확할 수 있습니다. 투자 판단의 참고용이며 매수·매도 권유가 아닙니다.</div>
+    <button type="button" id="brief-gen" class="tab-gen" style="margin-top:14px;padding:8px 15px;font-size:13px">🔄 새로고침</button>`;
+  box.innerHTML = h;
+}
 
 $("#f").onsubmit = async e => {
   e.preventDefault();
