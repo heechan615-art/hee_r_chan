@@ -161,23 +161,23 @@ _VIX_CACHE = [0.0, None]
 
 
 def vix_now():
-    """VIX 변동성지수 현재값 + 초보용 등급 (yfinance ^VIX, curl_cffi 세션)."""
+    """VIX 변동성지수 현재값 + 초보용 등급.
+
+    fear_greed._load_vix()를 재사용한다. 원래는 ^VIX를 period="10d"로 직접 받았는데
+    로컬에선 되지만 Render에서는 늘 None이었다(야후가 클라우드 IP의 단기 조회를 막는 듯).
+    같은 앱의 검증된 경로를 쓰면 6시간 캐시도 공유돼 야후 호출이 한 번으로 준다.
+    """
     val = None
     try:
         now = time.time()
         if _VIX_CACHE[1] is not None and now - _VIX_CACHE[0] < _TTL:
             val = _VIX_CACHE[1]
         else:
-            import yfinance as yf
-            try:
-                from curl_cffi import requests as creq
-                sess = creq.Session(impersonate="chrome")
-                tk = yf.Ticker("^VIX", session=sess)
-            except Exception:
-                tk = yf.Ticker("^VIX")
-            v = tk.history(period="10d")["Close"].dropna()
-            val = round(float(v.iloc[-1]), 2)
-            _VIX_CACHE[0], _VIX_CACHE[1] = now, val
+            import fear_greed
+            v = fear_greed._load_vix()
+            if v is not None and len(v):
+                val = round(float(v.iloc[-1]), 2)
+                _VIX_CACHE[0], _VIX_CACHE[1] = now, val
     except Exception:
         val = None
     return {"value": val, "label": _vix_label(val), "level": _vix_level(val)}
