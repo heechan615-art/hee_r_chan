@@ -656,7 +656,7 @@ def fin_ai_comment(name, fin):
             headers={"x-goog-api-key": key, "Content-Type": "application/json"},
             json={"contents": [{"parts": [{"text": prompt}]}],
                   "generationConfig": {"maxOutputTokens": 400, "temperature": 0.3,
-                                       "thinkingConfig": {"thinkingBudget": 0}}},
+                                       "thinkingConfig": {"thinkingLevel": "low"}}},
             timeout=25)
         if r.status_code != 200:
             return None

@@ -18,3 +18,12 @@ services:
         sync: false
       - key: FINNHUB_API_KEY
         sync: false
+      # --- 회원제 ---
+      - key: ADMIN_USER          # 이 아이디로 가입하면 자동 승인 + 관리자 권한
+        value: heechan615
+      - key: SECRET_KEY          # 로그인 세션 서명키 (Render가 자동 생성)
+        generateValue: true
+      - key: SUPABASE_URL        # 회원 DB — 대시보드에서 직접 입력
+        sync: false
+      - key: SUPABASE_SERVICE_KEY
+        sync: false

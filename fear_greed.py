@@ -185,7 +185,7 @@ def _gemini_headline_score(heads, kind="주식"):
             headers={"x-goog-api-key": gkey, "Content-Type": "application/json"},
             json={"contents": [{"parts": [{"text": prompt}]}],
                   "generationConfig": {"maxOutputTokens": 64, "temperature": 0,
-                                       "thinkingConfig": {"thinkingBudget": 0}}},
+                                       "thinkingConfig": {"thinkingLevel": "low"}}},
             timeout=20)
         if g.status_code != 200:
             return None, f"AI 채점 실패 ({g.status_code})"

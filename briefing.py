@@ -245,7 +245,7 @@ def _gemini_market_issues(heads, indices, market="KR"):
             headers={"x-goog-api-key": key, "Content-Type": "application/json"},
             json={"contents": [{"parts": [{"text": prompt}]}],
                   "generationConfig": {"maxOutputTokens": 2048, "temperature": 0.4,
-                                       "thinkingConfig": {"thinkingBudget": 0}}},
+                                       "thinkingConfig": {"thinkingLevel": "low"}}},
             timeout=40)
         if r.status_code != 200:
             return None
@@ -307,7 +307,7 @@ def _gemini_brief(data_str, date_str, market="KR"):
             headers={"x-goog-api-key": key, "Content-Type": "application/json"},
             json={"contents": [{"parts": [{"text": prompt}]}],
                   "generationConfig": {"maxOutputTokens": 2048, "temperature": 0.5,
-                                       "thinkingConfig": {"thinkingBudget": 0}}},
+                                       "thinkingConfig": {"thinkingLevel": "low"}}},
             timeout=40)
         if r.status_code != 200:
             return None
