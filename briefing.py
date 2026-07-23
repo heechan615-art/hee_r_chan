@@ -286,6 +286,154 @@ def get_macro(market="KR"):
     return out
 
 
+_SUPPLY_CACHE = {}   # {sosok: (ts, dict)}
+
+
+def _kr_supply_one(sosok):
+    """네이버 금융 투자자별 매매동향 — 시장(코스피01/코스닥02) 순매수(억원). 최근 영업일 자동 탐색."""
+    import re as _re
+    from datetime import datetime as _dt, timezone as _tz, timedelta as _td
+    kst = _tz(_td(hours=9))
+    now = time.time()
+    c = _SUPPLY_CACHE.get(sosok)
+    if c and now - c[0] < 1800:      # 30분 캐시
+        return c[1]
+    hdr = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+           "Referer": "https://finance.naver.com/"}
+    out = None
+    for back in range(0, 7):
+        day = (_dt.now(kst) - _td(days=back)).strftime("%Y%m%d")
+        try:
+            r = requests.get("https://finance.naver.com/sise/investorDealTrendDay.naver",
+                             params={"bizdate": day, "sosok": sosok}, headers=hdr, timeout=8)
+            r.encoding = "euc-kr"
+            plain = _re.sub(r"\s+", " ", _re.sub(r"<[^>]+>", " ", r.text))
+            i = plain.find("연기금등")
+            if i < 0:
+                continue
+            m = _re.search(r"(\d\d\.\d\d\.\d\d)\s+(-?[\d,]+)\s+(-?[\d,]+)\s+(-?[\d,]+)", plain[i:i + 200])
+            if m:
+                to_i = lambda s: int(s.replace(",", ""))
+                out = {"date": m.group(1), "individual": to_i(m.group(2)),
+                       "foreign": to_i(m.group(3)), "institution": to_i(m.group(4))}
+                break
+        except Exception:
+            continue
+    _SUPPLY_CACHE[sosok] = (now, out)
+    return out
+
+
+def get_supply(market="KR"):
+    """투자자별 순매수(억원). 미국은 해당 개념이 없어 None."""
+    if market == "US":
+        return None
+    return {"kospi": _kr_supply_one("01"), "kosdaq": _kr_supply_one("02")}
+
+
+def _gemini_json(prompt, max_tokens=4096, temp=0.6):
+    """Gemini에 JSON 응답 강제 요청. 실패 시 None."""
+    key = os.environ.get("GEMINI_API_KEY")
+    if not key:
+        return None
+    try:
+        r = requests.post(
+            "https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-lite-latest:generateContent",
+            headers={"x-goog-api-key": key, "Content-Type": "application/json"},
+            json={"contents": [{"parts": [{"text": prompt}]}],
+                  "generationConfig": {"maxOutputTokens": max_tokens, "temperature": temp,
+                                       "responseMimeType": "application/json",
+                                       "thinkingConfig": {"thinkingLevel": "low"}}},
+            timeout=60)
+        if r.status_code != 200:
+            return None
+        parts = (r.json()["candidates"][0]["content"].get("parts") or [])
+        txt = "".join(p.get("text", "") for p in parts).strip()
+        return json.loads(txt) if txt else None
+    except Exception:
+        return None
+
+
+def _report_data_block(indices, supply, movers, macro, news, market):
+    """AI에 넘길 데이터 요약 텍스트."""
+    L = []
+    L.append("[지수]")
+    for i in indices:
+        if i["price"] is not None:
+            L.append(f"  {i['name']}: {i['price']} ({i['chg']:+.2f}%)")
+    if market != "US" and supply:
+        for key, nm in (("kospi", "코스피"), ("kosdaq", "코스닥")):
+            s = supply.get(key)
+            if s:
+                L.append(f"[{nm} 수급(억원)] 개인 {s['individual']:+,} · 외국인 {s['foreign']:+,} · 기관 {s['institution']:+,}")
+    up_lbl = "급등 상위" if market == "US" else "코스피 급등"
+    L.append(f"[{up_lbl}]")
+    for s in movers["kospi_up"]:
+        L.append(f"  {s['name']} ({s.get('code','')}) {s['chg']:+}%")
+    if movers.get("kosdaq_up"):
+        L.append("[코스닥 급등]")
+        for s in movers["kosdaq_up"]:
+            L.append(f"  {s['name']} ({s.get('code','')}) {s['chg']:+}%")
+    L.append("[거래대금 상위(주도주)]")
+    for s in movers["kospi_val"]:
+        L.append(f"  {s['name']} ({s.get('code','')}) {s['chg']:+}%")
+    if movers.get("kospi_down"):
+        L.append("[급락]")
+        for s in movers["kospi_down"]:
+            L.append(f"  {s['name']} {s['chg']}%")
+    m = macro or {}
+    if market == "US":
+        L.append(f"[매크로] VIX {m.get('vix')}, WTI {m.get('wti')}달러, 환율 {m.get('usdkrw')}원")
+    else:
+        L.append(f"[매크로] 환율 {m.get('usdkrw')}원, WTI {m.get('wti')}달러, VIX {m.get('vix')}, VKOSPI {m.get('vkospi')}")
+    if news:
+        L.append("[오늘 주도주 관련 뉴스 헤드라인]")
+        for h in news[:24]:
+            L.append(f"  - {h}")
+    return "\n".join(L)
+
+
+def _gemini_report(indices, supply, movers, macro, news, date_str, market="KR"):
+    """일일 보고서(구조화 JSON) 생성 — 헤드라인·빅뉴스·테마·종목상세·총평."""
+    mkt = "미국 증시(S&P500·나스닥·다우·필라델피아반도체)" if market == "US" else "한국 증시(코스피·코스닥)"
+    data = _report_data_block(indices, supply, movers, macro, news, market)
+    tick = ("종목명은 반드시 영문 티커(예: NVDA, AAPL)로 쓰고, 한국어 설명을 덧붙여줘. "
+            if market == "US" else "종목명은 한국어 정식 명칭(예: 삼성전자)으로 써줘. ")
+    deriv_ex = ("예: NVDA의 파생 관련주로 AVGO(브로드컴)" if market == "US"
+                else "예: SK하이닉스의 파생 관련주로 한미반도체")
+    prompt = (
+        f"너는 증권사 리서치센터의 애널리스트야. 오늘({date_str}) {mkt} 마감 데이터를 근거로 "
+        "'프리미엄 일일 증시 보고서'를 작성해. 아래 데이터만 근거로 하고, 데이터에 없는 수치는 지어내지 마.\n\n"
+        f"=== 오늘의 데이터 ===\n{data}\n\n"
+        "아래 JSON 스키마로만 답해(설명·마크다운 없이 순수 JSON):\n"
+        "{\n"
+        '  "headline": {"title": "신문 헤드라인 스타일 제목(수치 포함, 25자 내외)", "hook": "오늘 장을 한 문장으로 요약"},\n'
+        '  "supply_comment": "수급(개인/외국인/기관) 한 줄 해설. 미국이면 지수·주도섹터 한 줄",\n'
+        '  "bignews": [ {"rank":1, "title":"🔴 오늘의 빅뉴스 제목", "background":"핵심 배경 2~3문장(뉴스 근거)", "impact":"시장 영향 1~2문장", "insight":"인사이트 1~2문장(추정 전제)"} ],\n'
+        '  "themes": [ {"name":"테마명", "range":"대표 등락 범위(예: +18~29%)", "summary":"이 테마가 오늘 강한 이유 1~2문장",\n'
+        '     "stocks":[ {"name":"종목명", "chg":숫자(%), "sector":"한줄 사업설명", "reason":"오늘 오른 이유 1~2문장(뉴스·데이터 근거, 추정 전제)", "deriv_name":"파생 관련주명", "deriv_note":"왜 같이 수혜인지 한 줄"} ] } ],\n'
+        '  "closing": "오늘 장 총평 3~4문장. 수급·주도섹터·리스크·다음 관전포인트를 종합. 애널리스트 톤."\n'
+        "}\n\n"
+        "작성 규칙:\n"
+        "- bignews는 가장 중요한 이슈 1~2개. themes는 급등·거래대금 데이터를 2~4개 테마로 묶고, 각 테마에 실제 데이터에 등장한 종목 3~6개.\n"
+        f"- {tick}chg는 데이터에 있는 실제 등락률을 써. 데이터에 없는 종목은 만들지 마.\n"
+        f"- deriv(파생 관련주)는 각 종목의 밸류체인/동일테마 수혜주를 추정으로 제시({deriv_ex}). 실재하는 상장사만.\n"
+        "- 모든 인과·테마 해석은 '추정' 전제(단정 금지). 매수·매도 권유 금지. 존댓말.\n"
+        "- 반드시 유효한 JSON. 종목 상세는 풍부하게, 근거 있게.")
+    rep = _gemini_json(prompt, max_tokens=8192, temp=0.55)
+    if not isinstance(rep, dict):
+        return None
+    # 종목 chip 연결용: 이름→코드 매핑 부여
+    code_by_name = {}
+    for grp in movers.values():
+        for s in grp:
+            if s.get("name"):
+                code_by_name[s["name"]] = s.get("code")
+    for th in rep.get("themes") or []:
+        for st in th.get("stocks") or []:
+            st["code"] = code_by_name.get(st.get("name"))
+    return rep
+
+
 def _gemini_brief(data_str, date_str, market="KR"):
     key = os.environ.get("GEMINI_API_KEY")
     if not key:
@@ -326,38 +474,16 @@ def daily_briefing(market="KR"):
     indices = get_indices(market)
     movers = get_movers(market)
     macro = get_macro(market)
+    supply = get_supply(market)
+    news = get_market_issues(movers, market)
     date_str = time.strftime("%Y-%m-%d %H:%M")
-    up_lbl = "급등" if market == "US" else "코스피 급등"
-    val_lbl = "거래 활발(주도주)" if market == "US" else "코스피 거래대금 상위"
-    down_lbl = "급락" if market == "US" else "코스피 급락"
-    lines = ["[지수]"]
-    for i in indices:
-        if i["price"] is not None:
-            lines.append(f"  {i['name']}: {i['price']} ({i['chg']:+.2f}%)")
-    lines.append(f"[{up_lbl}]")
-    for s in movers["kospi_up"]:
-        lines.append(f"  {s['name']} +{s['chg']}%")
-    if movers["kosdaq_up"]:
-        lines.append("[코스닥 급등]")
-        for s in movers["kosdaq_up"]:
-            lines.append(f"  {s['name']} +{s['chg']}%")
-    lines.append(f"[{val_lbl}]")
-    for s in movers["kospi_val"]:
-        lines.append(f"  {s['name']} ({s['chg']:+}%)")
-    lines.append(f"[{down_lbl}]")
-    for s in movers["kospi_down"]:
-        lines.append(f"  {s['name']} {s['chg']}%")
-    m = macro
-    if market == "US":
-        lines.append(f"[매크로] VIX {m.get('vix')}, WTI유가 {m.get('wti')}달러, 환율 {m.get('usdkrw')}원")
-    else:
-        lines.append(f"[매크로] 환율 {m.get('usdkrw')}원, WTI유가 {m.get('wti')}달러, "
-                     f"VIX {m.get('vix')}, VKOSPI {m.get('vkospi')}")
-    ai = _gemini_brief("\n".join(lines), date_str, market)
-    issues = _gemini_market_issues(get_market_issues(movers, market), indices, market)
+
+    # 프리미엄 보고서(구조화 JSON) — 헤드라인·빅뉴스·테마·종목상세·총평
+    report = _gemini_report(indices, supply, movers, macro, news, date_str, market)
+
     result = {"asof": date_str, "date": time.strftime("%Y-%m-%d"), "market": market,
-              "indices": indices, "movers": movers,
-              "macro": macro, "ai": ai, "bignews": issues}
+              "indices": indices, "movers": movers, "macro": macro, "supply": supply,
+              "report": report}
     _CACHE[market] = (now, result)
     _save_briefing(result, market)
     return result

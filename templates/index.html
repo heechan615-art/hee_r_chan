@@ -108,6 +108,73 @@
   .upside{margin-top:9px;font-size:13px;text-align:center;color:var(--muted)}
   .upside b{font-variant-numeric:tabular-nums}
   .up-pos{color:var(--up)} .up-neg{color:var(--down)}
+  /* ===== 프리미엄 브리핑 리포트 ===== */
+  .rp-topbar{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+  .rp-topbar select{background:#131a28;border:1px solid var(--line);color:var(--text);border-radius:8px;padding:7px 11px;font-size:13px}
+  .rp-hero{background:linear-gradient(135deg,#1c2740,#161d2c);border:1px solid var(--line);
+    border-radius:16px;padding:20px 22px;margin-bottom:18px}
+  .rp-badge{display:inline-block;font-size:11.5px;font-weight:700;border-radius:999px;padding:4px 11px;margin-bottom:10px;
+    background:rgba(245,181,68,.14);color:var(--warn);border:1px solid rgba(245,181,68,.3)}
+  .rp-badge.on{background:rgba(79,140,255,.14);color:var(--accent);border-color:rgba(79,140,255,.3)}
+  .rp-title{font-size:24px;font-weight:800;line-height:1.32;letter-spacing:-.3px}
+  @media(max-width:640px){.rp-title{font-size:20px}}
+  .rp-hook{font-size:14px;color:var(--muted);margin-top:9px;line-height:1.6}
+  /* 수급 */
+  .rp-supply{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:10px}
+  @media(max-width:640px){.rp-supply{grid-template-columns:1fr}}
+  .rp-flow{background:#131a28;border:1px solid var(--line);border-radius:12px;padding:13px 15px}
+  .rp-flow-mkt{font-size:12px;color:var(--muted);font-weight:700;margin-bottom:9px}
+  .rp-flow-cell{display:flex;justify-content:space-between;align-items:baseline;padding:3px 0}
+  .rp-flow-k{font-size:13px;color:var(--muted)}
+  .rp-flow-v{font-size:14.5px;font-weight:700;font-variant-numeric:tabular-nums}
+  .rp-supply-note{background:#131a28;border:1px solid var(--line);border-left:3px solid var(--accent);
+    border-radius:10px;padding:11px 14px;font-size:13.5px;line-height:1.65;color:var(--text);margin-bottom:14px}
+  /* 챕터 헤더 */
+  .rp-chap{font-size:18px;font-weight:800;margin:26px 0 14px;padding-left:12px;
+    border-left:4px solid var(--accent);line-height:1.3}
+  /* 빅뉴스 카드 */
+  .rp-news{background:var(--card);border:1px solid var(--line);border-radius:15px;padding:18px 20px;margin-bottom:14px}
+  .rp-news-t{font-size:17px;font-weight:700;line-height:1.45;margin-bottom:14px;display:flex;align-items:baseline;gap:9px;flex-wrap:wrap}
+  .rp-news-no{flex:none;font-size:11.5px;font-weight:800;color:#fff;background:var(--up);border-radius:6px;padding:2px 8px}
+  .rp-news-sec{margin-bottom:11px}
+  .rp-news-sec:last-child{margin-bottom:0}
+  .rp-news-lbl{display:inline-block;font-size:11.5px;font-weight:700;color:var(--muted);
+    background:#131a28;border:1px solid var(--line);border-radius:6px;padding:2px 9px;margin-bottom:6px}
+  .rp-news-sec.insight .rp-news-lbl{color:var(--warn);border-color:rgba(245,181,68,.3)}
+  .rp-news-sec p{margin:0;font-size:14.5px;line-height:1.72;color:var(--text)}
+  /* 테마 */
+  .rp-theme{background:var(--card);border:1px solid var(--line);border-radius:15px;padding:18px 20px;margin-bottom:14px}
+  .rp-theme-h{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+  .rp-theme-no{flex:none;width:27px;height:27px;background:var(--accent);color:#fff;border-radius:8px;
+    font-size:14px;font-weight:800;display:flex;align-items:center;justify-content:center}
+  .rp-theme-name{font-size:17px;font-weight:800}
+  .rp-theme-range{font-size:14px;font-weight:800;font-variant-numeric:tabular-nums}
+  .rp-theme-sum{font-size:13.5px;color:var(--muted);line-height:1.65;margin-bottom:14px;
+    padding-bottom:13px;border-bottom:1px solid var(--line)}
+  .rp-stocks{display:flex;flex-direction:column;gap:13px}
+  .rp-stock-top{display:flex;align-items:baseline;gap:9px;flex-wrap:wrap;margin-bottom:5px}
+  .rp-stock-nm{font-size:15.5px;font-weight:700}
+  .rp-stock-chg{font-size:14.5px;font-weight:800;font-variant-numeric:tabular-nums}
+  .rp-stock-sec{font-size:12px;color:var(--muted)}
+  .rp-stock-why{font-size:14px;line-height:1.68;color:var(--text)}
+  .rp-deriv{margin-top:7px;font-size:13px;line-height:1.6;color:var(--muted);
+    background:#131a28;border-radius:9px;padding:8px 12px}
+  .rp-deriv-tag{display:inline-block;font-size:11px;font-weight:700;color:var(--buy);
+    background:rgba(55,201,138,.12);border-radius:5px;padding:1px 7px;margin-right:6px}
+  .rp-deriv b{color:var(--text)}
+  .rp-deriv-note{margin-left:4px}
+  /* 총평 */
+  .rp-closing{background:linear-gradient(135deg,#1c2740,#161d2c);border:1px solid var(--line);
+    border-left:4px solid var(--warn);border-radius:14px;padding:18px 20px;margin:20px 0 8px}
+  .rp-closing-h{font-size:15px;font-weight:800;margin-bottom:9px}
+  .rp-closing p{margin:0;font-size:14.5px;line-height:1.75;color:var(--text)}
+  /* 원자료 접이식 */
+  .rp-raw{margin-top:20px}
+  .rp-raw summary{cursor:pointer;font-size:13px;color:var(--muted);padding:9px 0;user-select:none}
+  .rp-raw summary:hover{color:var(--text)}
+  .rp-raw .brf-mv{margin-top:12px}
+  .stk-chip{cursor:pointer}
+  .stk-chip:hover{color:var(--accent);text-decoration:underline}
   .decomp .drow{margin-bottom:12px}
   .decomp .dlabel{display:flex;justify-content:space-between;font-size:13px;margin-bottom:5px}
   .decomp .dlabel .chg{font-variant-numeric:tabular-nums;font-weight:600}
@@ -874,76 +941,139 @@ function renderBriefing(d){
     box.innerHTML = `<div class="warnbox">브리핑 표시 중 오류: ${esc(err && err.message || err)}</div>` + GEN_BTN;
   }
 }
+// 억원 → "±N조 N,NNN억" 표기
+function fmtEok(v){
+  if(v==null) return "-";
+  const sign = v<0 ? "-" : "+"; const a = Math.abs(v);
+  const jo = Math.floor(a/10000), eok = a%10000;
+  const s = jo>0 ? `${jo}조 ${eok.toLocaleString()}억` : `${eok.toLocaleString()}억`;
+  return sign+s;
+}
 function renderBriefingBody(d, box){
   const ic = v => v==null ? "muted" : (v>=0 ? "up-pos" : "up-neg");
   const cs = v => v==null ? "-" : (v>=0?"+":"")+v.toFixed(2)+"%";
+  const us = d.market === "US";
+  const rep = d.report || {};
   // 날짜 선택 (오늘 + 저장된 과거)
-  const days = isMember() ? briefDays() : [];   // 지난 브리핑 다시보기는 회원 전용
+  const days = isMember() ? briefDays() : [];
   const opts = `<option value="_today">📅 오늘 새로 생성</option>` +
     days.map(dy => `<option value="${dy}" ${dy===d.date?"selected":""}>${dy}</option>`).join("");
-  let h = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
-    <span class="muted" style="font-size:12px">기준: ${esc(d.asof)}</span>
-    <select id="brief-date" style="background:#131a28;border:1px solid var(--line);color:var(--text);border-radius:8px;padding:7px 11px;font-size:13px">${opts}</select>
+  let h = `<div class="rp-topbar">
+    <span class="muted" style="font-size:12px">${us?"🇺🇸 미국":"🇰🇷 한국"} · 기준 ${esc(d.asof)}</span>
+    <select id="brief-date">${opts}</select>
   </div>`;
-  // 지수
-  h += `<div class="brf-idx">` + d.indices.map(i => `<div class="box">
+
+  // ── 헤드라인 ──
+  const hl = rep.headline || {};
+  if(hl.title){
+    h += `<div class="rp-hero">
+      ${d.locked?`<span class="rp-badge">🔒 회원 전용 리포트 · 맛보기</span>`:`<span class="rp-badge on">📋 프리미엄 리포트</span>`}
+      <div class="rp-title">${esc(hl.title)}</div>
+      ${hl.hook?`<div class="rp-hook">${esc(hl.hook)}</div>`:""}</div>`;
+  }
+
+  // ── 지수 ──
+  h += `<div class="brf-idx">` + (d.indices||[]).map(i => `<div class="box">
     <div class="in">${esc(i.name)}</div>
     <div class="ip">${i.price!=null?fmt(i.price):"-"}</div>
     <div class="ic ${ic(i.chg)}">${cs(i.chg)}</div></div>`).join("") + `</div>`;
-  // 매크로
-  const m = d.macro;
+
+  // ── 수급 (한국) ──
+  if(!us && d.supply){
+    const flow = (lbl, s) => {
+      if(!s) return "";
+      const cell = (nm, v) => `<div class="rp-flow-cell"><span class="rp-flow-k">${nm}</span>
+        <span class="rp-flow-v ${ic(v)}">${fmtEok(v)}</span></div>`;
+      return `<div class="rp-flow"><div class="rp-flow-mkt">${lbl}</div>
+        ${cell("개인", s.individual)}${cell("외국인", s.foreign)}${cell("기관", s.institution)}</div>`;
+    };
+    h += `<div class="rp-supply">${flow("코스피", d.supply.kospi)}${flow("코스닥", d.supply.kosdaq)}</div>`;
+  }
+  if(rep.supply_comment){
+    h += `<div class="rp-supply-note">💬 ${esc(rep.supply_comment)}</div>`;
+  }
+
+  // ── 매크로 ──
+  const m = d.macro || {};
   h += `<div class="brf-macro">
     <span>환율 <b>${m.usdkrw?fmt(m.usdkrw,1)+"원":"-"}</b></span>
     <span>WTI유가 <b>${m.wti?"$"+m.wti:"-"}</b> ${m.wti_chg!=null?`<span class="${ic(m.wti_chg)}">${(m.wti_chg>=0?"+":"")+m.wti_chg}%</span>`:""}</span>
     <span>VIX <b>${m.vix??"-"}</b></span>
-    ${d.market==="US"?"":`<span>VKOSPI <b>${m.vkospi??"-"}</b></span>`}</div>`;
-  // 급등 / 거래대금
-  const mv = d.movers;
-  const list = arr => arr.map(s => `<div class="row"><span>${esc(s.name)}</span><span class="${ic(s.chg)}">${cs(s.chg)}</span></div>`).join("");
-  const us = d.market === "US";
-  h += `<div class="brf-mv">
-    <div class="col"><h4>🔥 ${us?"급등 상위":"코스피 급등"}</h4>${list(mv.kospi_up)}</div>
-    ${us ? "" : `<div class="col"><h4>🔥 코스닥 급등</h4>${list(mv.kosdaq_up)}</div>`}
-    <div class="col"><h4>💰 ${us?"거래 활발(주도주)":"코스피 거래대금 상위"}</h4>${list(mv.kospi_val)}</div>
-    <div class="col"><h4>❄️ ${us?"급락 상위":"코스피 급락"}</h4>${list(mv.kospi_down)}</div></div>`;
-  // 비회원 — AI 파트는 잠금 (지수·매크로·급등락까지는 위에서 공개)
+    ${us?"":`<span>VKOSPI <b>${m.vkospi??"-"}</b></span>`}</div>`;
+
+  // ── 챕터1: 오늘의 빅뉴스 ──
+  const bignews = rep.bignews || [];
+  if(bignews.length){
+    h += `<div class="rp-chap">📌 오늘의 빅뉴스</div>`;
+    h += bignews.map(b => `<div class="rp-news">
+      <div class="rp-news-t">${b.rank?`<span class="rp-news-no">TOP${b.rank}</span>`:""}${esc(b.title)}</div>
+      ${b.background?`<div class="rp-news-sec"><span class="rp-news-lbl">핵심 배경</span><p>${esc(b.background)}</p></div>`:""}
+      ${b.impact?`<div class="rp-news-sec"><span class="rp-news-lbl">시장 영향</span><p>${esc(b.impact)}</p></div>`:""}
+      ${b.insight?`<div class="rp-news-sec insight"><span class="rp-news-lbl">인사이트</span><p>${esc(b.insight)}</p></div>`:""}
+    </div>`).join("");
+  }
+
+  // ── 챕터2: 오늘을 주도한 핵심 테마 ──
+  const themes = rep.themes || [];
+  if(themes.length){
+    h += `<div class="rp-chap">🚀 오늘을 주도한 핵심 테마</div>`;
+    h += themes.map((th,ti) => `<div class="rp-theme">
+      <div class="rp-theme-h">
+        <span class="rp-theme-no">${ti+1}</span>
+        <span class="rp-theme-name">${esc(th.name)}</span>
+        ${th.range?`<span class="rp-theme-range up-pos">${esc(th.range)}</span>`:""}</div>
+      ${th.summary?`<div class="rp-theme-sum">${esc(th.summary)}</div>`:""}
+      <div class="rp-stocks">${(th.stocks||[]).map(st => `<div class="rp-stock">
+        <div class="rp-stock-top">
+          <span class="rp-stock-nm stk-chip" data-t="${esc(st.name)}">${esc(st.name)}</span>
+          ${st.chg!=null?`<span class="rp-stock-chg ${ic(st.chg)}">${(st.chg>=0?"+":"")+st.chg}%</span>`:""}
+          ${st.sector?`<span class="rp-stock-sec">${esc(st.sector)}</span>`:""}
+        </div>
+        ${st.reason?`<div class="rp-stock-why">${esc(st.reason)}</div>`:""}
+        ${st.deriv_name?`<div class="rp-deriv"><span class="rp-deriv-tag">파생 관련주</span>
+          <b class="stk-chip" data-t="${esc(st.deriv_name)}">${esc(st.deriv_name)}</b>
+          ${st.deriv_note?`<span class="rp-deriv-note">— ${esc(st.deriv_note)}</span>`:""}</div>`:""}
+      </div>`).join("")}</div>
+    </div>`).join("");
+  }
+
+  // ── 비회원 잠금 안내 ──
   if(d.locked){
-    h += `<div class="brf-head">📌 오늘의 주요 이슈</div>` + lockBox(
-      "오늘의 주요 이슈 · AI 종합 브리핑은 회원 전용입니다",
-      "회원이 되시면 시장을 움직인 이슈 3가지와 AI 종합 브리핑, 지난 브리핑 다시보기까지 모두 볼 수 있어요",
-      `🔴 반도체 수급 개선 — 외국인 사흘째 순매수<br>[핵심 배경] 간밤 필라델피아 반도체 지수가 급등하며…<br>
-       [시장 영향] 대형 반도체주가 지수 상승을 주도했고…<br>[인사이트] 향후 빅테크 실적 발표에 따라…<br>
-       🔴 로봇 산업 기대감 확산 — 관련주 동반 강세<br>[핵심 배경] 대기업의 로보틱스 사업 진출 소식과 함께…`);
+    const nb = rep.locked_bignews||0, nt = rep.locked_themes||0;
+    h += lockBox(
+      "빅뉴스 심층분석 · 나머지 테마 · 총평은 회원 전용입니다",
+      `회원가입하시면 오늘의 빅뉴스 ${nb||""}건, 핵심 테마 ${nt?"+"+nt+"개":"전체"}와 종목별 상세·파생주, 애널리스트 총평, 지난 리포트 다시보기까지 모두 열립니다`,
+      `🔴 TOP1. 빅테크 AI 실적 확인 — 반도체·에너지 동시 급등의 촉매<br>
+       핵심 배경 · 코스피가 장 초반 3%대 상승하며 7,000선을 회복했다…<br>
+       🚀 신재생·전력에너지 (+18~30%) — OCI홀딩스 실적 + SK-KKR 에너지 딜…<br>
+       💬 머니메이커스 총평 · 외국인 수급이 살아 있는 한 주도 섹터 안에서의 종목 선별이…`);
   }
-  // 오늘의 주요 이슈 (카드형)
-  if(d.bignews){
-    const issues = parseIssues(d.bignews);
-    h += `<div class="brf-head">📌 오늘의 주요 이슈</div>
-      <div class="muted" style="font-size:12px;margin:-6px 0 12px">시장을 움직인 이슈 · AI 분석, 참고용</div>`;
-    if(issues.length){
-      const icons = {"핵심 배경":"🔎","시장 영향":"📈","인사이트":"💡"};
-      h += `<div class="issues">` + issues.map((it,i) => `<div class="issue-card">
-        <div class="issue-title"><span class="issue-no">${i+1}</span>${esc(it.title)}</div>
-        ${it.sec.map(s => `<div class="issue-sec">
-          <div class="issue-lbl">${icons[s.k]||""} ${s.k}</div>
-          <div class="issue-txt">${esc(s.v)}</div></div>`).join("")}
-        ${it.stocks && it.stocks.length ? `<div class="issue-sec">
-          <div class="issue-lbl">🎯 관련 종목 <span style="font-weight:400;color:var(--muted)">· 참고용, 매수 권유 아님</span></div>
-          <div class="issue-stocks">${it.stocks.map(s=>`<span class="stk-chip" data-t="${esc(s)}">${esc(s)}</span>`).join("")}</div></div>` : ""}
-      </div>`).join("") + `</div>`;
-    } else {
-      // 파싱 실패 시 원문 표시
-      h += `<div class="brf-ai">${esc(d.bignews).replace(/\*\*(.+?)\*\*/g,"<b>$1</b>")}</div>`;
-    }
+
+  // ── 총평 ──
+  if(rep.closing){
+    h += `<div class="rp-closing"><div class="rp-closing-h">💬 애널리스트 총평</div>
+      <p>${esc(rep.closing)}</p></div>`;
   }
-  // AI 종합 브리핑 (**볼드** → <b>)
-  if(d.ai){
-    const ai = esc(d.ai).replace(/\*\*(.+?)\*\*/g, "<b>$1</b>").replace(/^\* /gm, "· ");
-    h += `<div style="font-size:13px;color:var(--muted);margin:14px 0 6px;font-weight:600">🤖 AI 종합 브리핑 <span style="font-weight:400">· Gemini 생성, 참고용</span></div>
-      <div class="brf-ai">${ai}</div>`;
+
+  // ── 원자료: 급등/거래대금/급락 (접이식) ──
+  const mv = d.movers;
+  if(mv){
+    const list = arr => (arr||[]).map(s => `<div class="row"><span>${esc(s.name)}</span><span class="${ic(s.chg)}">${cs(s.chg)}</span></div>`).join("");
+    h += `<details class="rp-raw"><summary>📊 원자료 보기 — ${us?"급등·거래활발·급락":"코스피·코스닥 급등, 거래대금, 급락"}</summary>
+      <div class="brf-mv">
+        <div class="col"><h4>🔥 ${us?"급등 상위":"코스피 급등"}</h4>${list(mv.kospi_up)}</div>
+        ${us?"":`<div class="col"><h4>🔥 코스닥 급등</h4>${list(mv.kosdaq_up)}</div>`}
+        <div class="col"><h4>💰 ${us?"거래 활발(주도주)":"코스피 거래대금 상위"}</h4>${list(mv.kospi_val)}</div>
+        <div class="col"><h4>❄️ ${us?"급락 상위":"코스피 급락"}</h4>${list(mv.kospi_down)}</div></div></details>`;
   }
-  h += `<div class="muted" style="font-size:11px;margin-top:12px;line-height:1.6">⚠️ 데이터: 네이버·야후 기준.
-    테마·인과 분석은 AI 추정으로 부정확할 수 있습니다. 투자 판단의 참고용이며 매수·매도 권유가 아닙니다.</div>
+
+  // 리포트가 통째로 비었으면(AI 실패) 원문 안내
+  if(!hl.title && !bignews.length && !themes.length && !rep.closing){
+    h += `<div class="warnbox" style="margin-top:14px">AI 리포트 생성에 실패했습니다. 잠시 후 새로고침해 주세요.</div>`;
+  }
+
+  h += `<div class="muted" style="font-size:11px;margin-top:14px;line-height:1.6">⚠️ 데이터: 네이버·야후·Finnhub 기준.
+    테마·인과·파생주 분석은 AI 추정으로 부정확할 수 있습니다. 투자 판단의 참고용이며 매수·매도 권유가 아닙니다.</div>
     <button type="button" id="brief-gen" class="tab-gen" style="margin-top:14px;padding:8px 15px;font-size:13px">🔄 새로고침</button>`;
   box.innerHTML = h;
 }

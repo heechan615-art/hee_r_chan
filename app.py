@@ -192,6 +192,24 @@ def api_snp():
         return jsonify({"error": f"S&P500 데이터 실패: {repr(e)[:150]}"}), 500
 
 
+def _preview_briefing(out):
+    """비회원 맛보기 — 지수·수급·급등락은 그대로, 보고서는 헤드라인+수급해설+첫 테마 1개까지만.
+    빅뉴스·나머지 테마·총평은 잘라내고 locked 플래그로 가입 유도."""
+    out = dict(out)
+    rep = out.get("report")
+    if isinstance(rep, dict):
+        themes = rep.get("themes") or []
+        out["report"] = {
+            "headline": rep.get("headline"),
+            "supply_comment": rep.get("supply_comment"),
+            "themes": themes[:1],                 # 첫 테마만 공개
+            "locked_bignews": len(rep.get("bignews") or []),
+            "locked_themes": max(0, len(themes) - 1),
+        }
+    out["locked"] = True
+    return out
+
+
 @app.route("/api/briefing")
 def api_briefing():
     """일일 증시 브리핑. day 파라미터 있으면 과거 브리핑 불러오기, list=1이면 날짜 목록."""
@@ -208,8 +226,8 @@ def api_briefing():
             data = briefing.load_briefing(day, market)
             return jsonify(clean(data) if data else {"error": "해당 날짜 브리핑이 없습니다."})
         out = clean(briefing.daily_briefing(market))
-        if not member:               # 맛보기: 지수·매크로·급등락만, AI 파트는 잠금
-            out = dict(out, ai=None, bignews=None, locked=True)
+        if not member:               # 맛보기: 헤드라인·수급·첫 테마까지만, 나머지 회원 전용
+            out = _preview_briefing(out)
         return jsonify(out)
     except Exception as e:
         return jsonify({"error": f"브리핑 실패: {repr(e)[:150]}"}), 500
