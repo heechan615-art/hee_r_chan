@@ -139,16 +139,16 @@ def _naver_rank(kind, market, n):
 def get_movers(market="KR"):
     if market == "US":
         return {
-            "kospi_up": _yahoo_screener("day_gainers", 6),       # 급등
+            "kospi_up": _yahoo_screener("day_gainers", 10),      # 급등
             "kosdaq_up": [],
-            "kospi_val": _yahoo_screener("most_actives", 6),     # 거래활발(주도주)
-            "kospi_down": _yahoo_screener("day_losers", 4),      # 급락
+            "kospi_val": _yahoo_screener("most_actives", 10),    # 거래활발(주도주)
+            "kospi_down": _yahoo_screener("day_losers", 5),      # 급락
         }
     return {
-        "kospi_up": _naver_rank("up", "KOSPI", 6),
-        "kosdaq_up": _naver_rank("up", "KOSDAQ", 6),
-        "kospi_val": _naver_rank("marketValue", "KOSPI", 6),
-        "kospi_down": _naver_rank("down", "KOSPI", 4),
+        "kospi_up": _naver_rank("up", "KOSPI", 10),
+        "kosdaq_up": _naver_rank("up", "KOSDAQ", 8),
+        "kospi_val": _naver_rank("marketValue", "KOSPI", 10),
+        "kospi_down": _naver_rank("down", "KOSPI", 5),
     }
 
 
@@ -392,37 +392,77 @@ def _report_data_block(indices, supply, movers, macro, news, market):
     return "\n".join(L)
 
 
-def _gemini_report(indices, supply, movers, macro, news, date_str, market="KR"):
-    """일일 보고서(구조화 JSON) 생성 — 헤드라인·빅뉴스·테마·종목상세·총평."""
-    mkt = "미국 증시(S&P500·나스닥·다우·필라델피아반도체)" if market == "US" else "한국 증시(코스피·코스닥)"
-    data = _report_data_block(indices, supply, movers, macro, news, market)
-    tick = ("종목명은 반드시 영문 티커(예: NVDA, AAPL)로 쓰고, 한국어 설명을 덧붙여줘. "
-            if market == "US" else "종목명은 한국어 정식 명칭(예: 삼성전자)으로 써줘. ")
-    deriv_ex = ("예: NVDA의 파생 관련주로 AVGO(브로드컴)" if market == "US"
-                else "예: SK하이닉스의 파생 관련주로 한미반도체")
+def _gemini_narrative(data, date_str, mkt, tick):
+    """헤드라인·수급해설·빅뉴스 3건(상세)·총평."""
     prompt = (
-        f"너는 증권사 리서치센터의 애널리스트야. 오늘({date_str}) {mkt} 마감 데이터를 근거로 "
-        "'프리미엄 일일 증시 보고서'를 작성해. 아래 데이터만 근거로 하고, 데이터에 없는 수치는 지어내지 마.\n\n"
+        f"너는 증권사 리서치센터 수석 애널리스트야. 오늘({date_str}) {mkt} 마감 데이터를 근거로 "
+        "'프리미엄 일일 증시 보고서'의 서술 파트를 작성해. 데이터에 없는 수치는 지어내지 마.\n\n"
         f"=== 오늘의 데이터 ===\n{data}\n\n"
         "아래 JSON 스키마로만 답해(설명·마크다운 없이 순수 JSON):\n"
         "{\n"
         '  "headline": {"title": "신문 헤드라인 스타일 제목(수치 포함, 25자 내외)", "hook": "오늘 장을 한 문장으로 요약"},\n'
-        '  "supply_comment": "수급(개인/외국인/기관) 한 줄 해설. 미국이면 지수·주도섹터 한 줄",\n'
-        '  "bignews": [ {"rank":1, "title":"🔴 오늘의 빅뉴스 제목", "background":"핵심 배경 2~3문장(뉴스 근거)", "impact":"시장 영향 1~2문장", "insight":"인사이트 1~2문장(추정 전제)"} ],\n'
-        '  "themes": [ {"name":"테마명", "range":"대표 등락 범위(예: +18~29%)", "summary":"이 테마가 오늘 강한 이유 1~2문장",\n'
-        '     "stocks":[ {"name":"종목명", "chg":숫자(%), "sector":"한줄 사업설명", "reason":"오늘 오른 이유 1~2문장(뉴스·데이터 근거, 추정 전제)", "deriv_name":"파생 관련주명", "deriv_note":"왜 같이 수혜인지 한 줄"} ] } ],\n'
-        '  "closing": "오늘 장 총평 3~4문장. 수급·주도섹터·리스크·다음 관전포인트를 종합. 애널리스트 톤."\n'
+        '  "supply_comment": "수급(개인/외국인/기관) 흐름 해설 2~3문장. 미국이면 지수·주도섹터 해설",\n'
+        '  "bignews": [\n'
+        '     {"rank":1, "title":"오늘의 빅뉴스 제목(구체적으로)",\n'
+        '      "background":"핵심 배경 — 무슨 일이 있었는지 뉴스·데이터 근거로 4~6문장 상세히. 수치·회사명·인과를 구체적으로.",\n'
+        '      "impact":"시장 영향 — 어떤 섹터·종목이 어떻게 움직였는지 3~4문장. 수급·지수 연결.",\n'
+        '      "insight":"인사이트 — 이 이슈를 어떻게 해석해야 하는지, 관전 포인트는 무엇인지 3~4문장(추정 전제)."}\n'
+        "  ],\n"
+        '  "closing": "오늘 장 총평 5~7문장. 수급·주도섹터·리스크·다음 관전포인트를 종합한 심층 코멘트. 수석 애널리스트 톤."\n'
         "}\n\n"
         "작성 규칙:\n"
-        "- bignews는 가장 중요한 이슈 1~2개. themes는 급등·거래대금 데이터를 2~4개 테마로 묶고, 각 테마에 실제 데이터에 등장한 종목 3~6개.\n"
-        f"- {tick}chg는 데이터에 있는 실제 등락률을 써. 데이터에 없는 종목은 만들지 마.\n"
-        f"- deriv(파생 관련주)는 각 종목의 밸류체인/동일테마 수혜주를 추정으로 제시({deriv_ex}). 실재하는 상장사만.\n"
-        "- 모든 인과·테마 해석은 '추정' 전제(단정 금지). 매수·매도 권유 금지. 존댓말.\n"
-        "- 반드시 유효한 JSON. 종목 상세는 풍부하게, 근거 있게.")
-    rep = _gemini_json(prompt, max_tokens=8192, temp=0.55)
-    if not isinstance(rep, dict):
+        "- bignews는 오늘 시장을 움직인 가장 중요한 이슈 **정확히 3개**. 각 이슈의 background/impact/insight를 "
+        "실제 애널리스트 리포트처럼 **길고 자세하게** 써(간략 금지). 뉴스 헤드라인과 데이터를 최대한 활용.\n"
+        f"- {tick}데이터에 있는 실제 수치만 사용. 없는 사실은 지어내지 마.\n"
+        "- 모든 인과·해석은 '추정' 전제(단정 금지). 매수·매도 권유 금지. 존댓말. 반드시 유효한 JSON.")
+    return _gemini_json(prompt, max_tokens=8192, temp=0.5)
+
+
+def _gemini_themes(data, date_str, mkt, tick, deriv_ex):
+    """핵심 테마 3개 × 메인종목 3개 × 관련주 3~5개."""
+    prompt = (
+        f"너는 증권사 리서치센터 애널리스트야. 오늘({date_str}) {mkt} 급등·거래대금 데이터를 근거로 "
+        "'오늘을 주도한 핵심 테마'를 정리해. 데이터에 없는 종목·수치는 지어내지 마.\n\n"
+        f"=== 오늘의 데이터 ===\n{data}\n\n"
+        "아래 JSON 스키마로만 답해(설명·마크다운 없이 순수 JSON):\n"
+        "{\n"
+        '  "themes": [\n'
+        '    {"name":"테마명", "range":"대표 등락 범위(예: +18~30%)", "summary":"이 테마가 오늘 강한 이유 2~3문장",\n'
+        '     "stocks":[\n'
+        '        {"name":"메인 종목명", "chg":숫자(%), "sector":"한줄 사업설명",\n'
+        '         "reason":"이 종목이 오늘 왜 이슈였는지 3~4문장 상세 코멘트(뉴스·데이터 근거, 추정 전제)",\n'
+        '         "related":[ {"name":"관련주명", "note":"왜 같이 수혜/연관인지 한 줄"} ] }\n'
+        "     ] }\n"
+        "  ]\n"
+        "}\n\n"
+        "작성 규칙:\n"
+        "- 테마는 급등·거래대금 데이터를 묶어 **정확히 3개**. 각 테마의 메인 종목은 **3개**(총 9종목).\n"
+        "- 메인 종목은 반드시 데이터에 등장한 실제 종목, chg는 데이터의 실제 등락률.\n"
+        "- 각 메인 종목마다 related(관련주)를 **3~5개** 제시. 밸류체인/동일테마 수혜주를 추정으로 "
+        f"({deriv_ex}). 실재하는 상장사만.\n"
+        f"- {tick}각 종목의 reason은 **길고 구체적으로**(왜 올랐는지, 무슨 재료인지).\n"
+        "- 모든 인과·테마·관련주는 '추정' 전제(단정 금지). 매수·매도 권유 금지. 존댓말. 반드시 유효한 JSON.")
+    return _gemini_json(prompt, max_tokens=8192, temp=0.55)
+
+
+def _gemini_report(indices, supply, movers, macro, news, date_str, market="KR"):
+    """일일 보고서(구조화 JSON) 생성 — 서술(헤드라인·빅뉴스3·총평) + 테마(3×3×관련주)를 두 번 호출로."""
+    mkt = "미국 증시(S&P500·나스닥·다우·필라델피아반도체)" if market == "US" else "한국 증시(코스피·코스닥)"
+    data = _report_data_block(indices, supply, movers, macro, news, market)
+    tick = ("종목명은 반드시 영문 티커(예: NVDA)로 쓰고 한국어 설명을 덧붙여. "
+            if market == "US" else "종목명은 한국어 정식 명칭(예: 삼성전자)으로 써. ")
+    deriv_ex = ("예: NVDA의 관련주로 AVGO·AMD" if market == "US"
+                else "예: SK하이닉스의 관련주로 한미반도체·이오테크닉스")
+    nar = _gemini_narrative(data, date_str, mkt, tick)
+    thm = _gemini_themes(data, date_str, mkt, tick, deriv_ex)
+    rep = {}
+    if isinstance(nar, dict):
+        rep.update(nar)
+    if isinstance(thm, dict):
+        rep["themes"] = thm.get("themes") or []
+    if not rep:
         return None
-    # 종목 chip 연결용: 이름→코드 매핑 부여
+    # 종목 chip 연결용: 이름→코드 매핑
     code_by_name = {}
     for grp in movers.values():
         for s in grp:

@@ -157,12 +157,12 @@
   .rp-stock-chg{font-size:14.5px;font-weight:800;font-variant-numeric:tabular-nums}
   .rp-stock-sec{font-size:12px;color:var(--muted)}
   .rp-stock-why{font-size:14px;line-height:1.68;color:var(--text)}
-  .rp-deriv{margin-top:7px;font-size:13px;line-height:1.6;color:var(--muted);
-    background:#131a28;border-radius:9px;padding:8px 12px}
+  .rp-related{margin-top:8px;background:#131a28;border-radius:10px;padding:10px 13px}
   .rp-deriv-tag{display:inline-block;font-size:11px;font-weight:700;color:var(--buy);
-    background:rgba(55,201,138,.12);border-radius:5px;padding:1px 7px;margin-right:6px}
-  .rp-deriv b{color:var(--text)}
-  .rp-deriv-note{margin-left:4px}
+    background:rgba(55,201,138,.12);border-radius:5px;padding:2px 8px;margin-bottom:7px}
+  .rp-rel{font-size:13px;line-height:1.65;color:var(--muted);padding:2px 0}
+  .rp-rel b{color:var(--text)}
+  .rp-rel-note{margin-left:3px}
   /* 총평 */
   .rp-closing{background:linear-gradient(135deg,#1c2740,#161d2c);border:1px solid var(--line);
     border-left:4px solid var(--warn);border-radius:14px;padding:18px 20px;margin:20px 0 8px}
@@ -1001,6 +1001,17 @@ function renderBriefingBody(d, box){
     <span>VIX <b>${m.vix??"-"}</b></span>
     ${us?"":`<span>VKOSPI <b>${m.vkospi??"-"}</b></span>`}</div>`;
 
+  // ── 급등/거래대금/급락 (원자료, 상단 노출) ──
+  const mv = d.movers;
+  if(mv){
+    const list = arr => (arr||[]).map(s => `<div class="row"><span>${esc(s.name)}</span><span class="${ic(s.chg)}">${cs(s.chg)}</span></div>`).join("");
+    h += `<div class="brf-mv">
+      <div class="col"><h4>🔥 ${us?"급등 상위":"코스피 급등"}</h4>${list(mv.kospi_up)}</div>
+      ${us?"":`<div class="col"><h4>🔥 코스닥 급등</h4>${list(mv.kosdaq_up)}</div>`}
+      <div class="col"><h4>💰 ${us?"거래 활발(주도주)":"코스피 거래대금 상위"}</h4>${list(mv.kospi_val)}</div>
+      <div class="col"><h4>❄️ ${us?"급락 상위":"코스피 급락"}</h4>${list(mv.kospi_down)}</div></div>`;
+  }
+
   // ── 챕터1: 오늘의 빅뉴스 ──
   const bignews = rep.bignews || [];
   if(bignews.length){
@@ -1030,9 +1041,11 @@ function renderBriefingBody(d, box){
           ${st.sector?`<span class="rp-stock-sec">${esc(st.sector)}</span>`:""}
         </div>
         ${st.reason?`<div class="rp-stock-why">${esc(st.reason)}</div>`:""}
-        ${st.deriv_name?`<div class="rp-deriv"><span class="rp-deriv-tag">파생 관련주</span>
-          <b class="stk-chip" data-t="${esc(st.deriv_name)}">${esc(st.deriv_name)}</b>
-          ${st.deriv_note?`<span class="rp-deriv-note">— ${esc(st.deriv_note)}</span>`:""}</div>`:""}
+        ${(st.related&&st.related.length)?`<div class="rp-related">
+          <div class="rp-deriv-tag">관련주 ${st.related.length}</div>
+          ${st.related.map(rel=>`<div class="rp-rel">
+            <b class="stk-chip" data-t="${esc(rel.name)}">${esc(rel.name)}</b>
+            ${rel.note?`<span class="rp-rel-note">— ${esc(rel.note)}</span>`:""}</div>`).join("")}</div>`:""}
       </div>`).join("")}</div>
     </div>`).join("");
   }
@@ -1051,20 +1064,8 @@ function renderBriefingBody(d, box){
 
   // ── 총평 ──
   if(rep.closing){
-    h += `<div class="rp-closing"><div class="rp-closing-h">💬 애널리스트 총평</div>
+    h += `<div class="rp-closing"><div class="rp-closing-h">💬 히르찬의 총평</div>
       <p>${esc(rep.closing)}</p></div>`;
-  }
-
-  // ── 원자료: 급등/거래대금/급락 (접이식) ──
-  const mv = d.movers;
-  if(mv){
-    const list = arr => (arr||[]).map(s => `<div class="row"><span>${esc(s.name)}</span><span class="${ic(s.chg)}">${cs(s.chg)}</span></div>`).join("");
-    h += `<details class="rp-raw"><summary>📊 원자료 보기 — ${us?"급등·거래활발·급락":"코스피·코스닥 급등, 거래대금, 급락"}</summary>
-      <div class="brf-mv">
-        <div class="col"><h4>🔥 ${us?"급등 상위":"코스피 급등"}</h4>${list(mv.kospi_up)}</div>
-        ${us?"":`<div class="col"><h4>🔥 코스닥 급등</h4>${list(mv.kosdaq_up)}</div>`}
-        <div class="col"><h4>💰 ${us?"거래 활발(주도주)":"코스피 거래대금 상위"}</h4>${list(mv.kospi_val)}</div>
-        <div class="col"><h4>❄️ ${us?"급락 상위":"코스피 급락"}</h4>${list(mv.kospi_down)}</div></div></details>`;
   }
 
   // 리포트가 통째로 비었으면(AI 실패) 원문 안내
