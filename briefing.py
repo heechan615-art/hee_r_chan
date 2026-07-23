@@ -83,7 +83,29 @@ def _naver_index(code, name):
         return {"name": name, "price": None, "chg": None}
 
 
+def _yahoo_chart(sym):
+    """야후 차트 API(curl_cffi) — 지수 최근 종가·등락률. 클라우드에서 .history보다 안정적."""
+    try:
+        from curl_cffi import requests as creq
+        r = creq.get(f"https://query1.finance.yahoo.com/v8/finance/chart/{sym}",
+                     params={"range": "5d", "interval": "1d"}, impersonate="chrome", timeout=10)
+        if r.status_code != 200:
+            return None
+        res = r.json()["chart"]["result"][0]
+        cl = [c for c in res["indicators"]["quote"][0]["close"] if c is not None]
+        if len(cl) >= 2:
+            return round(float(cl[-1]), 2), round((cl[-1] / cl[-2] - 1) * 100, 2)
+    except Exception:
+        pass
+    return None
+
+
 def _us_index(tk, name):
+    # 1차: 야후 차트 API(curl_cffi) — Render 등 클라우드 IP에서 안정적
+    ch = _yahoo_chart(tk)
+    if ch:
+        return {"name": name, "price": ch[0], "chg": ch[1]}
+    # 폴백: yfinance .history
     try:
         h = yfsess.ticker(tk).history(period="5d")["Close"].dropna()
         if len(h) >= 2:
