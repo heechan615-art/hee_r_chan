@@ -12,6 +12,13 @@ import json
 import time
 import glob
 import requests
+from datetime import datetime, timezone, timedelta
+
+_KST = timezone(timedelta(hours=9))   # Render는 UTC로 동작 → 표시·저장은 한국시간으로 고정
+
+
+def _kst_str(fmt="%Y-%m-%d %H:%M"):
+    return datetime.now(_KST).strftime(fmt)
 
 import yfsess
 import kr_data
@@ -39,7 +46,7 @@ def _save_briefing(result, market="KR"):
     """브리핑을 시장·날짜별 파일로 저장 + 3개월 지난 파일 정리."""
     try:
         os.makedirs(_ARCHIVE, exist_ok=True)
-        day = time.strftime("%Y-%m-%d")
+        day = _kst_str("%Y-%m-%d")
         with open(os.path.join(_ARCHIVE, f"{market}_{day}.json"), "w", encoding="utf-8") as f:
             json.dump(result, f, ensure_ascii=False)
         cutoff = time.time() - _KEEP_DAYS * 86400
@@ -218,15 +225,20 @@ def _us_stock_news(sym, n=4):
 
 
 def get_market_issues(movers, market="KR"):
-    """오늘 시장을 움직인 주요 이슈 재료 — 주도주 뉴스 헤드라인 모음."""
+    """오늘 시장을 움직인 주요 이슈 재료 — 주도주 뉴스 헤드라인 모음.
+    클라우드(오리건)에서 네이버로의 순차 호출이 느려 총 요청 수를 제한한다."""
     heads, seen = [], set()
-    picks = (movers["kospi_val"][:5] + movers["kospi_up"][:3]
-             + movers["kosdaq_up"][:2] + movers["kospi_down"][:2])
+    picks = (movers["kospi_val"][:4] + movers["kospi_up"][:3]
+             + movers["kosdaq_up"][:2] + movers["kospi_down"][:1])
+    tried = 0
     for s in picks:
+        if tried >= 8:               # 뉴스 호출 최대 8종목으로 제한(지연 방지)
+            break
         nm = s.get("name") or ""
         if any(k in nm.upper() for k in _ETF_KW) or not s.get("code"):
             continue
-        hs = _us_stock_news(s["code"], 4) if market == "US" else _stock_news(s["code"], 4)
+        tried += 1
+        hs = _us_stock_news(s["code"], 3) if market == "US" else _stock_news(s["code"], 3)
         for h in hs:
             if h and h not in seen:
                 seen.add(h)
@@ -365,7 +377,7 @@ def _gemini_json(prompt, max_tokens=4096, temp=0.6):
                   "generationConfig": {"maxOutputTokens": max_tokens, "temperature": temp,
                                        "responseMimeType": "application/json",
                                        "thinkingConfig": {"thinkingLevel": "low"}}},
-            timeout=60)
+            timeout=45)
         if r.status_code != 200:
             return None
         parts = (r.json()["candidates"][0]["content"].get("parts") or [])
@@ -538,12 +550,12 @@ def daily_briefing(market="KR"):
     macro = get_macro(market)
     supply = get_supply(market)
     news = get_market_issues(movers, market)
-    date_str = time.strftime("%Y-%m-%d %H:%M")
+    date_str = _kst_str("%Y-%m-%d %H:%M")
 
     # 프리미엄 보고서(구조화 JSON) — 헤드라인·빅뉴스·테마·종목상세·총평
     report = _gemini_report(indices, supply, movers, macro, news, date_str, market)
 
-    result = {"asof": date_str, "date": time.strftime("%Y-%m-%d"), "market": market,
+    result = {"asof": date_str, "date": _kst_str("%Y-%m-%d"), "market": market,
               "indices": indices, "movers": movers, "macro": macro, "supply": supply,
               "report": report}
     _CACHE[market] = (now, result)
