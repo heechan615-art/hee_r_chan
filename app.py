@@ -53,6 +53,18 @@ if not os.environ.get("GEMINI_API_KEY") and os.path.exists(_KEY_FILE):
         pass
 
 
+@app.errorhandler(500)
+@app.errorhandler(Exception)
+def _json_500(e):
+    """라우트 try/except를 우회한 예외도 JSON으로 반환(진단용)."""
+    import traceback
+    from werkzeug.exceptions import HTTPException
+    if isinstance(e, HTTPException) and e.code != 500:
+        return e
+    return jsonify({"error": f"서버 오류: {repr(e)[:150]}",
+                    "trace": traceback.format_exc()[-800:]}), 500
+
+
 def clean(o):
     """JSON은 NaN/Infinity를 허용 안 함 → None으로 치환(재귀)."""
     if isinstance(o, float):
@@ -213,10 +225,10 @@ def _preview_briefing(out):
 @app.route("/api/briefing")
 def api_briefing():
     """일일 증시 브리핑. day 파라미터 있으면 과거 브리핑 불러오기, list=1이면 날짜 목록."""
-    import briefing
-    market = "US" if (request.args.get("market") or "").upper() == "US" else "KR"
-    member = _is_member()
     try:
+        import briefing
+        market = "US" if (request.args.get("market") or "").upper() == "US" else "KR"
+        member = _is_member()
         if request.args.get("list"):
             return jsonify({"days": briefing.list_briefings(market)})
         day = request.args.get("day")
@@ -230,7 +242,9 @@ def api_briefing():
             out = _preview_briefing(out)
         return jsonify(out)
     except Exception as e:
-        return jsonify({"error": f"브리핑 실패: {repr(e)[:150]}"}), 500
+        import traceback
+        return jsonify({"error": f"브리핑 실패: {repr(e)[:150]}",
+                        "trace": traceback.format_exc()[-800:]}), 500
 
 
 @app.route("/api/peers")
