@@ -364,27 +364,52 @@ def get_supply(market="KR"):
     return {"kospi": _kr_supply_one("01"), "kosdaq": _kr_supply_one("02")}
 
 
-def _gemini_json(prompt, max_tokens=4096, temp=0.6):
-    """Gemini에 JSON 응답 강제 요청. 실패 시 None."""
+def _parse_json_loose(txt):
+    """모델 응답에서 JSON 추출 — 코드펜스 제거, 앞뒤 잡텍스트 무시."""
+    if not txt:
+        return None
+    t = txt.strip()
+    if t.startswith("```"):                       # ```json ... ``` 펜스 제거
+        t = t.split("```", 2)[1] if t.count("```") >= 2 else t.strip("`")
+        if t.lstrip().lower().startswith("json"):
+            t = t.lstrip()[4:]
+    try:
+        return json.loads(t)
+    except Exception:
+        pass
+    a, b = t.find("{"), t.rfind("}")              # 첫 { ~ 마지막 } 구간 재시도
+    if a >= 0 and b > a:
+        try:
+            return json.loads(t[a:b + 1])
+        except Exception:
+            pass
+    return None
+
+
+def _gemini_json(prompt, max_tokens=4096, temp=0.6, tries=3):
+    """Gemini에 JSON 응답 강제 요청. 깨진 JSON·빈 응답이면 최대 tries회 재시도. 실패 시 None."""
     key = os.environ.get("GEMINI_API_KEY")
     if not key:
         return None
-    try:
-        r = requests.post(
-            "https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-lite-latest:generateContent",
-            headers={"x-goog-api-key": key, "Content-Type": "application/json"},
-            json={"contents": [{"parts": [{"text": prompt}]}],
-                  "generationConfig": {"maxOutputTokens": max_tokens, "temperature": temp,
-                                       "responseMimeType": "application/json",
-                                       "thinkingConfig": {"thinkingLevel": "low"}}},
-            timeout=45)
-        if r.status_code != 200:
-            return None
-        parts = (r.json()["candidates"][0]["content"].get("parts") or [])
-        txt = "".join(p.get("text", "") for p in parts).strip()
-        return json.loads(txt) if txt else None
-    except Exception:
-        return None
+    for attempt in range(tries):
+        try:
+            r = requests.post(
+                "https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-lite-latest:generateContent",
+                headers={"x-goog-api-key": key, "Content-Type": "application/json"},
+                json={"contents": [{"parts": [{"text": prompt}]}],
+                      "generationConfig": {"maxOutputTokens": max_tokens,
+                                           "temperature": temp + attempt * 0.05,  # 재시도마다 살짝 변주
+                                           "responseMimeType": "application/json",
+                                           "thinkingConfig": {"thinkingLevel": "low"}}},
+                timeout=40)
+            if r.status_code == 200:
+                parts = (r.json()["candidates"][0]["content"].get("parts") or [])
+                obj = _parse_json_loose("".join(p.get("text", "") for p in parts))
+                if isinstance(obj, (dict, list)):
+                    return obj
+        except Exception:
+            pass
+    return None
 
 
 def _report_data_block(indices, supply, movers, macro, news, market):
@@ -449,7 +474,7 @@ def _gemini_narrative(data, date_str, mkt, tick):
         "실제 애널리스트 리포트처럼 **길고 자세하게** 써(간략 금지). 뉴스 헤드라인과 데이터를 최대한 활용.\n"
         f"- {tick}데이터에 있는 실제 수치만 사용. 없는 사실은 지어내지 마.\n"
         "- 모든 인과·해석은 '추정' 전제(단정 금지). 매수·매도 권유 금지. 존댓말. 반드시 유효한 JSON.")
-    return _gemini_json(prompt, max_tokens=8192, temp=0.5)
+    return _gemini_json(prompt, max_tokens=8192, temp=0.5, tries=4)
 
 
 def _gemini_themes(data, date_str, mkt, tick, deriv_ex):
@@ -476,7 +501,28 @@ def _gemini_themes(data, date_str, mkt, tick, deriv_ex):
         f"({deriv_ex}). 실재하는 상장사만.\n"
         f"- {tick}각 종목의 reason은 **길고 구체적으로**(왜 올랐는지, 무슨 재료인지).\n"
         "- 모든 인과·테마·관련주는 '추정' 전제(단정 금지). 매수·매도 권유 금지. 존댓말. 반드시 유효한 JSON.")
-    return _gemini_json(prompt, max_tokens=8192, temp=0.55)
+    return _gemini_json(prompt, max_tokens=8192, temp=0.55, tries=4)
+
+
+def _fallback_themes(movers, market="KR"):
+    """AI 테마 생성이 실패했을 때, 급등·거래대금 데이터만으로 최소 테마 구성."""
+    def cards(items):
+        out = []
+        for s in items:
+            if not s.get("name"):
+                continue
+            out.append({"name": s["name"], "chg": s.get("chg"),
+                        "sector": "", "reason": "", "related": [], "code": s.get("code")})
+        return out
+    up = cards((movers.get("kospi_up") or [])[:5])
+    val = cards((movers.get("kospi_val") or [])[:5])
+    themes = []
+    if up:
+        themes.append({"name": "오늘의 급등 종목", "range": "", "summary": "", "stocks": up})
+    if val:
+        themes.append({"name": ("거래 활발(주도주)" if market == "US" else "거래대금 상위(주도주)"),
+                       "range": "", "summary": "", "stocks": val})
+    return themes
 
 
 def _gemini_report(indices, supply, movers, macro, news, date_str, market="KR"):
@@ -492,9 +538,11 @@ def _gemini_report(indices, supply, movers, macro, news, date_str, market="KR"):
     rep = {}
     if isinstance(nar, dict):
         rep.update(nar)
-    if isinstance(thm, dict):
-        rep["themes"] = thm.get("themes") or []
-    if not rep:
+    themes = thm.get("themes") if isinstance(thm, dict) else None
+    if not themes:                       # AI 테마 실패 시 급등·거래대금 데이터로 기본 테마 구성(빈 화면 방지)
+        themes = _fallback_themes(movers, market)
+    rep["themes"] = themes
+    if not rep.get("headline") and not rep.get("bignews") and not themes:
         return None
     # 종목 chip 연결용: 이름→코드 매핑
     code_by_name = {}
