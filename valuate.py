@@ -769,6 +769,42 @@ def _yahoo_fwd_eps(tk):
     return None
 
 
+def _yahoo_chart_series(symbol, rng="10y", interval="1d"):
+    """야후 차트 API(curl_cffi) — 일별 종가 시계열. 클라우드에서 .history가 막힐 때 대체."""
+    try:
+        from curl_cffi import requests as creq
+        r = creq.get(f"https://query1.finance.yahoo.com/v8/finance/chart/{symbol}",
+                     params={"range": rng, "interval": interval}, impersonate="chrome", timeout=12)
+        if r.status_code != 200:
+            return pd.Series(dtype=float)
+        res = r.json()["chart"]["result"][0]
+        ts = res.get("timestamp") or []
+        cl = res["indicators"]["quote"][0]["close"]
+        pairs = [(pd.Timestamp(t, unit="s"), c) for t, c in zip(ts, cl) if c is not None]
+        if not pairs:
+            return pd.Series(dtype=float)
+        idx, vals = zip(*pairs)
+        return pd.Series(vals, index=pd.DatetimeIndex(idx).tz_localize(None))
+    except Exception:
+        return pd.Series(dtype=float)
+
+
+def _finnhub_quote(symbol):
+    """미국 종목 현재가 — Finnhub /quote (정식 API, 클라우드에서도 됨). 실패 시 None."""
+    key = os.environ.get("FINNHUB_API_KEY")
+    if not key:
+        return None
+    try:
+        r = requests.get("https://finnhub.io/api/v1/quote",
+                         params={"symbol": symbol.upper(), "token": key}, timeout=8)
+        if r.status_code == 200:
+            c = (r.json() or {}).get("c")
+            return float(c) if c else None
+    except Exception:
+        pass
+    return None
+
+
 def _finnhub_metrics(symbol):
     """미국 종목 기본 지표 — Finnhub basic financials (정식 API라 클라우드에서도 됨).
     야후 .info가 데이터센터 IP에서 차단될 때 폴백."""
@@ -828,6 +864,9 @@ def analyze_data(ticker):
     except Exception:
         hist_df = pd.DataFrame()
         hist = pd.Series(dtype=float)
+    # 클라우드(Render)에서 야후 .history가 막히면 미국 종목은 차트 API(curl_cffi)로 이력 대체
+    if hist.empty and not is_korean(ticker):
+        hist = _yahoo_chart_series(yf_ticker)
 
     price = info.get("currentPrice") or info.get("regularMarketPrice")
     ttm_eps = info.get("trailingEps")
@@ -884,6 +923,13 @@ def analyze_data(ticker):
                     eps_fwd_src = "Finnhub"
                 if not cur:
                     cur = "USD"
+        # 주가가 여전히 없으면(야후 .info·.history·차트 모두 실패) Finnhub 시세로 최종 폴백
+        if price is None:
+            price = _finnhub_quote(ticker)
+        # 주가가 생겼는데 예상EPS가 없고 Finnhub 선행 PER이 있으면 역산
+        if fwd_eps is None and price and us_fh.get("per_fwd"):
+            fwd_eps = price / us_fh["per_fwd"]
+            eps_fwd_src = eps_fwd_src or "Finnhub"
         # 상단 '데이터 출처'를 실제 소스로 정확히 표시
         src = "Finnhub" if data_src == "Finnhub" else "야후(yfinance)"
 
