@@ -452,6 +452,17 @@
   .amsg.err{background:#3a1e26;border:1px solid #6d3341;color:#ffb3bf}
   .amsg.ok{background:#12332a;border:1px solid #1f6a52;color:#8ff0c8}
   /* 관리자 표 */
+  .msum{display:flex;align-items:center;gap:18px;flex-wrap:wrap;background:#131a28;border:1px solid var(--line);
+    border-radius:12px;padding:14px 18px;margin-bottom:16px}
+  .msum-total{display:flex;align-items:baseline;gap:8px}
+  .msum-total .msum-k{font-size:13px;color:var(--muted);font-weight:600}
+  .msum-total .msum-v{font-size:26px;font-weight:800;font-variant-numeric:tabular-nums}
+  .msum-total .msum-v em{font-size:14px;font-weight:600;color:var(--muted);font-style:normal;margin-left:2px}
+  .msum-total .msum-sub{font-size:11px;color:var(--muted);align-self:center}
+  .msum-break{display:flex;gap:14px;margin-left:auto;flex-wrap:wrap}
+  .msum-cell{font-size:12.5px;color:var(--muted);display:flex;align-items:baseline;gap:5px}
+  .msum-cell b{font-size:16px;font-weight:800;font-variant-numeric:tabular-nums}
+  .msum-cell b.approved{color:var(--good)} .msum-cell b.pending{color:var(--warn)} .msum-cell b.kicked{color:#ff8a9c}
   .mtab{width:100%;border-collapse:collapse;font-size:13px}
   .mtab th{text-align:left;color:var(--muted);font-weight:600;font-size:12px;
     border-bottom:1px solid var(--line);padding:8px 9px;white-space:nowrap}
@@ -771,9 +782,20 @@ async function openAdmin(){
     const d = await (await fetch("/api/admin/members")).json();
     if(d.error){ box.innerHTML = `<div class="warnbox">${esc(d.error)}</div>`; return; }
     const ms = d.members || [];
-    if(!ms.length){ box.innerHTML = `<div class="muted" style="padding:16px 0">아직 가입한 회원이 없습니다.</div>`; return; }
+    // 관리자 제외 회원 통계
+    const mem = ms.filter(m => !m.is_admin);
+    const cnt = s => mem.filter(m => m.status === s).length;
+    const summary = `<div class="msum">
+      <div class="msum-total"><span class="msum-k">총 회원</span><span class="msum-v">${mem.length}<em>명</em></span>
+        <span class="msum-sub">관리자 제외</span></div>
+      <div class="msum-break">
+        <span class="msum-cell"><b class="approved">${cnt("approved")}</b>이용 중</span>
+        <span class="msum-cell"><b class="pending">${cnt("pending")}</b>승인 대기</span>
+        <span class="msum-cell"><b class="kicked">${cnt("kicked")}</b>정지됨</span>
+      </div></div>`;
+    if(!mem.length && !ms.length){ box.innerHTML = summary + `<div class="muted" style="padding:16px 0">아직 가입한 회원이 없습니다.</div>`; return; }
     const LBL = {pending:"승인 대기", approved:"이용 중", kicked:"정지됨"};
-    box.innerHTML = `<table class="mtab"><thead><tr>
+    box.innerHTML = summary + `<table class="mtab"><thead><tr>
       <th>본명</th><th>아이디</th><th>상태</th><th>가입일</th><th>마지막 사용</th><th>사용 기간</th><th>관리</th>
       </tr></thead><tbody>` + ms.map(m => `<tr>
       <td><b>${esc(m.realname)}</b>${m.is_admin ? ` <span class="badge admin">관리자</span>` : ""}</td>
