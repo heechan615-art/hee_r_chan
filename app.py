@@ -67,6 +67,23 @@ def _json_500(e):
                     "trace": traceback.format_exc()[-800:]}), 500
 
 
+# ------- 간단 TTL 캐시 (여러 명이 같은 종목 조회 시 계산 1번으로) -------
+_CACHE = {}   # key -> (ts, value)
+
+
+def _cache_get(key, ttl):
+    v = _CACHE.get(key)
+    if v and time.time() - v[0] < ttl:
+        return v[1]
+    return None
+
+
+def _cache_put(key, value):
+    if len(_CACHE) > 800:            # 폭주 방지용 상한(수업 규모엔 넉넉)
+        _CACHE.clear()
+    _CACHE[key] = (time.time(), value)
+
+
 def clean(o):
     """JSON은 NaN/Infinity를 허용 안 함 → None으로 치환(재귀)."""
     if isinstance(o, float):
@@ -182,13 +199,18 @@ def api_analyze():
         return jsonify({"error": f"오늘의 무료 체험 {GUEST_LIMIT}회를 모두 사용했습니다. "
                                  "내일 0시에 다시 채워집니다. 회원가입하시면 제한 없이 이용할 수 있어요.",
                         "locked": True}), 402
-    try:
-        from valuate import analyze_data   # 지연 로딩(부팅 경량화)
-        out = clean(analyze_data(ticker))
-    except ValueError as e:          # 종목 못 찾음 등 사용자 안내 메시지는 그대로 노출
-        return jsonify({"error": str(e)}), 400
-    except Exception as e:
-        return jsonify({"error": f"분석 실패: {repr(e)[:150]}"}), 500
+    ck = "analyze:" + ticker.lower()
+    out = _cache_get(ck, 300)        # 5분 캐시 — 여러 명이 같은 종목 조회 시 계산 1회
+    if out is None:
+        try:
+            from valuate import analyze_data   # 지연 로딩(부팅 경량화)
+            out = clean(analyze_data(ticker))
+        except ValueError as e:      # 종목 못 찾음 등 사용자 안내 메시지는 그대로 노출
+            return jsonify({"error": str(e)}), 400
+        except Exception as e:
+            return jsonify({"error": f"분석 실패: {repr(e)[:150]}"}), 500
+        _cache_put(ck, out)
+    out = dict(out)                  # 캐시 원본 보존 — 요청별 필드는 복사본에만
     if left is not None:             # 분석에 성공했을 때만 차감
         session["guest_uses"] = _guest_uses() + 1
         session.permanent = True
@@ -205,6 +227,10 @@ def api_company_analysis():
     ticker = (request.args.get("ticker") or "").strip()
     if not ticker:
         return jsonify({"error": "기업 이름 또는 티커를 입력하세요."}), 400
+    ck = "company:" + ticker.lower()
+    cached = _cache_get(ck, 1800)    # 30분 캐시(AI 지식 기반이라 안정적)
+    if cached is not None:
+        return jsonify(cached)
     try:
         import kr_data
         import deepdive
@@ -213,7 +239,9 @@ def api_company_analysis():
         out = deepdive.company_analysis(kr_code6 or yf_ticker or ticker, name)
         if not out:
             return jsonify({"error": "AI 분석에 실패했습니다. 잠시 후 다시 시도해 주세요."}), 500
-        return jsonify(clean(out))
+        out = clean(out)
+        _cache_put(ck, out)
+        return jsonify(out)
     except Exception as e:
         return jsonify({"error": f"분석 실패: {repr(e)[:150]}"}), 500
 
@@ -226,6 +254,10 @@ def api_company_news():
     ticker = (request.args.get("ticker") or "").strip()
     if not ticker:
         return jsonify({"error": "기업 이름 또는 티커를 입력하세요."}), 400
+    ck = "news:" + ticker.lower()
+    cached = _cache_get(ck, 900)     # 15분 캐시(뉴스는 천천히 바뀜)
+    if cached is not None:
+        return jsonify(cached)
     try:
         import kr_data
         import briefing
@@ -237,8 +269,10 @@ def api_company_news():
         else:
             sym = (yf_ticker or ticker).split(".")[0]
             heads = briefing._us_stock_news(sym, 10)
-        out = deepdive.analyze_news(name, heads)
-        return jsonify(clean(out))
+        out = clean(deepdive.analyze_news(name, heads))
+        if out and out.get("issues"):   # 성공한 것만 캐시(빈 결과는 재시도 여지)
+            _cache_put(ck, out)
+        return jsonify(out)
     except Exception as e:
         return jsonify({"error": f"분석 실패: {repr(e)[:150]}"}), 500
 
