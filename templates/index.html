@@ -568,6 +568,19 @@
   .dd-form input[type=text]:focus{outline:0;border-color:var(--accent)}
   .dd-btn{background:var(--accent);color:#fff;border:0;border-radius:10px;padding:11px 20px;font-size:15px;font-weight:700;cursor:pointer;white-space:nowrap}
   .dd-btn:disabled{opacity:.5;cursor:default}
+  .ddb-card{background:var(--card);border:1px solid var(--line);border-radius:15px;padding:18px 20px;margin-bottom:14px}
+  .ddb-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap;
+    padding-bottom:13px;margin-bottom:13px;border-bottom:1px solid var(--line)}
+  .ddb-name{font-size:18px;font-weight:800}
+  .ddb-price{font-size:24px;font-weight:800;font-variant-numeric:tabular-nums}
+  .ddb-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+  @media(max-width:640px){.ddb-grid{grid-template-columns:repeat(2,1fr)}}
+  .ddb-cell{text-align:center}
+  .ddb-k{font-size:12px;color:var(--muted);margin-bottom:3px}
+  .ddb-v{font-size:16px;font-weight:700;font-variant-numeric:tabular-nums}
+  .ddb-foot{margin-top:14px;padding-top:12px;border-top:1px solid var(--line);text-align:right}
+  .ddb-link{font-size:12.5px;color:var(--accent);text-decoration:none;font-weight:600}
+  .ddb-link:hover{text-decoration:underline}
   .dd-card{background:var(--card);border:1px solid var(--line);border-radius:15px;padding:20px 22px;margin-bottom:14px}
   .dd-oneliner{font-size:19px;font-weight:800;line-height:1.4;margin-bottom:16px}
   .dd-block{margin-bottom:15px}
@@ -963,6 +976,7 @@ function renderDeepTab(){
         <input type="text" id="dd-q" placeholder="회사 이름 또는 티커 (예: 삼성전자, NVDA)" autocomplete="off">
         <button class="dd-btn" id="dd-go">분석</button>
       </div>
+      <div id="dd-basic"></div>
       <div id="dd-company"></div>
     </div>
     <div class="dd-sec">
@@ -981,7 +995,15 @@ function renderDeepTab(){
   const runCompany = () => {
     const q = $("#dd-q").value.trim();
     if(!q) return;
-    const c = $("#dd-company");
+    const c = $("#dd-company"), bx = $("#dd-basic");
+    // 기본정보(주가·PER 등) — 밸류에이션 API 재사용 (회원은 무제한)
+    bx.innerHTML = `<div class="muted" style="padding:12px 0;font-size:13px">📊 기본정보 불러오는 중…</div>`;
+    fetch("/api/analyze?ticker="+encodeURIComponent(q))
+      .then(r => r.json()).then(d => {
+        if(d.error || d.price==null){ bx.innerHTML = ""; return; }
+        renderDeepBasic(d, bx);
+      }).catch(() => bx.innerHTML = "");
+    // AI 기업 분석
     c.innerHTML = `<div id="loading" style="display:block"><div class="spin"></div>기업 분석 중… (5~15초)</div>`;
     fetch("/api/company_analysis?ticker="+encodeURIComponent(q))
       .then(r => r.json()).then(d => {
@@ -1033,6 +1055,36 @@ function runReports(){
       renderReports(d, out);
     }).catch(e => out.innerHTML = `<div class="warnbox">요청 실패: ${esc(e)}</div>`)
     .finally(() => { btn.disabled = false; });
+}
+function renderDeepBasic(d, box){
+  const cur = d.currency === "KRW" ? "₩" : (d.currency === "USD" ? "$" : "");
+  const won = d.currency === "KRW";
+  const pv = v => v==null ? "-" : (won ? Math.round(v).toLocaleString()+"원" : cur+(+v).toFixed(2));
+  const nf = (v,dg=2) => v==null ? "-" : (+v).toFixed(dg);
+  const cell = (k,v) => `<div class="ddb-cell"><div class="ddb-k">${k}</div><div class="ddb-v">${v}</div></div>`;
+  box.innerHTML = `<div class="ddb-card">
+    <div class="ddb-head">
+      <div class="ddb-name">${esc(d.name||d.ticker)} <span class="muted" style="font-size:13px;font-weight:600">${esc(d.ticker||"")}</span></div>
+      <div class="ddb-price">${pv(d.price)}</div>
+    </div>
+    <div class="ddb-grid">
+      ${cell("현재 PER", nf(d.per_ttm))}
+      ${cell("예상 PER", nf(d.per_fwd))}
+      ${cell("현재 PBR", nf(d.pbr_ttm))}
+      ${cell("EPS(TTM)", d.eps_ttm==null?"-":(won?Math.round(d.eps_ttm).toLocaleString():nf(d.eps_ttm)))}
+      ${cell("예상 EPS", d.eps_fwd==null?"-":(won?Math.round(d.eps_fwd).toLocaleString():nf(d.eps_fwd)))}
+      ${cell("52주 최고", pv(d.hi52))}
+      ${cell("52주 최저", pv(d.lo52))}
+    </div>
+    <div class="ddb-foot"><a href="#" class="ddb-link" data-t="${esc(d.name||d.ticker)}">📊 기업 밸류에이션 탭에서 자세히 보기 →</a></div>
+  </div>`;
+  const link = box.querySelector(".ddb-link");
+  if(link) link.onclick = e => {
+    e.preventDefault();
+    document.querySelector('.tab-btn[data-tab="value"]').click();
+    $("#q").value = link.dataset.t; $("#f").requestSubmit();
+    window.scrollTo({top:0, behavior:"smooth"});
+  };
 }
 function renderCompany(d, box){
   const seg = (d.segments||[]).map(s => `<div class="dd-seg"><b>${esc(s.name)}</b><span class="muted">${esc(s.desc||"")}</span></div>`).join("");
