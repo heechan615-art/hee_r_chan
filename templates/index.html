@@ -2141,16 +2141,17 @@ function tpManualMethod(d, df){
   if(d.eps_ttm) eC += chip("tp-echip", (+d.eps_ttm).toFixed(2), `TTM ${fmt(d.eps_ttm)}`);
   const nEps = normEpsOf(d);
   if(nEps) eC += chip("tp-echip", nEps.toFixed(2), `사이클 평균 ${fmt(nEps)}`);
-  mC += chip("tp-mchip", d.sigma.mean.toFixed(1), `과거 평균 ${d.sigma.mean.toFixed(1)}`);
+  if(d.sigma) mC += chip("tp-mchip", d.sigma.mean.toFixed(1), `과거 평균 ${d.sigma.mean.toFixed(1)}`);
   if(d.sigma_fwd) mC += chip("tp-mchip", d.sigma_fwd.mean.toFixed(1), `선행 평균 ${d.sigma_fwd.mean.toFixed(1)}`);
   if(d.per_fwd) mC += chip("tp-mchip", (+d.per_fwd).toFixed(1), `현재 선행 ${(+d.per_fwd).toFixed(1)}`);
+  if(d.per_ttm && !d.sigma && !d.per_fwd) mC += chip("tp-mchip", (+d.per_ttm).toFixed(1), `현재 PER ${(+d.per_ttm).toFixed(1)}`);
   return `<div class="muted" style="font-size:12.5px;margin-bottom:8px">미래 EPS와 PER을
     <b>직접 정해서</b> 계산 — 증권사 리포트의 추정치를 그대로 넣어볼 수 있습니다. (칩 클릭 시 입력)</div>
     <div class="chips" style="margin-bottom:6px"><span class="muted" style="font-size:11px;padding:4px 0">EPS:</span>${eC}</div>
     <div class="chips" style="margin-bottom:10px"><span class="muted" style="font-size:11px;padding:4px 0">PER:</span>${mC}</div>
     <div class="rp-cur" style="margin-bottom:8px">
       <label style="width:180px">실적 (EPS)<input id="tp-e2" type="number" step="any" value="${inNum(d.eps_fwd ?? d.eps_ttm)}"></label>
-      <label style="width:140px">멀티플 (PER)<input id="tp-m2" type="number" step="any" value="${(d.per_fwd?+d.per_fwd:d.sigma.mean).toFixed(1)}"></label>
+      <label style="width:140px">멀티플 (PER)<input id="tp-m2" type="number" step="any" value="${(d.per_fwd?+d.per_fwd:(d.sigma?d.sigma.mean:(d.per_ttm||15))).toFixed(1)}"></label>
     </div><div id="tp-man-out"></div>`;
 }
 
