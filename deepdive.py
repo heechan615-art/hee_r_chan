@@ -116,6 +116,43 @@ def analyze_news(name, headlines):
     return {"issues": [], "analysis": None, "headlines": headlines}
 
 
+# ------------------- 1-c) 종합 총평 (기업모델 + 뉴스 + 리포트) -------------------
+def final_verdict(company, news, report):
+    """기업 개요·최근 이슈·증권사 리포트를 통합한 종합 총평. 리포트 업로드 시에만 호출."""
+    def j(x):
+        try:
+            return json.dumps(x, ensure_ascii=False)[:4000]
+        except Exception:
+            return ""
+    ctx = []
+    if company:
+        ctx.append("[기업 개요]\n" + j({k: company.get(k) for k in
+                   ("name", "oneliner", "business", "tech", "market_expectation", "catalysts", "risks")}))
+    if news:
+        ctx.append("[최근 이슈]\n" + j({"issues": news.get("issues"), "analysis": news.get("analysis")}))
+    if report:
+        ctx.append("[증권사 리포트 분석]\n" + j({k: report.get(k) for k in
+                   ("reports", "consensus", "disagreement", "bull", "bear", "verdict")}))
+    if not report:
+        return None
+    body = "\n\n".join(ctx)
+    prompt = (
+        "너는 증권사 리서치센터장이야. 아래는 한 기업에 대한 (1)기업 개요 (2)최근 뉴스 이슈 "
+        "(3)증권사 리포트 분석 결과야. 이 셋을 모두 종합해서 투자자에게 주는 '종합 총평'을 작성해줘.\n\n"
+        f"{body}\n\n"
+        "아래 JSON으로만 답해(마크다운 없이 순수 JSON):\n"
+        "{\n"
+        '  "headline": "종합 관점을 한 문장으로",\n'
+        '  "thesis": "기업의 본질(비즈니스·기술)·시장 기대·최근 이슈·증권가 시각을 하나로 엮은 종합 판단 5~7문장. 서로 강화하는 부분과 상충하는 부분을 짚어줘.",\n'
+        '  "strengths": [ "종합적으로 본 투자 매력·강점 2~4개" ],\n'
+        '  "concerns": [ "종합적으로 본 우려·리스크 2~4개" ],\n'
+        '  "watch": [ "앞으로 확인해야 할 관전 포인트 2~3개" ]\n'
+        "}\n"
+        "규칙: 세 자료를 실제로 '종합'해(단순 반복 금지). 자료에 없는 사실 지어내지 마. "
+        "존댓말. 매수·매도 권유 금지. 추정은 추정으로 표기. 반드시 유효한 JSON.")
+    return _gemini_json(prompt, max_tokens=4096, temp=0.45, tries=3)
+
+
 # ----------------------------- 2) 리포트 교차분석 -----------------------------
 def extract_pdf_text(raw, max_chars=18000):
     """PDF 바이트 → 텍스트. 실패/빈약하면 빈 문자열."""

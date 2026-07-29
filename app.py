@@ -266,6 +266,24 @@ def api_report_analysis():
         return jsonify({"error": f"분석 실패: {repr(e)[:150]}"}), 500
 
 
+@app.route("/api/final_verdict", methods=["POST"])
+def api_final_verdict():
+    """기업 개요+뉴스+리포트 통합 종합 총평 — 회원 전용."""
+    if not _is_member():
+        return jsonify({"error": "회원 전용 기능입니다.", "locked": True}), 402
+    import deepdive
+    d = request.get_json(silent=True) or {}
+    if not d.get("report"):
+        return jsonify({"error": "리포트 분석 결과가 필요합니다."}), 400
+    try:
+        out = deepdive.final_verdict(d.get("company"), d.get("news"), d.get("report"))
+        if not out:
+            return jsonify({"error": "종합 총평 생성에 실패했습니다."}), 500
+        return jsonify(clean(out))
+    except Exception as e:
+        return jsonify({"error": f"분석 실패: {repr(e)[:150]}"}), 500
+
+
 @app.route("/api/snp")
 def api_snp():
     """S&P500 밸류에이션 대시보드 — PER σ밴드·EPS·공포탐욕·VIX. (snp.py에서 6시간 캐시)"""

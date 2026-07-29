@@ -635,6 +635,11 @@
   .ni-src summary{cursor:pointer;font-size:12.5px;color:var(--muted);user-select:none}
   .ni-src summary:hover{color:var(--text)}
   .ni-src-li{font-size:12.5px;color:var(--muted);line-height:1.7;padding-left:6px;margin-top:4px}
+  .dd-final-card{background:linear-gradient(135deg,#20283d,#171e2e);border:1px solid var(--accent);
+    border-radius:16px;padding:22px 24px;margin-top:16px;box-shadow:0 0 0 1px rgba(79,140,255,.15)}
+  .dd-final-h{font-size:18px;font-weight:800;margin-bottom:12px}
+  .dd-final-sub{font-size:12px;color:var(--muted);font-weight:600;margin-left:6px}
+  .dd-final-hl{font-size:16.5px;font-weight:800;line-height:1.5;margin-bottom:12px;color:var(--accent)}
 </style>
 </head>
 <body>
@@ -969,6 +974,7 @@ document.querySelectorAll(".tab-btn").forEach(b => b.onclick = () => {
 
 // ---------- 기업 심층 분석 ----------
 let DD_FILES = [];   // 업로드 대기 리포트 파일
+let DD_COMPANY = null, DD_NEWS = null;   // 종합 총평용 — 최근 검색한 기업개요·뉴스
 function renderDeepTab(){
   const box = $("#deep-body");
   if(!isMember()){
@@ -1003,11 +1009,13 @@ function renderDeepTab(){
       <div class="dd-files" id="dd-filelist"></div>
       <button class="dd-btn" id="dd-analyze" style="display:none">📑 리포트 분석하기</button>
       <div id="dd-report"></div>
+      <div id="dd-final"></div>
     </div>`;
   // 기업 분석
   const runCompany = () => {
     const q = $("#dd-q").value.trim();
     if(!q) return;
+    DD_COMPANY = null; DD_NEWS = null;   // 새 검색 → 이전 기업 데이터 초기화
     const c = $("#dd-company"), bx = $("#dd-basic");
     // 기본정보(주가·PER 등) — 밸류에이션 API 재사용 (회원은 무제한)
     bx.innerHTML = `<div class="muted" style="padding:12px 0;font-size:13px">📊 기본정보 불러오는 중…</div>`;
@@ -1065,8 +1073,9 @@ function renderFileList(){
 }
 function runReports(){
   if(!DD_FILES.length) return;
-  const btn = $("#dd-analyze"), out = $("#dd-report");
+  const btn = $("#dd-analyze"), out = $("#dd-report"), fin = $("#dd-final");
   btn.disabled = true;
+  fin.innerHTML = "";
   out.innerHTML = `<div id="loading" style="display:block"><div class="spin"></div>리포트 ${DD_FILES.length}개 분석 중… PDF를 읽고 있어요 (10~40초)</div>`;
   const fd = new FormData();
   DD_FILES.forEach(f => fd.append("files", f));
@@ -1075,8 +1084,34 @@ function runReports(){
       if(d.locked){ openAuth("login", d.error); return; }
       if(d.error){ out.innerHTML = `<div class="warnbox">${esc(d.error)}</div>`; return; }
       renderReports(d, out);
+      runFinalVerdict(d);   // 기업개요+뉴스+리포트 종합 총평
     }).catch(e => out.innerHTML = `<div class="warnbox">요청 실패: ${esc(e)}</div>`)
     .finally(() => { btn.disabled = false; });
+}
+function runFinalVerdict(report){
+  const fin = $("#dd-final");
+  if(!fin) return;
+  fin.innerHTML = `<div id="loading" style="display:block"><div class="spin"></div>기업개요·최신이슈·리포트를 종합하는 중… (5~15초)</div>`;
+  fetch("/api/final_verdict", {method:"POST", headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({company: DD_COMPANY, news: DD_NEWS, report})})
+    .then(r => r.json()).then(d => {
+      if(d.error || !d.thesis){ fin.innerHTML = ""; return; }
+      renderFinalVerdict(d, fin);
+    }).catch(() => fin.innerHTML = "");
+}
+function renderFinalVerdict(d, box){
+  const li = arr => (arr||[]).map(x => `<div class="dd-li">${esc(x)}</div>`).join("");
+  let h = `<div class="dd-final-card">
+    <div class="dd-final-h">🎯 기업 종합 총평 <span class="dd-final-sub">기업 개요 · 최신 이슈 · 증권사 리포트 종합</span></div>
+    ${d.headline?`<div class="dd-final-hl">${esc(d.headline)}</div>`:""}
+    ${d.thesis?`<div class="dd-txt" style="margin-bottom:16px">${esc(d.thesis)}</div>`:""}
+    <div class="dd-cols">
+      <div class="dd-col-bull"><div class="dd-col-h">👍 종합 강점</div>${li(d.strengths)}</div>
+      <div class="dd-col-bear"><div class="dd-col-h">👎 종합 우려</div>${li(d.concerns)}</div></div>
+    ${(d.watch&&d.watch.length)?`<div class="dd-block" style="margin-top:14px"><span class="dd-lbl cat">🔭 앞으로 볼 관전 포인트</span>${li(d.watch)}</div>`:""}
+    <div class="muted" style="font-size:11px;margin-top:12px;line-height:1.6">⚠️ 기업 개요(AI 지식)·뉴스·업로드 리포트를 AI가 종합한 참고용 의견이며 투자 권유가 아닙니다.</div>
+  </div>`;
+  box.innerHTML = h;
 }
 function renderDeepBasic(d, box){
   const cur = d.currency === "KRW" ? "₩" : (d.currency === "USD" ? "$" : "");
@@ -1109,6 +1144,7 @@ function renderDeepBasic(d, box){
   };
 }
 function renderCompany(d, box){
+  DD_COMPANY = d;   // 종합 총평용 저장
   const seg = (d.segments||[]).map(s => `<div class="dd-seg"><b>${esc(s.name)}</b><span class="muted">${esc(s.desc||"")}</span></div>`).join("");
   const li = (arr,cls) => (arr||[]).map(x => `<div class="dd-li ${cls}">${esc(x)}</div>`).join("");
   box.innerHTML = `<div class="dd-card">
@@ -1124,6 +1160,7 @@ function renderCompany(d, box){
   <div class="muted" style="font-size:11px;line-height:1.6">⚠️ AI가 학습 지식으로 생성한 참고용 분석이며 사실과 다를 수 있습니다. 투자 권유가 아닙니다.</div>`;
 }
 function renderNews(d, box){
+  DD_NEWS = d;   // 종합 총평용 저장
   const issues = d.issues || [];
   if(!issues.length && !d.analysis){ box.innerHTML = ""; return; }
   const TONE = {"긍정":"pos","부정":"neg","중립":"neu"};
