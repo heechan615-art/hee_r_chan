@@ -93,6 +93,29 @@ def company_analysis(ticker, name=None):
     return _gemini_json(prompt, max_tokens=4096, temp=0.45, tries=3)
 
 
+# ----------------------------- 1-b) 최근 이슈 & 분석 -----------------------------
+def analyze_news(name, headlines):
+    """최근 뉴스 헤드라인 → 핵심 이슈 정리 + 분석. headlines: [str]."""
+    headlines = [h for h in (headlines or []) if h][:14]
+    if not headlines:
+        return {"issues": [], "analysis": None, "headlines": []}
+    hs = "\n".join(f"- {h}" for h in headlines)
+    prompt = (
+        f"너는 증권사 애널리스트야. '{name}' 관련 최근 뉴스 헤드라인이야:\n{hs}\n\n"
+        "이 헤드라인들을 근거로 최근 이 기업을 둘러싼 핵심 이슈를 정리하고 분석해줘. "
+        "회사와 직접 관련 없는 일반 시장 뉴스는 제외해. 아래 JSON으로만 답해:\n"
+        "{\n"
+        '  "issues": [ {"title":"이슈 제목(구체적으로)", "detail":"무슨 내용이고 왜 중요한지 2~3문장", "tone":"긍정|부정|중립"} ],\n'
+        '  "analysis": "이 이슈들을 종합하면 현재 이 기업의 상황과 시장 투자심리를 어떻게 볼 수 있는지 3~5문장(추정 전제)"\n'
+        "}\n"
+        "규칙: 헤드라인에 없는 사실을 지어내지 마. 이슈는 2~5개. 존댓말. 매수·매도 권유 금지. 반드시 유효한 JSON.")
+    rep = _gemini_json(prompt, max_tokens=3072, temp=0.4, tries=3)
+    if isinstance(rep, dict):
+        rep["headlines"] = headlines
+        return rep
+    return {"issues": [], "analysis": None, "headlines": headlines}
+
+
 # ----------------------------- 2) 리포트 교차분석 -----------------------------
 def extract_pdf_text(raw, max_chars=18000):
     """PDF 바이트 → 텍스트. 실패/빈약하면 빈 문자열."""

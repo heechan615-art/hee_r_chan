@@ -216,6 +216,31 @@ def api_company_analysis():
         return jsonify({"error": f"분석 실패: {repr(e)[:150]}"}), 500
 
 
+@app.route("/api/company_news")
+def api_company_news():
+    """기업 최근 뉴스 이슈 정리 + 분석 — 회원 전용."""
+    if not _is_member():
+        return jsonify({"error": "회원 전용 기능입니다.", "locked": True}), 402
+    ticker = (request.args.get("ticker") or "").strip()
+    if not ticker:
+        return jsonify({"error": "기업 이름 또는 티커를 입력하세요."}), 400
+    try:
+        import kr_data
+        import briefing
+        import deepdive
+        yf_ticker, kr_code6, kr_name = kr_data.resolve_query(ticker)
+        name = kr_name or ticker
+        if kr_code6:
+            heads = briefing._stock_news(kr_code6, 10)
+        else:
+            sym = (yf_ticker or ticker).split(".")[0]
+            heads = briefing._us_stock_news(sym, 10)
+        out = deepdive.analyze_news(name, heads)
+        return jsonify(clean(out))
+    except Exception as e:
+        return jsonify({"error": f"분석 실패: {repr(e)[:150]}"}), 500
+
+
 @app.route("/api/report_analysis", methods=["POST"])
 def api_report_analysis():
     """증권사 리포트 PDF 교차분석(최대 5개) — 회원 전용."""
