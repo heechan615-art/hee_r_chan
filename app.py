@@ -36,6 +36,19 @@ app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-change-in-production")
 app.permanent_session_lifetime = timedelta(days=30)
 app.config["MAX_CONTENT_LENGTH"] = 30 * 1024 * 1024   # 리포트 PDF 업로드 상한 30MB
 
+
+def _warm_imports():
+    """부팅 직후 백그라운드에서 무거운 라이브러리를 미리 로드.
+    → 깨어나는 건 가볍게 유지하면서, 첫 종목 검색이 5초씩 지연되지 않게(첫 요청에 로딩 몰림 방지)."""
+    try:
+        import valuate  # noqa: F401  (pandas/numpy/yfinance/bs4/curl_cffi)
+    except Exception:
+        pass
+
+
+import threading as _threading
+_threading.Thread(target=_warm_imports, daemon=True).start()
+
 # 비회원 맛보기 — 가치평가 하루 5회 무료(한국시간 00시 리셋), 브리핑은 AI 파트만 잠금.
 GUEST_LIMIT = int(os.environ.get("GUEST_LIMIT", "5"))
 KST = timezone(timedelta(hours=9))   # 배포 서버(Render)는 UTC라 날짜 기준을 한국시간으로 고정
