@@ -31,23 +31,12 @@ import auth
 # valuate(=pandas/numpy/yfinance/bs4/curl_cffi, ~80MB)는 부팅을 가볍게 하려고 지연 로딩.
 # → 무료 512MB 인스턴스가 빠르고 가볍게 깨어나 정적 페이지를 즉시 응답(콜드 웨이크 OOM 방지).
 
+from valuate import analyze_data   # 부팅 시 로드(측정상 분석 peak 122MB로 512MB에 여유). 안정성 우선.
+
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-change-in-production")
 app.permanent_session_lifetime = timedelta(days=30)
 app.config["MAX_CONTENT_LENGTH"] = 30 * 1024 * 1024   # 리포트 PDF 업로드 상한 30MB
-
-
-def _warm_imports():
-    """부팅 직후 백그라운드에서 무거운 라이브러리를 미리 로드.
-    → 깨어나는 건 가볍게 유지하면서, 첫 종목 검색이 5초씩 지연되지 않게(첫 요청에 로딩 몰림 방지)."""
-    try:
-        import valuate  # noqa: F401  (pandas/numpy/yfinance/bs4/curl_cffi)
-    except Exception:
-        pass
-
-
-import threading as _threading
-_threading.Thread(target=_warm_imports, daemon=True).start()
 
 # 비회원 맛보기 — 가치평가 하루 5회 무료(한국시간 00시 리셋), 브리핑은 AI 파트만 잠금.
 GUEST_LIMIT = int(os.environ.get("GUEST_LIMIT", "5"))
@@ -216,7 +205,6 @@ def api_analyze():
     out = _cache_get(ck, 300)        # 5분 캐시 — 여러 명이 같은 종목 조회 시 계산 1회
     if out is None:
         try:
-            from valuate import analyze_data   # 지연 로딩(부팅 경량화)
             out = clean(analyze_data(ticker))
         except ValueError as e:      # 종목 못 찾음 등 사용자 안내 메시지는 그대로 노출
             return jsonify({"error": str(e)}), 400
