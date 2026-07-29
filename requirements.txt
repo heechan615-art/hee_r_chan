@@ -7,3 +7,4 @@ numpy==2.0.2
 beautifulsoup4==4.15.0
 lxml==6.1.1
 curl_cffi==0.13.0
+pypdf==6.14.2

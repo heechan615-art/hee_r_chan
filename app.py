@@ -33,6 +33,7 @@ import auth
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-change-in-production")
 app.permanent_session_lifetime = timedelta(days=30)
+app.config["MAX_CONTENT_LENGTH"] = 30 * 1024 * 1024   # 리포트 PDF 업로드 상한 30MB
 
 # 비회원 맛보기 — 가치평가 하루 5회 무료(한국시간 00시 리셋), 브리핑은 AI 파트만 잠금.
 GUEST_LIMIT = int(os.environ.get("GUEST_LIMIT", "5"))
@@ -192,6 +193,52 @@ def api_analyze():
         out["guest_left"] = _guest_left()
         out["guest_limit"] = GUEST_LIMIT
     return jsonify(out)
+
+
+@app.route("/api/company_analysis")
+def api_company_analysis():
+    """기업 심층 분석(비즈니스모델·기술·시장기대) — 회원 전용."""
+    if not _is_member():
+        return jsonify({"error": "회원 전용 기능입니다. 로그인해 주세요.", "locked": True}), 402
+    ticker = (request.args.get("ticker") or "").strip()
+    if not ticker:
+        return jsonify({"error": "기업 이름 또는 티커를 입력하세요."}), 400
+    try:
+        import kr_data
+        import deepdive
+        yf_ticker, kr_code6, kr_name = kr_data.resolve_query(ticker)
+        name = kr_name or ticker
+        out = deepdive.company_analysis(kr_code6 or yf_ticker or ticker, name)
+        if not out:
+            return jsonify({"error": "AI 분석에 실패했습니다. 잠시 후 다시 시도해 주세요."}), 500
+        return jsonify(clean(out))
+    except Exception as e:
+        return jsonify({"error": f"분석 실패: {repr(e)[:150]}"}), 500
+
+
+@app.route("/api/report_analysis", methods=["POST"])
+def api_report_analysis():
+    """증권사 리포트 PDF 교차분석(최대 5개) — 회원 전용."""
+    if not _is_member():
+        return jsonify({"error": "회원 전용 기능입니다. 로그인해 주세요.", "locked": True}), 402
+    import deepdive
+    files = request.files.getlist("files")
+    files = [f for f in files if f and f.filename]
+    if not files:
+        return jsonify({"error": "PDF 파일을 첨부하세요."}), 400
+    if len(files) > deepdive.MAX_REPORTS:
+        return jsonify({"error": f"리포트는 최대 {deepdive.MAX_REPORTS}개까지 올릴 수 있습니다."}), 400
+    payload = []
+    for f in files:
+        if not f.filename.lower().endswith(".pdf"):
+            return jsonify({"error": f"PDF 파일만 지원합니다: {f.filename}"}), 400
+        payload.append((f.filename, f.read()))
+    try:
+        out = deepdive.report_analysis(payload)
+        code = 500 if out.get("error") else 200
+        return jsonify(clean(out)), code
+    except Exception as e:
+        return jsonify({"error": f"분석 실패: {repr(e)[:150]}"}), 500
 
 
 @app.route("/api/snp")

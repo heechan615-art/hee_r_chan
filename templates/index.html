@@ -558,6 +558,58 @@
   #tab-snp .loading, #tab-snp .err{text-align:center;color:var(--muted);padding:60px 20px;font-size:15px}
   #tab-snp .err{color:var(--sell)}
   #tab-snp .foot{color:var(--muted);font-size:11.5px;margin-top:18px;line-height:1.7}
+  /* ===== 기업 심층 분석 ===== */
+  .dd-sec{margin-bottom:26px}
+  .dd-h{font-size:18px;font-weight:800;margin:0 0 4px;padding-left:12px;border-left:4px solid var(--accent);line-height:1.3}
+  .dd-hsub{font-size:12.5px;color:var(--muted);margin:0 0 14px;padding-left:14px}
+  .dd-form{display:flex;gap:8px;margin-bottom:14px}
+  .dd-form input[type=text]{flex:1;background:var(--card);border:1px solid var(--line);color:var(--text);
+    border-radius:10px;padding:11px 14px;font-size:15px}
+  .dd-form input[type=text]:focus{outline:0;border-color:var(--accent)}
+  .dd-btn{background:var(--accent);color:#fff;border:0;border-radius:10px;padding:11px 20px;font-size:15px;font-weight:700;cursor:pointer;white-space:nowrap}
+  .dd-btn:disabled{opacity:.5;cursor:default}
+  .dd-card{background:var(--card);border:1px solid var(--line);border-radius:15px;padding:20px 22px;margin-bottom:14px}
+  .dd-oneliner{font-size:19px;font-weight:800;line-height:1.4;margin-bottom:16px}
+  .dd-block{margin-bottom:15px}
+  .dd-block:last-child{margin-bottom:0}
+  .dd-lbl{display:inline-block;font-size:12px;font-weight:700;color:var(--accent);background:rgba(79,140,255,.12);
+    border-radius:6px;padding:2px 9px;margin-bottom:7px}
+  .dd-lbl.risk{color:#ff8a9c;background:rgba(240,97,109,.12)} .dd-lbl.cat{color:var(--good);background:rgba(55,201,138,.12)}
+  .dd-txt{font-size:14.5px;line-height:1.75}
+  .dd-seg{display:flex;gap:9px;padding:7px 0;border-bottom:1px solid var(--line);font-size:14px}
+  .dd-seg:last-child{border-bottom:0}
+  .dd-seg b{flex:none;min-width:120px}
+  .dd-li{font-size:14px;line-height:1.7;padding-left:18px;position:relative;margin-bottom:5px}
+  .dd-li::before{content:"•";position:absolute;left:4px;color:var(--muted)}
+  .dd-li.risk::before{content:"⚠";left:0;color:#ff8a9c} .dd-li.cat::before{content:"▲";left:2px;color:var(--good);font-size:11px}
+  .dd-drop{border:2px dashed var(--line);border-radius:14px;padding:26px 20px;text-align:center;cursor:pointer;transition:.15s;background:#131a28}
+  .dd-drop:hover,.dd-drop.over{border-color:var(--accent)}
+  .dd-drop .di{font-size:15px;font-weight:600;margin-bottom:4px}
+  .dd-drop .ds{font-size:12.5px;color:var(--muted)}
+  .dd-files{display:flex;flex-direction:column;gap:7px;margin:12px 0}
+  .dd-file{display:flex;align-items:center;gap:9px;background:#131a28;border:1px solid var(--line);border-radius:9px;padding:9px 12px;font-size:13.5px}
+  .dd-file .fn{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .dd-file .fx{color:var(--muted);cursor:pointer;font-size:16px;line-height:1;border:0;background:0}
+  .dd-file .fx:hover{color:#ff8a9c}
+  .dd-rep{background:#131a28;border:1px solid var(--line);border-radius:12px;padding:15px 17px;margin-bottom:11px}
+  .dd-rep-h{display:flex;align-items:baseline;gap:9px;flex-wrap:wrap;margin-bottom:9px}
+  .dd-rep-house{font-size:15.5px;font-weight:800}
+  .dd-rep-rating{font-size:12.5px;font-weight:700;border-radius:6px;padding:2px 9px;background:rgba(79,140,255,.14);color:var(--accent)}
+  .dd-rep-target{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+  .dd-rep-sum{font-size:14px;line-height:1.7;margin-bottom:8px}
+  .dd-cols{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:14px 0}
+  @media(max-width:640px){.dd-cols{grid-template-columns:1fr}}
+  .dd-col-bull{background:rgba(55,201,138,.06);border:1px solid rgba(55,201,138,.25);border-radius:13px;padding:16px 18px}
+  .dd-col-bear{background:rgba(240,97,109,.06);border:1px solid rgba(240,97,109,.25);border-radius:13px;padding:16px 18px}
+  .dd-col-h{font-size:15px;font-weight:800;margin-bottom:11px}
+  .dd-col-bull .dd-col-h{color:var(--good)} .dd-col-bear .dd-col-h{color:#ff8a9c}
+  .dd-diff{background:#131a28;border:1px solid var(--line);border-radius:11px;padding:12px 15px;margin-bottom:9px}
+  .dd-diff-t{font-size:14px;font-weight:700;margin-bottom:4px}
+  .dd-diff-v{font-size:13.5px;line-height:1.65;color:var(--muted)}
+  .dd-verdict{background:linear-gradient(135deg,#1c2740,#161d2c);border:1px solid var(--line);border-left:4px solid var(--warn);
+    border-radius:14px;padding:18px 20px;margin-top:8px}
+  .dd-verdict .dd-col-h{color:var(--text)}
+  .dd-verdict p{margin:0;font-size:14.5px;line-height:1.75}
 </style>
 </head>
 <body>
@@ -568,6 +620,7 @@
   </div>
   <div class="tabs">
     <button class="tab-btn active" data-tab="value">📊 기업 밸류에이션</button>
+    <button class="tab-btn" data-tab="deep">🔬 기업 심층 분석</button>
     <button class="tab-btn" data-tab="snp">📈 S&amp;P500 밸류에이션</button>
     <button class="tab-btn" data-tab="briefing" data-mkt="KR">🇰🇷 한국 브리핑</button>
     <button class="tab-btn" data-tab="briefing" data-mkt="US">🇺🇸 미국 브리핑</button>
@@ -605,6 +658,12 @@
     <div class="sub" id="brief-sub">오늘의 지수·급등락·매크로를 AI가 종합한 일일 증시 브리핑 · 참고용</div>
     <div id="briefing-body"><div class="muted" style="padding:20px 0">아래 버튼을 눌러 브리핑을 생성하세요.</div>
       <button type="button" id="brief-gen" class="tab-gen">📰 오늘의 브리핑 생성</button></div>
+  </div>
+
+  <!-- 기업 심층 분석 탭 -->
+  <div id="tab-deep" style="display:none">
+    <div class="sub">기업이 무엇을 하는 회사인지(비즈니스·기술·시장 기대)와 증권사 리포트(PDF)를 AI가 분석 · 회원 전용</div>
+    <div id="deep-body"></div>
   </div>
 
   <!-- S&P500 밸류에이션 대시보드 탭 -->
@@ -860,10 +919,12 @@ document.querySelectorAll(".tab-btn").forEach(b => b.onclick = () => {
   $("#tab-value").style.display = t === "value" ? "" : "none";
   $("#tab-briefing").style.display = t === "briefing" ? "" : "none";
   $("#tab-snp").style.display = t === "snp" ? "" : "none";
+  $("#tab-deep").style.display = t === "deep" ? "" : "none";
   if(t === "snp" && !$("#tab-snp").dataset.loaded){   // 처음 열 때 한 번만 로드
     $("#tab-snp").dataset.loaded = "1";
     loadSnp();
   }
+  if(t === "deep") renderDeepTab();   // 회원 상태 반영 위해 열 때마다
   if(t === "briefing"){
     const mkt = b.dataset.mkt || "KR";
     if(mkt !== BRIEF_MKT || !$("#briefing-body").dataset.loaded){
@@ -880,6 +941,138 @@ document.querySelectorAll(".tab-btn").forEach(b => b.onclick = () => {
     }
   }
 });
+
+// ---------- 기업 심층 분석 ----------
+let DD_FILES = [];   // 업로드 대기 리포트 파일
+function renderDeepTab(){
+  const box = $("#deep-body");
+  if(!isMember()){
+    box.innerHTML = lockBox(
+      "기업 심층 분석은 회원 전용입니다",
+      "회원가입하시면 기업의 비즈니스·핵심기술·시장 기대 분석과, 증권사 리포트(PDF) 자동 요약·교차분석을 이용할 수 있어요",
+      `🔬 이 회사는 무엇을 하는가 · 비즈니스 모델 / 핵심 기술 / 시장이 기대하는 성장 스토리…<br>
+       📑 증권사 리포트 PDF를 올리면 공통 의견 · 엇갈리는 지점 · 긍정/부정 근거를 자동 정리`);
+    return;
+  }
+  DD_FILES = [];
+  box.innerHTML = `
+    <div class="dd-sec">
+      <div class="dd-h">🔬 기업 개요 분석</div>
+      <div class="dd-hsub">이 회사가 무엇을 하는지 — 비즈니스 모델·핵심 기술·시장 기대를 AI가 정리합니다.</div>
+      <div class="dd-form">
+        <input type="text" id="dd-q" placeholder="회사 이름 또는 티커 (예: 삼성전자, NVDA)" autocomplete="off">
+        <button class="dd-btn" id="dd-go">분석</button>
+      </div>
+      <div id="dd-company"></div>
+    </div>
+    <div class="dd-sec">
+      <div class="dd-h">📑 증권사 리포트 분석 <span style="font-size:12px;color:var(--muted);font-weight:600">· 최대 5개</span></div>
+      <div class="dd-hsub">증권사 리포트 PDF를 올리면 각 요약과 함께 공통 의견·엇갈리는 지점·긍정/부정 근거를 정리합니다. 여러 개 올리면 교차분석해요.</div>
+      <div class="dd-drop" id="dd-drop">
+        <div class="di">📎 PDF 파일을 여기로 끌어오거나 클릭해서 선택</div>
+        <div class="ds">증권사 리포트 PDF · 최대 5개</div>
+      </div>
+      <input type="file" id="dd-input" accept="application/pdf" multiple style="display:none">
+      <div class="dd-files" id="dd-filelist"></div>
+      <button class="dd-btn" id="dd-analyze" style="display:none">📑 리포트 분석하기</button>
+      <div id="dd-report"></div>
+    </div>`;
+  // 기업 분석
+  const runCompany = () => {
+    const q = $("#dd-q").value.trim();
+    if(!q) return;
+    const c = $("#dd-company");
+    c.innerHTML = `<div id="loading" style="display:block"><div class="spin"></div>기업 분석 중… (5~15초)</div>`;
+    fetch("/api/company_analysis?ticker="+encodeURIComponent(q))
+      .then(r => r.json()).then(d => {
+        if(d.locked){ openAuth("login", d.error); return; }
+        if(d.error){ c.innerHTML = `<div class="warnbox">${esc(d.error)}</div>`; return; }
+        renderCompany(d, c);
+      }).catch(e => c.innerHTML = `<div class="warnbox">요청 실패: ${esc(e)}</div>`);
+  };
+  $("#dd-go").onclick = runCompany;
+  $("#dd-q").onkeydown = e => { if(e.key === "Enter") runCompany(); };
+  // 파일 업로드
+  const inp = $("#dd-input"), drop = $("#dd-drop");
+  drop.onclick = () => inp.click();
+  inp.onchange = () => { addFiles(inp.files); inp.value = ""; };
+  ["dragover","dragenter"].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add("over"); }));
+  ["dragleave","drop"].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove("over"); }));
+  drop.addEventListener("drop", e => { if(e.dataTransfer) addFiles(e.dataTransfer.files); });
+  $("#dd-analyze").onclick = runReports;
+}
+function addFiles(fl){
+  for(const f of fl){
+    if(!f.name.toLowerCase().endsWith(".pdf")) continue;
+    if(DD_FILES.length >= 5){ alert("리포트는 최대 5개까지 올릴 수 있어요."); break; }
+    if(!DD_FILES.some(x => x.name === f.name && x.size === f.size)) DD_FILES.push(f);
+  }
+  renderFileList();
+}
+function renderFileList(){
+  const box = $("#dd-filelist");
+  box.innerHTML = DD_FILES.map((f,i) => `<div class="dd-file">
+    <span>📄</span><span class="fn">${esc(f.name)}</span>
+    <span class="muted">${(f.size/1024/1024).toFixed(1)}MB</span>
+    <button class="fx" data-fi="${i}">✕</button></div>`).join("");
+  box.querySelectorAll(".fx").forEach(b => b.onclick = () => { DD_FILES.splice(+b.dataset.fi,1); renderFileList(); });
+  $("#dd-analyze").style.display = DD_FILES.length ? "" : "none";
+  $("#dd-analyze").textContent = `📑 리포트 ${DD_FILES.length}개 분석하기`;
+}
+function runReports(){
+  if(!DD_FILES.length) return;
+  const btn = $("#dd-analyze"), out = $("#dd-report");
+  btn.disabled = true;
+  out.innerHTML = `<div id="loading" style="display:block"><div class="spin"></div>리포트 ${DD_FILES.length}개 분석 중… PDF를 읽고 있어요 (10~40초)</div>`;
+  const fd = new FormData();
+  DD_FILES.forEach(f => fd.append("files", f));
+  fetch("/api/report_analysis", {method:"POST", body:fd})
+    .then(r => r.json()).then(d => {
+      if(d.locked){ openAuth("login", d.error); return; }
+      if(d.error){ out.innerHTML = `<div class="warnbox">${esc(d.error)}</div>`; return; }
+      renderReports(d, out);
+    }).catch(e => out.innerHTML = `<div class="warnbox">요청 실패: ${esc(e)}</div>`)
+    .finally(() => { btn.disabled = false; });
+}
+function renderCompany(d, box){
+  const seg = (d.segments||[]).map(s => `<div class="dd-seg"><b>${esc(s.name)}</b><span class="muted">${esc(s.desc||"")}</span></div>`).join("");
+  const li = (arr,cls) => (arr||[]).map(x => `<div class="dd-li ${cls}">${esc(x)}</div>`).join("");
+  box.innerHTML = `<div class="dd-card">
+    <div class="dd-oneliner">${esc(d.oneliner||d.name||"")}</div>
+    ${d.business?`<div class="dd-block"><span class="dd-lbl">비즈니스 모델</span><div class="dd-txt">${esc(d.business)}</div></div>`:""}
+    ${seg?`<div class="dd-block"><span class="dd-lbl">사업 부문</span>${seg}</div>`:""}
+    ${d.tech?`<div class="dd-block"><span class="dd-lbl">핵심 기술·경쟁력</span><div class="dd-txt">${esc(d.tech)}</div></div>`:""}
+    ${d.market_expectation?`<div class="dd-block"><span class="dd-lbl">시장이 기대하는 것</span><div class="dd-txt">${esc(d.market_expectation)}</div></div>`:""}
+    ${(d.catalysts&&d.catalysts.length)?`<div class="dd-block"><span class="dd-lbl cat">상승 촉매·관전 포인트</span>${li(d.catalysts,"cat")}</div>`:""}
+    ${(d.risks&&d.risks.length)?`<div class="dd-block"><span class="dd-lbl risk">우려·리스크</span>${li(d.risks,"risk")}</div>`:""}
+    ${d.summary?`<div class="dd-block"><span class="dd-lbl">종합</span><div class="dd-txt">${esc(d.summary)}</div></div>`:""}
+  </div>
+  <div class="muted" style="font-size:11px;line-height:1.6">⚠️ AI가 학습 지식으로 생성한 참고용 분석이며 사실과 다를 수 있습니다. 투자 권유가 아닙니다.</div>`;
+}
+function renderReports(d, box){
+  const reps = (d.reports||[]).map(r => `<div class="dd-rep">
+    <div class="dd-rep-h"><span class="dd-rep-house">${esc(r.house||"리포트")}</span>
+      ${r.rating?`<span class="dd-rep-rating">${esc(r.rating)}</span>`:""}
+      ${r.target?`<span class="dd-rep-target">목표 ${esc(r.target)}</span>`:""}</div>
+    ${r.summary?`<div class="dd-rep-sum">${esc(r.summary)}</div>`:""}
+    ${(r.points||[]).map(p => `<div class="dd-li">${esc(p)}</div>`).join("")}
+  </div>`).join("");
+  const li = arr => (arr||[]).map(x => `<div class="dd-li">${esc(x)}</div>`).join("");
+  let h = `<div class="dd-block" style="margin-top:6px"><span class="dd-lbl">리포트별 요약 (${d.count||(d.reports||[]).length}개)</span>${reps}</div>`;
+  if((d.consensus&&d.consensus.length) || (d.disagreement&&d.disagreement.length)){
+    h += `<div class="dd-block"><span class="dd-lbl">🤝 공통된 의견</span>${li(d.consensus)}</div>`;
+    if(d.disagreement&&d.disagreement.length){
+      h += `<div class="dd-block"><span class="dd-lbl" style="color:var(--warn);background:rgba(245,181,68,.12)">⚖️ 엇갈리는 지점</span>` +
+        d.disagreement.map(x => `<div class="dd-diff"><div class="dd-diff-t">${esc(x.topic||"")}</div><div class="dd-diff-v">${esc(x.views||"")}</div></div>`).join("") + `</div>`;
+    }
+  }
+  h += `<div class="dd-cols">
+    <div class="dd-col-bull"><div class="dd-col-h">👍 긍정적으로 보는 근거</div>${li(d.bull)}</div>
+    <div class="dd-col-bear"><div class="dd-col-h">👎 부정적·우려 근거</div>${li(d.bear)}</div></div>`;
+  if(d.verdict) h += `<div class="dd-verdict"><div class="dd-col-h">💬 종합 — 시장은 이 기업을 어떻게 보는가</div><p>${esc(d.verdict)}</p></div>`;
+  h += `<div class="muted" style="font-size:11px;margin-top:12px;line-height:1.6">⚠️ 업로드한 리포트 원문을 AI가 요약·정리한 참고용이며, 원문 해석과 다를 수 있습니다. 투자 권유가 아닙니다.</div>`;
+  box.innerHTML = h;
+}
 
 // ---------- 일일 브리핑 ----------
 const BRIEF_KEEP = 92;   // 브라우저 보관 일수
