@@ -1098,7 +1098,7 @@ function renderDeepBasic(d, box){
       ${cell("52주 최고", pv(d.hi52))}
       ${cell("52주 최저", pv(d.lo52))}
     </div>
-    <div class="ddb-foot"><a href="#" class="ddb-link" data-t="${esc(d.name||d.ticker)}">📊 기업 밸류에이션 탭에서 자세히 보기 →</a></div>
+    <div class="ddb-foot"><a href="#" class="ddb-link" data-t="${esc(d.ticker||d.name)}">📊 기업 밸류에이션 탭에서 자세히 보기 →</a></div>
   </div>`;
   const link = box.querySelector(".ddb-link");
   if(link) link.onclick = e => {
