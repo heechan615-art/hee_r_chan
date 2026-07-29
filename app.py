@@ -27,8 +27,9 @@ if os.path.exists(_ENV_FILE):
     except Exception:
         pass
 
-from valuate import analyze_data
 import auth
+# valuate(=pandas/numpy/yfinance/bs4/curl_cffi, ~80MB)는 부팅을 가볍게 하려고 지연 로딩.
+# → 무료 512MB 인스턴스가 빠르고 가볍게 깨어나 정적 페이지를 즉시 응답(콜드 웨이크 OOM 방지).
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-change-in-production")
@@ -182,6 +183,7 @@ def api_analyze():
                                  "내일 0시에 다시 채워집니다. 회원가입하시면 제한 없이 이용할 수 있어요.",
                         "locked": True}), 402
     try:
+        from valuate import analyze_data   # 지연 로딩(부팅 경량화)
         out = clean(analyze_data(ticker))
     except ValueError as e:          # 종목 못 찾음 등 사용자 안내 메시지는 그대로 노출
         return jsonify({"error": str(e)}), 400
