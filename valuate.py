@@ -924,8 +924,24 @@ def analyze_data(ticker):
                 if not cur:
                     cur = "USD"
         # 주가가 여전히 없으면(야후 .info·.history·차트 모두 실패) Finnhub 시세로 최종 폴백
+        _pxdbg = {}
         if price is None:
-            price = _finnhub_quote(ticker)
+            try:
+                _pxdbg["hist_empty"] = bool(hist.empty)
+                cs = _yahoo_chart_series(yf_ticker)
+                _pxdbg["chart_len"] = len(cs)
+                if len(cs):
+                    price = float(cs.iloc[-1]); _pxdbg["from"] = "chart"
+            except Exception as e:
+                _pxdbg["chart_err"] = repr(e)[:80]
+        if price is None:
+            try:
+                fq = _finnhub_quote(ticker)
+                _pxdbg["fq"] = fq
+                if fq:
+                    price = fq; _pxdbg["from"] = "finnhub"
+            except Exception as e:
+                _pxdbg["fq_err"] = repr(e)[:80]
         # 주가가 생겼는데 예상EPS가 없고 Finnhub 선행 PER이 있으면 역산
         if fwd_eps is None and price and us_fh.get("per_fwd"):
             fwd_eps = price / us_fh["per_fwd"]
@@ -1052,6 +1068,7 @@ def analyze_data(ticker):
     fin_comment = fin_ai_comment(name, fin_data)   # 재무 안정성 AI 판단
 
     return {
+        "_pxdbg": locals().get("_pxdbg"),   # 진단용(임시) — 미국 주가 폴백 추적
         "ticker": ticker, "name": name, "currency": cur, "source": src,
         "price": price, "eps_ttm": ttm_eps, "per_ttm": cur_per,
         "eps_fwd": fwd_eps, "per_fwd": fwd_per,
