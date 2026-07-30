@@ -820,22 +820,39 @@ function amMsg(text, kind){
   b.textContent = text;
   b.style.display = "block";
 }
+const AM_MODES = ["login","signup","findid","reset"];
 function openAuth(mode, msg){
-  AM_MODE = mode === "signup" ? "signup" : "login";
-  const su = AM_MODE === "signup";
-  $("#am-title").textContent = su ? "회원가입" : "로그인";
-  $("#am-sub").innerHTML = su
-    ? "가입 신청 후 <b>관리자 승인</b>을 받으면 모든 기능을 제한 없이 이용할 수 있습니다."
-    : "회원이 되시면 가치평가와 AI 브리핑을 제한 없이 이용할 수 있습니다.";
-  $("#am-name").style.display = su ? "" : "none";
-  $("#am-pw").placeholder = su ? "비밀번호 (6자 이상)" : "비밀번호";
-  $("#am-submit").textContent = su ? "가입 신청" : "로그인";
-  $("#am-alt").innerHTML = su
-    ? `이미 회원이신가요? <a data-open="login">로그인</a>`
-    : `아직 회원이 아니신가요? <a data-open="signup">회원가입</a>`;
+  AM_MODE = AM_MODES.includes(mode) ? mode : "login";
+  const M = AM_MODE;
+  const cfg = {
+    login:  {title:"로그인", sub:"회원이 되시면 가치평가와 AI 브리핑을 제한 없이 이용할 수 있습니다.",
+             user:1, name:0, pw:1, pwph:"비밀번호", submit:"로그인"},
+    signup: {title:"회원가입", sub:"가입 신청 후 <b>관리자 승인</b>을 받으면 모든 기능을 제한 없이 이용할 수 있습니다.",
+             user:1, name:1, pw:1, pwph:"비밀번호 (6자 이상)", submit:"가입 신청"},
+    findid: {title:"아이디 찾기", sub:"가입 시 입력한 <b>본명</b>을 넣으면 일치하는 아이디를 알려드립니다.",
+             user:0, name:1, pw:0, submit:"아이디 찾기"},
+    reset:  {title:"비밀번호 재설정", sub:"<b>아이디와 본명</b>이 확인되면 새 비밀번호로 변경합니다.",
+             user:1, name:1, pw:1, pwph:"새 비밀번호 (6자 이상)", submit:"비밀번호 변경"},
+  }[M];
+  $("#am-title").textContent = cfg.title;
+  $("#am-sub").innerHTML = cfg.sub;
+  $("#am-user").style.display = cfg.user ? "" : "none";
+  $("#am-user").placeholder = M === "signup" ? "아이디 (영문·숫자 3~20자)" : "아이디";
+  $("#am-name").style.display = cfg.name ? "" : "none";
+  $("#am-pw").style.display = cfg.pw ? "" : "none";
+  if(cfg.pwph) $("#am-pw").placeholder = cfg.pwph;
+  $("#am-submit").textContent = cfg.submit;
+  const alt = {
+    login:  `아직 회원이 아니신가요? <a data-open="signup">회원가입</a>
+             <div style="margin-top:7px"><a data-open="findid">아이디 찾기</a> · <a data-open="reset">비밀번호 재설정</a></div>`,
+    signup: `이미 회원이신가요? <a data-open="login">로그인</a>`,
+    findid: `<a data-open="login">← 로그인으로</a> · <a data-open="reset">비밀번호 재설정</a>`,
+    reset:  `<a data-open="login">← 로그인으로</a> · <a data-open="findid">아이디 찾기</a>`,
+  }[M];
+  $("#am-alt").innerHTML = alt;
   amMsg(msg, "err");
   openModal("auth-modal");
-  setTimeout(() => $("#am-user").focus(), 50);
+  setTimeout(() => (cfg.user ? $("#am-user") : $("#am-name")).focus(), 50);
 }
 $("#am-form").onsubmit = async e => {
   e.preventDefault();
@@ -847,6 +864,14 @@ $("#am-form").onsubmit = async e => {
       body: JSON.stringify(body)}).then(r => r.json());
     if(AM_MODE === "signup"){
       const r = await post("/api/auth/register", {username:u, password:p, realname:n});
+      if(r.ok){ amMsg(r.message, "ok"); setTimeout(() => openAuth("login"), 2200); }
+      else amMsg(r.message, "err");
+    } else if(AM_MODE === "findid"){
+      const r = await post("/api/auth/find_id", {realname:n});
+      if(r.ids && r.ids.length) amMsg("회원님의 아이디: " + r.ids.join(", ") + " (일부 가림)", "ok");
+      else amMsg("해당 본명으로 가입된 아이디가 없습니다.", "err");
+    } else if(AM_MODE === "reset"){
+      const r = await post("/api/auth/reset_password", {username:u, realname:n, password:p});
       if(r.ok){ amMsg(r.message, "ok"); setTimeout(() => openAuth("login"), 2200); }
       else amMsg(r.message, "err");
     } else {

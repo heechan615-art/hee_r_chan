@@ -93,6 +93,45 @@ def login(username, password):
                               "realname": u["realname"], "is_admin": u["is_admin"]}
 
 
+def _mask_username(u):
+    """아이디 일부 가림 (예: heechan615 → he******15)."""
+    u = u or ""
+    if len(u) <= 4:
+        return (u[0] + "*" * (len(u) - 1)) if u else ""
+    return u[:2] + "*" * (len(u) - 4) + u[-2:]
+
+
+def find_usernames(realname):
+    """본명으로 아이디 찾기 — 일치하는 아이디를 일부 가려서 반환 (마스킹)."""
+    realname = (realname or "").strip()
+    if len(realname) < 2:
+        return []
+    try:
+        rows = _rest("GET", "members?realname=eq.%s&select=username" % requests.utils.quote(realname))
+    except Exception:
+        return []
+    return [_mask_username(r.get("username", "")) for r in rows if r.get("username")]
+
+
+def reset_password(username, realname, new_password):
+    """셀프 비밀번호 재설정 — 아이디+본명이 일치할 때만 새 비밀번호로 변경. 반환 (ok, message)."""
+    username = (username or "").strip()
+    realname = (realname or "").strip()
+    if len(new_password or "") < 6:
+        return False, "비밀번호는 6자 이상이어야 합니다."
+    u = _find(username)
+    if not u or (u.get("realname") or "").strip() != realname:
+        return False, "아이디와 본명이 일치하는 계정이 없습니다. 다시 확인해 주세요."
+    if u.get("status") == "kicked":
+        return False, "이용이 정지된 계정입니다. 관리자에게 문의하세요."
+    try:
+        _rest("PATCH", "members?id=eq.%s" % u["id"],
+              json={"pw_hash": generate_password_hash(new_password, method=_PW_METHOD)})
+    except Exception as e:
+        return False, "재설정 처리 실패: %s" % (repr(e)[:60])
+    return True, "비밀번호가 변경되었습니다. 새 비밀번호로 로그인하세요."
+
+
 def touch(uid):
     """활동 시각 갱신 (세션 유지 중 주기적)."""
     try:

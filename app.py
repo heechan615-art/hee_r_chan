@@ -151,6 +151,24 @@ def auth_login():
     return jsonify({"ok": ok, "message": msg, "user": u})
 
 
+@app.route("/api/auth/find_id", methods=["POST"])
+def auth_find_id():
+    """본명으로 아이디 찾기 — 일치 아이디를 일부 가려서 반환."""
+    d = request.get_json(silent=True) or {}
+    if not auth.auth_enabled():
+        return jsonify({"ids": []})
+    ids = auth.find_usernames(d.get("realname"))
+    return jsonify({"ids": ids})
+
+
+@app.route("/api/auth/reset_password", methods=["POST"])
+def auth_reset_password():
+    """셀프 비밀번호 재설정 — 아이디+본명 확인 후 변경."""
+    d = request.get_json(silent=True) or {}
+    ok, msg = auth.reset_password(d.get("username"), d.get("realname"), d.get("password"))
+    return jsonify({"ok": ok, "message": msg})
+
+
 @app.route("/api/auth/logout", methods=["POST"])
 def auth_logout():
     session.pop("user", None)
