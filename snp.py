@@ -36,10 +36,14 @@ def _num(x):
 
 # ------------------------------------------- ① PER (2020년부터 현재까지)
 PE_START = dt.datetime(2020, 1, 1)
+_RAW_PE = {"ts": 0.0, "rows": None}   # 전체(1871~) 월별 원본 캐시 — 기간 전환 시 재조회 방지
 
 
-def sp500_pe_history(start=PE_START):
-    """multpl.com에서 S&P500 PER(월별) — start 이후 + 평균/σ밴드 통계."""
+def _fetch_pe_rows():
+    """multpl.com 전체 월별 PER(1871~현재) 원본. 6시간 캐시."""
+    now = time.time()
+    if _RAW_PE["rows"] and now - _RAW_PE["ts"] < _TTL:
+        return _RAW_PE["rows"]
     creq = _creq()
     r = creq.get("https://www.multpl.com/s-p-500-pe-ratio/table/by-month",
                  impersonate="chrome", timeout=25)
@@ -58,7 +62,14 @@ def sp500_pe_history(start=PE_START):
             continue
         rows.append((d, v))
     rows.sort(key=lambda x: x[0])                      # 과거→현재
-    rows = [x for x in rows if x[0] >= start]
+    if rows:
+        _RAW_PE["ts"], _RAW_PE["rows"] = now, rows
+    return rows
+
+
+def sp500_pe_history(start=PE_START):
+    """선택 기간(start 이후)의 PER 시계열 + 평균/σ밴드 통계. 원본은 캐시라 기간 전환이 빠름."""
+    rows = [x for x in _fetch_pe_rows() if x[0] >= start]
     if not rows:
         raise RuntimeError("PER 데이터를 받지 못했습니다.")
 
@@ -69,11 +80,13 @@ def sp500_pe_history(start=PE_START):
     current = vals[-1]
     bands = {k: round(mean + k * sd, 2) for k in (3, 2, 1, 0, -1, -2, -3)}
     z = (current - mean) / sd if sd else 0.0
+    all_rows = _RAW_PE["rows"] or rows
     return {
         "series": series, "current": round(current, 2),
         "mean": round(mean, 2), "std": round(sd, 2), "bands": bands,
         "z": round(z, 2), "points": len(vals),
         "start": series[0]["date"], "end": series[-1]["date"],
+        "min_year": all_rows[0][0].year,      # 원본에서 가장 오래된 연도(전체 옵션용)
     }
 
 
@@ -250,39 +263,52 @@ def macro_defaults():
 
 
 # ------------------------------------------------------------ 통합(캐시)
-def overview(force=False):
-    """대시보드 전체 데이터. 6시간 캐시 — 방문 시 만료됐으면 자동 갱신."""
+ALLOWED_STARTS = (2020, 2010, 2000, 1990, 1871)   # 기간 선택 옵션(전체=1871)
+_BASE = {"ts": 0.0, "data": None}                 # PER 외 지표(EPS/공탐/VIX/매크로) 캐시
+
+
+def overview(force=False, start_year=2020):
+    """대시보드 데이터. start_year로 PER 기간 선택(σ밴드 재계산). PER 외 지표는 6시간 캐시 공유."""
     now = time.time()
-    if not force and _CACHE["data"] and now - _CACHE["ts"] < _TTL:
-        d = dict(_CACHE["data"])
-        d["cached"] = True
-        return d
+    try:
+        start_year = int(start_year)
+    except (TypeError, ValueError):
+        start_year = 2020
+    if start_year not in ALLOWED_STARTS:
+        start_year = 2020
 
     errors = []
+    # ① PER — 기간별 재계산 (원본 rows는 캐시라 빠름)
     try:
-        pe = sp500_pe_history()
+        pe = sp500_pe_history(dt.datetime(start_year, 1, 1))
     except Exception as e:
         pe = None
         errors.append(f"PER: {repr(e)[:120]}")
-    try:
-        eps = sp500_eps()
-    except Exception as e:
-        eps = None
-        errors.append(f"EPS: {repr(e)[:120]}")
-    try:
-        fg = cnn_fear_greed()
-    except Exception as e:
-        fg = None
-        errors.append(f"공포탐욕: {repr(e)[:120]}")
-    vix = vix_now()
-    macro = macro_defaults()
 
-    data = {"pe": pe, "eps": eps, "macro": macro, "fear_greed": fg, "vix": vix,
+    # ② PER 외 지표 — 기간과 무관, 6시간 캐시 공유
+    if not force and _BASE["data"] and now - _BASE["ts"] < _TTL:
+        base = _BASE["data"]
+        cached = True
+    else:
+        try:
+            eps = sp500_eps()
+        except Exception as e:
+            eps = None
+            errors.append(f"EPS: {repr(e)[:120]}")
+        try:
+            fg = cnn_fear_greed()
+        except Exception as e:
+            fg = None
+            errors.append(f"공포탐욕: {repr(e)[:120]}")
+        base = {"eps": eps, "fear_greed": fg, "vix": vix_now(), "macro": macro_defaults()}
+        if eps or fg:
+            _BASE["ts"], _BASE["data"] = now, base
+        cached = False
+
+    data = {"pe": pe, "start_year": start_year, "start_options": list(ALLOWED_STARTS),
             "updated": dt.datetime.now().strftime("%Y-%m-%d %H:%M"),
-            "errors": errors, "cached": False}
-    if pe:                       # PER 성공 시에만 캐시 저장
-        _CACHE["ts"] = now
-        _CACHE["data"] = data
+            "errors": errors, "cached": cached}
+    data.update(base)
     return data
 
 

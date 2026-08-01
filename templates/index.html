@@ -558,6 +558,12 @@
   #tab-snp .loading, #tab-snp .err{text-align:center;color:var(--muted);padding:60px 20px;font-size:15px}
   #tab-snp .err{color:var(--sell)}
   #tab-snp .foot{color:var(--muted);font-size:11.5px;margin-top:18px;line-height:1.7}
+  #tab-snp .snp-period{display:flex;gap:6px;flex-wrap:wrap;margin:2px 0 14px}
+  #tab-snp .snp-pbtn{background:#131a28;border:1px solid var(--line);color:var(--muted);
+    border-radius:8px;padding:6px 13px;font-size:13px;font-weight:600;cursor:pointer}
+  #tab-snp .snp-pbtn:hover{color:var(--text);border-color:var(--accent)}
+  #tab-snp .snp-pbtn.on{background:var(--accent);border-color:var(--accent);color:#fff}
+  #tab-snp .snp-period-note{font-size:12px;color:var(--muted);margin-top:10px;line-height:1.6}
   /* ===== 기업 심층 분석 ===== */
   .dd-sec{margin-bottom:26px}
   .dd-h{font-size:18px;font-weight:800;margin:0 0 4px;padding-left:12px;border-left:4px solid var(--accent);line-height:1.3}
@@ -2790,9 +2796,11 @@ function render(d){
   </div>
 
   <div class="card chart">
-    <h2>① S&P500 PER 추이 (2020년~) · 평균 ±σ 밴드</h2>
-    <div class="desc">${esc(pe.start)} ~ ${esc(pe.end)} · ${pe.points}개월 · 파란 실선이 실제 PER(끝점에 현재값 표시), 점선이 σ 기준선입니다.</div>
+    <h2>① S&P500 PER 추이 · 평균 ±σ 밴드</h2>
+    <div class="desc">기간을 바꾸면 평균·σ밴드가 그 기간 기준으로 다시 계산됩니다. ${esc(pe.start)} ~ ${esc(pe.end)} · ${pe.points}개월.</div>
+    <div class="snp-period">${periodBtns(d)}</div>
     ${chartSVG(pe)}
+    <div class="snp-period-note">${periodNote(d.start_year)}</div>
   </div>
 
   <div class="card">
@@ -2891,11 +2899,36 @@ function setupCalc(baseEps, curPer){
 }
 
 
-// 탭을 처음 열 때 한 번만 호출 (force=1이면 서버 캐시 무시하고 새로 수집)
-function loadSnp(force){
+// PER 기간 선택 버튼 + 안내
+var SNP_START = 2020;   // 현재 선택 기간
+function periodBtns(d){
+  var opts = d.start_options || [2020,2010,2000,1990,1871];
+  var cur = d.start_year || 2020;
+  var minY = (d.pe && d.pe.min_year) || 1871;
+  return opts.map(function(y){
+    var label = (y <= minY) ? "전체" : (y + "년~");
+    var on = (y === cur) ? " on" : "";
+    return '<button type="button" class="snp-pbtn'+on+'" data-snpstart="'+y+'">'+label+'</button>';
+  }).join("");
+}
+function periodNote(y){
+  var m = {
+    2020: "최근 저금리·성장주 시대 기준 (지금 시장 잣대).",
+    2010: "금융위기 이후 강세장 기준.",
+    2000: "닷컴버블·금융위기·코로나까지 포함 — 변동성(σ)이 큽니다.",
+    1990: "1990년대 이후 현대 시장 기준.",
+    1871: "역사 전체 평균(약 155년). 회계·금리 환경이 크게 달라 현재는 대체로 고평가로 보입니다."
+  };
+  return "ℹ️ " + (m[y] || "");
+}
+
+// 탭을 처음 열 때 호출. start=연도로 PER 기간 선택. force=1이면 서버 캐시 무시.
+function loadSnp(force, start){
+  if(start) SNP_START = start;
   var box = document.getElementById("snp-app");
   box.innerHTML = '<div class="loading">데이터를 불러오는 중…</div>';
-  fetch("/api/snp" + (force ? "?force=1" : ""))
+  var qs = "?start=" + SNP_START + (force ? "&force=1" : "");
+  fetch("/api/snp" + qs)
   .then(r=>r.json())
   .then(d=>{
     if(d.error){ document.getElementById("snp-app").innerHTML=`<div class="err">${esc(d.error)}</div>`; return; }
@@ -2903,6 +2936,11 @@ function loadSnp(force){
   })
   .catch(e=>{ document.getElementById("snp-app").innerHTML=`<div class="err">불러오기 실패: ${esc(e)}</div>`; });
 }
+// 기간 버튼 클릭 (위임)
+document.addEventListener("click", function(e){
+  var b = e.target && e.target.closest && e.target.closest(".snp-pbtn");
+  if(b && b.dataset.snpstart) loadSnp(false, parseInt(b.dataset.snpstart, 10));
+});
 window.loadSnp = loadSnp;
 
 })();

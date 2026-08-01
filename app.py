@@ -344,7 +344,8 @@ def api_snp():
     """S&P500 밸류에이션 대시보드 — PER σ밴드·EPS·공포탐욕·VIX. (snp.py에서 6시간 캐시)"""
     import snp
     try:
-        return jsonify(clean(snp.overview(force=bool(request.args.get("force")))))
+        return jsonify(clean(snp.overview(force=bool(request.args.get("force")),
+                                          start_year=request.args.get("start", 2020))))
     except Exception as e:
         return jsonify({"error": f"S&P500 데이터 실패: {repr(e)[:150]}"}), 500
 
