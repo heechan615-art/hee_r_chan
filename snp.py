@@ -123,6 +123,57 @@ def sp500_eps():
     return out
 
 
+# ---- EPS 시계열(월별, 1871~) — PER과 같은 방식의 추이 차트용 ----
+_RAW_EPS = {"ts": 0.0, "rows": None}
+
+
+def _fetch_eps_rows():
+    """multpl.com 전체 월별 S&P500 EPS(TTM, 1871~현재) 원본. 6시간 캐시."""
+    now = time.time()
+    if _RAW_EPS["rows"] and now - _RAW_EPS["ts"] < _TTL:
+        return _RAW_EPS["rows"]
+    creq = _creq()
+    from bs4 import BeautifulSoup
+    r = creq.get("https://www.multpl.com/s-p-500-earnings/table/by-month",
+                 impersonate="chrome", timeout=25)
+    soup = BeautifulSoup(r.text, "lxml")
+    table = soup.find("table", id="datatable")
+    rows = []
+    for tr in table.find_all("tr")[1:]:
+        tds = [td.get_text(strip=True) for td in tr.find_all("td")]
+        if len(tds) != 2:
+            continue
+        try:
+            d = dt.datetime.strptime(tds[0], "%b %d, %Y")
+            v = float(tds[1].replace("†", "").replace(",", "").replace("$", "").strip())
+        except ValueError:
+            continue
+        rows.append((d, v))
+    rows.sort(key=lambda x: x[0])
+    if rows:
+        _RAW_EPS["ts"], _RAW_EPS["rows"] = now, rows
+    return rows
+
+
+def sp500_eps_history(start):
+    """선택 기간의 EPS(TTM) 시계열 + 성장률/연평균성장률(CAGR). σ밴드 없음(절대값이라)."""
+    rows = [x for x in _fetch_eps_rows() if x[0] >= start]
+    if len(rows) < 2:
+        return None
+    series = [{"date": d.strftime("%Y-%m"), "eps": round(v, 2)} for d, v in rows]
+    first, last = rows[0][1], rows[-1][1]
+    growth = (last / first - 1) * 100 if first > 0 else None
+    years = (rows[-1][0] - rows[0][0]).days / 365.25
+    cagr = ((last / first) ** (1 / years) - 1) * 100 if (first > 0 and years >= 1) else None
+    return {
+        "series": series, "current": round(last, 2),
+        "start_eps": round(first, 2), "start": series[0]["date"], "end": series[-1]["date"],
+        "points": len(series),
+        "growth_pct": round(growth, 1) if growth is not None else None,
+        "cagr": round(cagr, 1) if cagr is not None else None,
+    }
+
+
 # ------------------------------------------------------------ ③ CNN 공포·탐욕
 def cnn_fear_greed():
     """CNN 공포·탐욕 지수 (0~100) + 최근 1년 타임라인."""
@@ -298,12 +349,19 @@ def overview(force=False, period="2020"):
         period = "2020"
 
     errors = []
+    start_dt = _period_start(period)
     # ① PER — 기간별 재계산 (원본 rows는 캐시라 빠름)
     try:
-        pe = sp500_pe_history(_period_start(period))
+        pe = sp500_pe_history(start_dt)
     except Exception as e:
         pe = None
         errors.append(f"PER: {repr(e)[:120]}")
+    # ①-b EPS 추이 — 같은 기간 (원본 캐시)
+    try:
+        eps_hist = sp500_eps_history(start_dt)
+    except Exception as e:
+        eps_hist = None
+        errors.append(f"EPS추이: {repr(e)[:120]}")
 
     # ② PER 외 지표 — 기간과 무관, 6시간 캐시 공유
     if not force and _BASE["data"] and now - _BASE["ts"] < _TTL:
@@ -325,7 +383,7 @@ def overview(force=False, period="2020"):
             _BASE["ts"], _BASE["data"] = now, base
         cached = False
 
-    data = {"pe": pe, "period": period, "periods": PERIODS,
+    data = {"pe": pe, "eps_hist": eps_hist, "period": period, "periods": PERIODS,
             "updated": dt.datetime.now().strftime("%Y-%m-%d %H:%M"),
             "errors": errors, "cached": cached}
     data.update(base)
