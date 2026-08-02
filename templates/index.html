@@ -2849,7 +2849,8 @@ function render(d){
 
   ${d.eps_hist ? `<div class="card chart">
     <h2>② S&P500 EPS 추이 · 주당순이익(TTM)</h2>
-    <div class="desc">위 기간 버튼과 같은 기간의 EPS 성장 추이입니다. ${esc(d.eps_hist.start)} ~ ${esc(d.eps_hist.end)}.</div>
+    <div class="desc">기간을 바꾸면 그 기간의 EPS 성장 추이로 다시 그립니다. ${esc(d.eps_hist.start)} ~ ${esc(d.eps_hist.end)}.</div>
+    <div class="snp-period">${periodBtns(d)}</div>
     <div class="snp-eps-stat">
       <span>기간 성장 <b class="up-pos">${d.eps_hist.growth_pct!=null?(d.eps_hist.growth_pct>=0?'+':'')+d.eps_hist.growth_pct+'%':'-'}</b></span>
       <span>연평균(CAGR) <b class="up-pos">${d.eps_hist.cagr!=null?d.eps_hist.cagr+'%':'-'}</b></span>
