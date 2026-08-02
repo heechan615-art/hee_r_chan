@@ -162,15 +162,32 @@ def sp500_eps_history(start):
         return None
     series = [{"date": d.strftime("%Y-%m"), "eps": round(v, 2)} for d, v in rows]
     first, last = rows[0][1], rows[-1][1]
+    last_d = rows[-1][0]
     growth = (last / first - 1) * 100 if first > 0 else None
-    years = (rows[-1][0] - rows[0][0]).days / 365.25
+    years = (last_d - rows[0][0]).days / 365.25
     cagr = ((last / first) ** (1 / years) - 1) * 100 if (first > 0 and years >= 1) else None
+
+    # 향후 2년 예상 EPS — CAGR을 복리로 적용, 매끄러운 곡선 위해 월별 24개 포인트
+    projection, proj_1y, proj_2y = [], None, None
+    if cagr is not None:
+        m_rate = (1 + cagr / 100.0) ** (1 / 12.0) - 1        # 월 복리율
+        for k in range(1, 25):
+            y = last_d.year + (last_d.month - 1 + k) // 12
+            mo = (last_d.month - 1 + k) % 12 + 1
+            projection.append({"date": dt.datetime(y, mo, 1).strftime("%Y-%m"),
+                               "eps": round(last * (1 + m_rate) ** k, 2)})
+        proj_1y = round(last * (1 + cagr / 100.0), 2)         # +1년
+        proj_2y = round(last * (1 + cagr / 100.0) ** 2, 2)    # +2년
+
     return {
         "series": series, "current": round(last, 2),
         "start_eps": round(first, 2), "start": series[0]["date"], "end": series[-1]["date"],
         "points": len(series),
         "growth_pct": round(growth, 1) if growth is not None else None,
         "cagr": round(cagr, 1) if cagr is not None else None,
+        "projection": projection,
+        "proj_1y": proj_1y, "proj_2y": proj_2y,
+        "proj_1y_year": last_d.year + 1, "proj_2y_year": last_d.year + 2,
     }
 
 

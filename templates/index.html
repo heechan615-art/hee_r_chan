@@ -568,6 +568,7 @@
     background:#131a28;border:1px solid var(--line);border-radius:10px;padding:10px 14px}
   #tab-snp .snp-eps-stat b{color:var(--text);font-variant-numeric:tabular-nums}
   #tab-snp .snp-eps-stat .up-pos{color:var(--buy)}
+  #tab-snp .snp-eps-stat .proj{color:#f5b544}
   /* ===== 기업 심층 분석 ===== */
   .dd-sec{margin-bottom:26px}
   .dd-h{font-size:18px;font-weight:800;margin:0 0 4px;padding-left:12px;border-left:4px solid var(--accent);line-height:1.3}
@@ -2681,17 +2682,19 @@ function chartSVG(pe){
   return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="S&P500 PER 추이">${g}</svg>`;
 }
 
-// EPS 추이 (σ밴드 없이 선그래프 + Y축 눈금 + 현재값). EPS는 절대값이라 밴드 대신 성장 추이.
+// EPS 추이 (σ밴드 없이 선그래프). 실선=실제, 점선(주황)=CAGR 복리 예상(향후 2년).
 function epsChartSVG(eh){
   const S = eh.series;
+  const proj = eh.projection || [];
+  const N = S.length + proj.length;                     // 실제 + 예상 전체 x축
   const W=900, H=340, ml=52, mr=64, mt=16, mb=26;
   const iw=W-ml-mr, ih=H-mt-mb;
-  const vals = S.map(p=>p.eps);
-  let ymin = Math.min(...vals), ymax = Math.max(...vals);
+  const allVals = S.map(p=>p.eps).concat(proj.map(p=>p.eps));
+  let ymin = Math.min(...allVals), ymax = Math.max(...allVals);
   const pad=(ymax-ymin)*0.08 || 1; ymin=Math.max(0,ymin-pad); ymax+=pad;
-  const X = i => ml + iw*i/(S.length-1);
+  const X = i => ml + iw*i/(N-1);
   const Y = v => mt + ih*(1-(v-ymin)/(ymax-ymin));
-  const GRN="#37c98a";
+  const GRN="#37c98a", AMB="#f5b544";
   let g="";
   // Y축 눈금 5개
   for(let k=0;k<=4;k++){
@@ -2699,26 +2702,38 @@ function epsChartSVG(eh){
     g+=`<line class="ref" x1="${ml}" y1="${y.toFixed(1)}" x2="${ml+iw}" y2="${y.toFixed(1)}" stroke="var(--line)"/>`;
     g+=`<text class="reflbl" x="${(ml-6).toFixed(1)}" y="${(y+3.5).toFixed(1)}" fill="var(--muted)" text-anchor="end">$${v>=100?Math.round(v):v.toFixed(1)}</text>`;
   }
+  const li=S.length-1, cx=X(li), cy=Y(eh.current);
+  // 예상 점선(주황) — 현재 실제 끝점에서 이어짐
+  if(proj.length){
+    const ppts = [`${X(li).toFixed(1)},${cy.toFixed(1)}`]
+      .concat(proj.map((p,i)=>`${X(S.length+i).toFixed(1)},${Y(p.eps).toFixed(1)}`)).join(" ");
+    g+=`<polyline points="${ppts}" fill="none" stroke="${AMB}" stroke-width="2" stroke-dasharray="5 4"/>`;
+    // 예상 끝점(2년 뒤) 값 라벨
+    const pe=proj[proj.length-1], pex=X(N-1), pey=Y(pe.eps);
+    const ptxt="$"+Math.round(pe.eps);
+    g+=`<circle cx="${pex.toFixed(1)}" cy="${pey.toFixed(1)}" r="4" fill="#1a2130" stroke="${AMB}" stroke-width="2"/>`;
+    g+=`<text x="${(pex-8).toFixed(1)}" y="${(pey-6).toFixed(1)}" text-anchor="end" font-size="11.5" font-weight="700" fill="${AMB}" font-variant-numeric="tabular-nums">${ptxt}</text>`;
+  }
   // EPS 실선(초록)
   const pts = S.map((p,i)=>`${X(i).toFixed(1)},${Y(p.eps).toFixed(1)}`).join(" ");
   g+=`<polyline points="${pts}" fill="none" stroke="${GRN}" stroke-width="2"/>`;
   // 현재값 라벨
-  const li=S.length-1, cx=X(li), cy=Y(eh.current);
   const txt="$"+(eh.current>=100?Math.round(eh.current):f2(eh.current));
   const bw=Math.max(50,txt.length*8+10), bh=19, bx=cx-9-bw, by=cy-bh/2;
-  g+=`<line x1="${(bx+bw).toFixed(1)}" y1="${cy.toFixed(1)}" x2="${cx.toFixed(1)}" y2="${cy.toFixed(1)}" stroke="${GRN}" stroke-width="1"/>`;
   g+=`<rect x="${bx.toFixed(1)}" y="${by.toFixed(1)}" width="${bw}" height="${bh}" rx="5" fill="#1a2130" stroke="${GRN}" stroke-width="1.2"/>`;
   g+=`<text x="${(bx+bw/2).toFixed(1)}" y="${(cy+4).toFixed(1)}" text-anchor="middle" font-size="12" font-weight="700" fill="#fff" font-variant-numeric="tabular-nums">${txt}</text>`;
   g+=`<circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="4.5" fill="#fff" stroke="${GRN}" stroke-width="2.5"/>`;
-  // X축 연도 라벨
-  const seen={};
-  S.forEach((p,i)=>{
+  // X축 연도 라벨 (실제 + 예상 연도)
+  const seen={}; const step=Math.max(1,Math.floor(N/9));
+  const allS=S.concat(proj);
+  allS.forEach((p,i)=>{
     const yr=p.date.slice(0,4);
-    if(!seen[yr] && (i%Math.max(1,Math.floor(S.length/8))===0 || i===li)){ seen[yr]=1;
-      g+=`<text class="axlbl" x="${X(i).toFixed(1)}" y="${H-8}" text-anchor="middle">${yr}</text>`;
+    if(!seen[yr] && (i%step===0 || i===N-1)){ seen[yr]=1;
+      const isProj=i>=S.length;
+      g+=`<text class="axlbl" x="${X(i).toFixed(1)}" y="${H-8}" text-anchor="middle" ${isProj?`fill="${AMB}"`:''}>${yr}</text>`;
     }
   });
-  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="S&P500 EPS 추이">${g}</svg>`;
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="S&P500 EPS 추이 및 예상">${g}</svg>`;
 }
 
 function bandsHTML(pe){
@@ -2852,12 +2867,13 @@ function render(d){
     <div class="desc">기간을 바꾸면 그 기간의 EPS 성장 추이로 다시 그립니다. ${esc(d.eps_hist.start)} ~ ${esc(d.eps_hist.end)}.</div>
     <div class="snp-period">${periodBtns(d)}</div>
     <div class="snp-eps-stat">
-      <span>기간 성장 <b class="up-pos">${d.eps_hist.growth_pct!=null?(d.eps_hist.growth_pct>=0?'+':'')+d.eps_hist.growth_pct+'%':'-'}</b></span>
       <span>연평균(CAGR) <b class="up-pos">${d.eps_hist.cagr!=null?d.eps_hist.cagr+'%':'-'}</b></span>
-      <span>${esc(d.eps_hist.start_eps)} → <b>${esc(d.eps_hist.current)}</b></span>
+      ${d.eps_hist.proj_1y!=null?`<span>${d.eps_hist.proj_1y_year} 예상 <b class="proj">$${Math.round(d.eps_hist.proj_1y)}</b></span>`:''}
+      ${d.eps_hist.proj_2y!=null?`<span>${d.eps_hist.proj_2y_year} 예상 <b class="proj">$${Math.round(d.eps_hist.proj_2y)}</b></span>`:''}
+      <span>현재 <b>$${Math.round(d.eps_hist.current)}</b></span>
     </div>
     ${epsChartSVG(d.eps_hist)}
-    <div class="snp-period-note">ℹ️ EPS는 계속 커지는 절대값이라 σ밴드 대신 <b>성장 추이</b>로 봅니다. 초록 실선이 실제 주당순이익(끝점에 현재값).</div>
+    <div class="snp-period-note">ℹ️ <b style="color:#37c98a">초록 실선</b>=실제 EPS, <b style="color:#f5b544">주황 점선</b>=선택 기간 CAGR(${d.eps_hist.cagr!=null?d.eps_hist.cagr+'%':'-'})을 <b>복리로 적용</b>한 향후 2년 예상. 기간을 바꾸면 CAGR·예상치도 달라집니다. (실제 실적과 다를 수 있는 단순 추정)</div>
   </div>` : ''}
 
   <div class="card">
