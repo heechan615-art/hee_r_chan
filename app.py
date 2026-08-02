@@ -345,7 +345,7 @@ def api_snp():
     import snp
     try:
         return jsonify(clean(snp.overview(force=bool(request.args.get("force")),
-                                          start_year=request.args.get("start", 2020))))
+                                          period=request.args.get("period", "2020"))))
     except Exception as e:
         return jsonify({"error": f"S&P500 데이터 실패: {repr(e)[:150]}"}), 500
 

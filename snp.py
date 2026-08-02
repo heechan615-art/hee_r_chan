@@ -263,24 +263,44 @@ def macro_defaults():
 
 
 # ------------------------------------------------------------ 통합(캐시)
-ALLOWED_STARTS = (2020, 2010, 2000, 1990, 1871)   # 기간 선택 옵션(전체=1871)
+# 기간 옵션: 롤링(최근 N년, 오늘 기준) + 고정연도 + 전체
+PERIODS = [
+    {"id": "10y",  "label": "최근 10년"},
+    {"id": "20y",  "label": "최근 20년"},
+    {"id": "2020", "label": "2020년~"},
+    {"id": "2000", "label": "2000년~"},
+    {"id": "all",  "label": "전체"},
+]
+_PERIOD_IDS = {p["id"] for p in PERIODS}
 _BASE = {"ts": 0.0, "data": None}                 # PER 외 지표(EPS/공탐/VIX/매크로) 캐시
 
 
-def overview(force=False, start_year=2020):
-    """대시보드 데이터. start_year로 PER 기간 선택(σ밴드 재계산). PER 외 지표는 6시간 캐시 공유."""
-    now = time.time()
+def _period_start(period):
+    """기간 id → 시작 datetime. 10y/20y는 오늘 기준 롤링."""
+    n = dt.datetime.now()
+    if period == "10y":
+        return dt.datetime(n.year - 10, n.month, 1)
+    if period == "20y":
+        return dt.datetime(n.year - 20, n.month, 1)
+    if period == "all":
+        return dt.datetime(1800, 1, 1)            # 원본 전체(1871~)
     try:
-        start_year = int(start_year)
+        return dt.datetime(int(period), 1, 1)      # 고정 연도
     except (TypeError, ValueError):
-        start_year = 2020
-    if start_year not in ALLOWED_STARTS:
-        start_year = 2020
+        return dt.datetime(2020, 1, 1)
+
+
+def overview(force=False, period="2020"):
+    """대시보드 데이터. period로 PER 기간 선택(σ밴드 재계산). PER 외 지표는 6시간 캐시 공유."""
+    now = time.time()
+    period = str(period)
+    if period not in _PERIOD_IDS:
+        period = "2020"
 
     errors = []
     # ① PER — 기간별 재계산 (원본 rows는 캐시라 빠름)
     try:
-        pe = sp500_pe_history(dt.datetime(start_year, 1, 1))
+        pe = sp500_pe_history(_period_start(period))
     except Exception as e:
         pe = None
         errors.append(f"PER: {repr(e)[:120]}")
@@ -305,7 +325,7 @@ def overview(force=False, start_year=2020):
             _BASE["ts"], _BASE["data"] = now, base
         cached = False
 
-    data = {"pe": pe, "start_year": start_year, "start_options": list(ALLOWED_STARTS),
+    data = {"pe": pe, "period": period, "periods": PERIODS,
             "updated": dt.datetime.now().strftime("%Y-%m-%d %H:%M"),
             "errors": errors, "cached": cached}
     data.update(base)

@@ -2800,7 +2800,7 @@ function render(d){
     <div class="desc">기간을 바꾸면 평균·σ밴드가 그 기간 기준으로 다시 계산됩니다. ${esc(pe.start)} ~ ${esc(pe.end)} · ${pe.points}개월.</div>
     <div class="snp-period">${periodBtns(d)}</div>
     ${chartSVG(pe)}
-    <div class="snp-period-note">${periodNote(d.start_year)}</div>
+    <div class="snp-period-note">${periodNote(d.period)}</div>
   </div>
 
   <div class="card">
@@ -2900,34 +2900,32 @@ function setupCalc(baseEps, curPer){
 
 
 // PER 기간 선택 버튼 + 안내
-var SNP_START = 2020;   // 현재 선택 기간
+var SNP_PERIOD = "2020";   // 현재 선택 기간 id
 function periodBtns(d){
-  var opts = d.start_options || [2020,2010,2000,1990,1871];
-  var cur = d.start_year || 2020;
-  var minY = (d.pe && d.pe.min_year) || 1871;
-  return opts.map(function(y){
-    var label = (y <= minY) ? "전체" : (y + "년~");
-    var on = (y === cur) ? " on" : "";
-    return '<button type="button" class="snp-pbtn'+on+'" data-snpstart="'+y+'">'+label+'</button>';
+  var opts = d.periods || [{id:"10y",label:"최근 10년"},{id:"20y",label:"최근 20년"},{id:"2020",label:"2020년~"},{id:"2000",label:"2000년~"},{id:"all",label:"전체"}];
+  var cur = d.period || "2020";
+  return opts.map(function(p){
+    var on = (p.id === cur) ? " on" : "";
+    return '<button type="button" class="snp-pbtn'+on+'" data-snpperiod="'+p.id+'">'+esc(p.label)+'</button>';
   }).join("");
 }
-function periodNote(y){
+function periodNote(period){
   var m = {
-    2020: "최근 저금리·성장주 시대 기준 (지금 시장 잣대).",
-    2010: "금융위기 이후 강세장 기준.",
-    2000: "닷컴버블·금융위기·코로나까지 포함 — 변동성(σ)이 큽니다.",
-    1990: "1990년대 이후 현대 시장 기준.",
-    1871: "역사 전체 평균(약 155년). 회계·금리 환경이 크게 달라 현재는 대체로 고평가로 보입니다."
+    "10y": "오늘 기준 최근 10년. 현재 시장과 가장 가까운 잣대입니다.",
+    "20y": "오늘 기준 최근 20년. 금융위기·코로나 포함, 중기 기준.",
+    "2020": "2020년 이후 — 최근 저금리·성장주 시대 기준.",
+    "2000": "2000년 이후 — 닷컴버블·금융위기까지 포함해 변동성(σ)이 큽니다.",
+    "all": "역사 전체 평균(1871~, 약 155년). 회계·금리 환경이 크게 달라 현재는 대체로 고평가로 보입니다."
   };
-  return "ℹ️ " + (m[y] || "");
+  return "ℹ️ " + (m[period] || "");
 }
 
-// 탭을 처음 열 때 호출. start=연도로 PER 기간 선택. force=1이면 서버 캐시 무시.
-function loadSnp(force, start){
-  if(start) SNP_START = start;
+// 탭을 처음 열 때 호출. period로 PER 기간 선택. force=1이면 서버 캐시 무시.
+function loadSnp(force, period){
+  if(period) SNP_PERIOD = period;
   var box = document.getElementById("snp-app");
   box.innerHTML = '<div class="loading">데이터를 불러오는 중…</div>';
-  var qs = "?start=" + SNP_START + (force ? "&force=1" : "");
+  var qs = "?period=" + SNP_PERIOD + (force ? "&force=1" : "");
   fetch("/api/snp" + qs)
   .then(r=>r.json())
   .then(d=>{
@@ -2939,7 +2937,7 @@ function loadSnp(force, start){
 // 기간 버튼 클릭 (위임)
 document.addEventListener("click", function(e){
   var b = e.target && e.target.closest && e.target.closest(".snp-pbtn");
-  if(b && b.dataset.snpstart) loadSnp(false, parseInt(b.dataset.snpstart, 10));
+  if(b && b.dataset.snpperiod) loadSnp(false, b.dataset.snpperiod);
 });
 window.loadSnp = loadSnp;
 
