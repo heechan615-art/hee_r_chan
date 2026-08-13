@@ -42,33 +42,37 @@ def resolve_query(q):
     q = q.strip()
     if not q:
         return None, None, None
-    if re.fullmatch(r"[A-Za-z.\-]{1,6}", q):          # 미국 티커
-        return q.upper(), None, None
     m = re.fullmatch(r"(\d{6})\.(KS|KQ)", q.upper())  # 접미사 직접 입력
     if m:
         return q.upper(), m.group(1), None
     if q in _RESOLVE_CACHE:
         return _RESOLVE_CACHE[q]
+
+    # 영문 1~6자는 대개 미국 티커지만 'NAVER'·'KAKAO'처럼 영문 회사명인 국내 종목도 있음.
+    # → 자동완성으로 국내 '정확 일치' 종목이 있으면 국내로, 없으면 미국 티커로.
+    ticker_like = bool(re.fullmatch(r"[A-Za-z.\-]{1,6}", q))
     out = (None, None, None)
     try:
         r = requests.get("https://ac.stock.naver.com/ac",
                          params={"q": q, "target": "stock"}, headers=UA, timeout=6)
         items = r.json().get("items", []) if r.status_code == 200 else []
-        # 정확히 일치하는 이름 우선, 없으면 첫 국내 종목 (자동완성이 관련도순 정렬)
         cands = [it for it in items
                  if it.get("nationCode") == "KOR"
                  and re.fullmatch(r"\d{6}", it.get("code", ""))
                  and it.get("typeCode") in ("KOSPI", "KOSDAQ", "KONEX")]
-        exact = [it for it in cands if it.get("name") == q]
-        pick = (exact or cands)[0] if (exact or cands) else None
+        exact = [it for it in cands if (it.get("name") or "").upper() == q.upper()]
+        # 영문 티커형 입력은 '정확 일치'일 때만 국내로 인정(NVDA 등 미국 티커 오인 방지)
+        pick = exact[0] if exact else (None if ticker_like else (cands[0] if cands else None))
         if pick:
             code = pick["code"]
             suf = ".KQ" if pick["typeCode"] == "KOSDAQ" else ".KS"
             out = (code + suf, code, pick.get("name"))
     except Exception:
         pass
-    if out[0] is None and re.fullmatch(r"\d{6}", q):
-        out = (q + ".KS", q, None)   # 자동완성 실패해도 6자리 코드는 코스피로 시도
+    if out[0] is None and ticker_like:
+        out = (q.upper(), None, None)                # 국내 정확일치 없음 → 미국 티커
+    elif out[0] is None and re.fullmatch(r"\d{6}", q):
+        out = (q + ".KS", q, None)                   # 자동완성 실패해도 6자리 코드는 코스피로 시도
     _RESOLVE_CACHE[q] = out
     return out
 
