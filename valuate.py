@@ -900,6 +900,14 @@ def analyze_data(ticker):
             price = nv.get("price", price)
             cur = "KRW"
             src = "네이버(EPS/PBR)+yfinance(밴드)"
+        # 추정PER이 N/A(커버 증권사 3개 미만)여도 기업실적분석 표의 예상(E) 연도 EPS를 예상EPS로 사용
+        if (fwd_eps is None or fwd_eps <= 0) and nv_annual:
+            for _y, _e in zip(nv_annual.get("years") or [], nv_annual.get("eps") or []):
+                if str(_y).strip().endswith("E") and _e:
+                    fwd_eps = _e
+                    if price and _e > 0:
+                        fwd_per = price / _e        # 예상PER도 예상EPS와 일관되게 재계산
+                    break
     if price is None and not hist.empty:
         h2 = hist.dropna()
         if len(h2):
