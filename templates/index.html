@@ -2156,11 +2156,11 @@ function tpBandMethod(d, fwd, df){
   if(!sg) return `<div class="muted">${basis} PER 시계열이 부족합니다.
     ${fwd?"다른 방식을 선택해 주세요.":""}</div>`;
   const est = fwd ? (d.eps_fwd ?? d.eps_ttm) : (d.eps_ttm ?? d.eps_fwd);
-  let h = `<div class="muted" style="font-size:12.5px;margin-bottom:10px">추정 EPS를 고정하고,
+  let h = `<div class="muted" style="font-size:12.5px;margin-bottom:10px">EPS를 고정하고,
     <b>${basis} PER</b>이 과거 평균 ±3σ로 움직일 때의 주가입니다. 멀티플은 빠르게 변하지만
-    실적 추정은 느리게 변합니다.</div>
+    실적은 느리게 변합니다.</div>
     <div class="rp-cur" style="margin-bottom:8px">
-      <label style="width:220px">추정 EPS ${fwd?"(예상, FY+1)":"(TTM)"}
+      <label style="width:220px">EPS ${fwd?"(예상, FY+1)":"(TTM)"}
         <input id="tp-eps" type="number" step="any" value="${inNum(est)}">
         ${d.eps_src?`<span class="src-tag">출처: ${esc(d.eps_src)}</span>`:""}</label>
       <div class="box" style="align-self:flex-end">현재 선행 PER
@@ -2176,7 +2176,7 @@ function tpBandCompute(){
   const {df} = tpDiscount(d);
   const val = parseFloat($("#tp-eps").value);
   const out = $("#tp-band-out");
-  if(!(val > 0)){ out.innerHTML = `<div class="muted">추정 EPS를 입력하세요.</div>`; return; }
+  if(!(val > 0)){ out.innerHTML = `<div class="muted">EPS를 입력하세요.</div>`; return; }
   const center = sg.mean;
   let h = `<table class="tpt"><tr><th>밴드</th><th>PER</th>
     <th>목표주가${df>1?" (현재가치)":""}</th><th>상승여력</th></tr>`;
