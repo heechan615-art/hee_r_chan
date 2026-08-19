@@ -111,6 +111,19 @@
   /* ===== 프리미엄 브리핑 리포트 ===== */
   .rp-topbar{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:14px}
   .rp-topbar select{background:#131a28;border:1px solid var(--line);color:var(--text);border-radius:8px;padding:7px 11px;font-size:13px}
+  .brief-pdf-btn{background:var(--accent);border:1px solid var(--accent);color:#fff;border-radius:8px;
+    padding:7px 13px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap}
+  .brief-pdf-btn:hover{filter:brightness(1.08)}
+  /* 브리핑 PDF 저장(인쇄) — 브리핑 본문만 남기고 색 유지 */
+  @media print {
+    @page { size:A4; margin:11mm; }
+    html,body{background:#0f1420 !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    .tabs,.topbar .authbar,.disclaimer,.brief-pdf-btn,#brief-date,#brief-gen,.tab-gen,.rp-raw > summary{display:none !important}
+    .wrap{max-width:none;padding:14px 6px}
+    h1{font-size:18px;margin-bottom:6px}
+    .card,.rp-hero,.rp-news,.rp-theme,.rp-closing,.rp-supply,.brf-idx,.brf-mv,.dd-card,.issue-card,.rp-cols{break-inside:avoid}
+    .rp-raw[open] .brf-mv,.rp-raw{display:block !important}
+  }
   .rp-hero{background:linear-gradient(135deg,#1c2740,#161d2c);border:1px solid var(--line);
     border-radius:16px;padding:20px 22px;margin-bottom:18px}
   .rp-badge{display:inline-block;font-size:11.5px;font-weight:700;border-radius:999px;padding:4px 11px;margin-bottom:10px;
@@ -1245,6 +1258,15 @@ function renderReports(d, box){
 // ---------- 일일 브리핑 ----------
 const BRIEF_KEEP = 92;   // 브라우저 보관 일수
 function briefKey(mkt, day){ return "brief_"+mkt+"_"+day; }
+// 브리핑을 PDF로 저장 — 브라우저 인쇄(→ PDF로 저장) 사용. 인쇄 CSS가 브리핑만 남김.
+function printBriefing(){
+  const prev = document.title;
+  const mkt = BRIEF_MKT === "US" ? "미국" : "한국";
+  document.body.classList.add("printing-brief");
+  document.title = `${mkt} 브리핑 ${todayStr()}`;
+  window.print();
+  setTimeout(() => { document.body.classList.remove("printing-brief"); document.title = prev; }, 800);
+}
 function todayStr(){     // 로컬 기준 오늘 (YYYY-MM-DD) — 서버 date 필드와 같은 형식
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
@@ -1267,6 +1289,7 @@ function briefDays(){   // 현재 시장(BRIEF_MKT)의 저장 날짜 (최신순)
 }
 document.addEventListener("click", e => {
   if(e.target && e.target.id === "brief-gen") loadBriefing();
+  if(e.target && e.target.id === "brief-pdf") printBriefing();
   // 관련 종목 칩 클릭 → 밸류에이션 탭으로 이동해 분석
   if(e.target && e.target.classList.contains("stk-chip")){
     const name = e.target.dataset.t;
@@ -1344,7 +1367,10 @@ function renderBriefingBody(d, box){
     days.map(dy => `<option value="${dy}" ${dy===d.date?"selected":""}>${dy}</option>`).join("");
   let h = `<div class="rp-topbar">
     <span class="muted" style="font-size:12px">${us?"🇺🇸 미국":"🇰🇷 한국"} · 기준 ${esc(d.asof)}</span>
-    <select id="brief-date">${opts}</select>
+    <div style="display:flex;gap:8px;align-items:center">
+      <button type="button" id="brief-pdf" class="brief-pdf-btn">📄 PDF 다운로드</button>
+      <select id="brief-date">${opts}</select>
+    </div>
   </div>`;
 
   // ── 헤드라인 ──
