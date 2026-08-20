@@ -1566,11 +1566,6 @@ function render(d){
     ? `<div class="row2">` + headerCard + fgCard(d.fear_greed) + `</div>`
     : headerCard;
 
-  // EPS 성장률 · 미래 EPS 추정 (기본정보 카드 하단 · 분석 후 비동기 로드)
-  h += `<div class="card epsg" id="epsg"><h2>EPS 성장률 · 미래 EPS 추정
-      <span class="h2note">분기 EPS(최근 10년) 추이 · 연복리(CAGR) 성장률</span></h2>
-    <div id="epsg-body" class="muted" style="font-size:13px">EPS 이력 불러오는 중…</div></div>`;
-
   // 재무 흐름 (성장성·수익성·안정성·현금흐름) + AI 안정성 판단
   if(d.financials && d.financials.years) h += finCard(d.financials, d.fin_comment, d.usdkrw);
 
@@ -1579,6 +1574,11 @@ function render(d){
      + sigmaCard("PER 표준편차 밴드", d.sigma, d.sigma_fwd, "PER", 1, d.price)
      + sigmaCard("PBR 표준편차 밴드", d.pbr_sigma, d.pbr_sigma_fwd, "PBR", 2, d.price)
      + `</div>`;
+
+  // EPS 성장률 · 미래 EPS 추정 (표준편차 밴드 아래 · 적정주가 위 · 분석 후 비동기 로드)
+  h += `<div class="card epsg" id="epsg"><h2>EPS 성장률 · 미래 EPS 추정
+      <span class="h2note">분기 EPS(최근 10년) 추이 · 연복리(CAGR) 성장률</span></h2>
+    <div id="epsg-body" class="muted" style="font-size:13px">EPS 이력 불러오는 중…</div></div>`;
 
   // 목표주가 시나리오 (PER σ밴드 × 추정 EPS + 할인/금리보정 옵션)
   h += tpCard(d);
