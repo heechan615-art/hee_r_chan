@@ -31,6 +31,7 @@ import auth
 # valuate(=pandas/numpy/yfinance/bs4/curl_cffi, ~80MB)는 부팅을 가볍게 하려고 지연 로딩.
 # → 무료 512MB 인스턴스가 빠르고 가볍게 깨어나 정적 페이지를 즉시 응답(콜드 웨이크 OOM 방지).
 
+import valuate
 from valuate import analyze_data   # 부팅 시 로드(측정상 분석 peak 122MB로 512MB에 여유). 안정성 우선.
 
 app = Flask(__name__)
@@ -235,6 +236,28 @@ def api_analyze():
         session.permanent = True
         out["guest_left"] = _guest_left()
         out["guest_limit"] = GUEST_LIMIT
+    return jsonify(out)
+
+
+@app.route("/api/eps_history")
+def api_eps_history():
+    """개별 종목 분기/연간 EPS 이력 + 성장률 + 미래 EPS 추정.
+    기업 밸류 탭 기본정보 카드 하단 패널용. 공개(비회원도 조회) — 분석 성공
+    후 보조로 불러오므로 무료 횟수 차감 안 함. 6시간 캐시로 부하 최소화."""
+    ticker = (request.args.get("ticker") or "").strip()
+    if not ticker:
+        return jsonify({"error": "종목 코드를 입력하세요."}), 400
+    ck = "epshist:" + ticker.lower()
+    out = _cache_get(ck, 6 * 3600)
+    if out is None:
+        try:
+            d = valuate.eps_history(ticker)
+        except Exception as e:
+            return jsonify({"error": f"EPS 이력 조회 실패: {repr(e)[:120]}"}), 500
+        if not d:
+            return jsonify({"error": "EPS 이력 데이터가 부족합니다.", "empty": True}), 200
+        out = clean(d)
+        _cache_put(ck, out)
     return jsonify(out)
 
 

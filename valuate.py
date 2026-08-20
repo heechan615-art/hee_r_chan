@@ -1171,6 +1171,129 @@ def print_report(d):
     print()
 
 
+_EPS_HIST_CACHE = {}          # {야후티커: (ts, dict|None)}
+_EPS_HIST_TTL = 6 * 3600      # 보고 EPS는 분기당 1회 갱신 → 6시간 캐시
+
+
+def _yearfrac(date_str):
+    """'YYYY-MM-DD' → 연 소수(2024-06-30 → 2024.5). x축 통일용."""
+    y = int(date_str[:4])
+    m = int(date_str[5:7]) if len(date_str) >= 7 else 12
+    return y + (m - 1) / 12.0
+
+
+def _cagr_growth(vals, per_year):
+    """확정 시계열 vals(오래된→최신)에서 1/3/5/7/10년 연복리 성장률.
+    per_year=포인트/년(분기=4, 연간=1). 최신·기준 모두 양(+)일 때만 계산."""
+    cur = vals[-1]
+    out = {}
+    for n in (1, 3, 5, 7, 10):
+        k = per_year * n
+        if len(vals) > k:
+            base = vals[-1 - k]
+            out[n] = ((cur / base) ** (1.0 / n) - 1.0
+                      if base > 0 and cur > 0 else None)
+        else:
+            out[n] = None
+    return out
+
+
+def _eps_from_yahoo(yf_ticker, name, years):
+    """야후 보고 EPS(분기) → 분기 막대 + TTM 라인 + CAGR 성장률/추정."""
+    tk = yfsess.ticker(yf_ticker)
+    ed = tk.get_earnings_dates(limit=52)
+    if ed is None or "Reported EPS" not in ed.columns:
+        return None
+    s = ed["Reported EPS"].dropna()
+    s = s[~s.index.duplicated(keep="first")].sort_index()
+    if len(s) < 8:                                 # 최소 2년치
+        return None
+    bars = [{"x": _yearfrac(str(i)[:10]), "y": float(v)}
+            for i, v in s.items()][-(years * 4):]
+    ttm = s.rolling(4).sum().dropna()              # 4분기 이동합 → 계절성 제거
+    pts = [{"x": _yearfrac(str(i)[:10]), "y": float(v)}
+           for i, v in ttm.items()][-(years * 4):]
+    cur = float(ttm.iloc[-1])
+    growth = _cagr_growth([float(v) for v in ttm.values], 4)
+    cur_x = _yearfrac(str(ttm.index[-1])[:10])
+    cur_year = int(str(ttm.index[-1])[:4])
+    proj = _cagr_projection(cur, cur_x, cur_year, growth)
+    return {"granularity": "quarterly", "line_label": "EPS (최근 4분기 합·TTM)",
+            "bars": bars, "points": pts, "growth": growth, "cur": cur,
+            "cur_x": cur_x, "cur_year": cur_year, "projection": proj,
+            "currency": "USD" if not is_korean(yf_ticker) else "KRW",
+            "ticker": yf_ticker, "name": name or ""}
+
+
+def _eps_from_wisefn(yf_ticker, code, name, years):
+    """국내 코스닥 소형주 등 야후 분기 데이터가 부족할 때 폴백.
+    wisefn 연간 EPS(확정 5 + 애널리스트 컨센서스 E) → 연간 라인 + 성장률.
+    추정선은 애널리스트 컨센서스 E연도를 우선 사용(없으면 CAGR)."""
+    d = kr_data.wisefn_annual(code, "Y")
+    if not d or not d.get("eps"):
+        return None
+    pairs = [(y, e) for y, e in zip(d["years"], d["eps"]) if e is not None]
+    conf = [(y, e) for y, e in pairs if not y.endswith("E")]   # 확정
+    est = [(y, e) for y, e in pairs if y.endswith("E")]        # 컨센서스
+    if len(conf) < 3:
+        return None
+    pts = [{"x": float(y), "y": float(e)} for y, e in conf]
+    cur = float(conf[-1][1]); cur_year = int(conf[-1][0])
+    growth = _cagr_growth([float(e) for _, e in conf], 1)
+    if est:                                        # 애널리스트 컨센서스 우선
+        proj = {"source": "consensus", "basis": None, "cagr": None,
+                "points": [{"x": float(y[:4]), "y": float(e),
+                            "label": y[:4]} for y, e in est]}
+    else:
+        proj = _cagr_projection(cur, float(cur_year), cur_year, growth)
+    return {"granularity": "annual", "line_label": "EPS (연간)",
+            "bars": [], "points": pts, "growth": growth, "cur": cur,
+            "cur_x": float(cur_year), "cur_year": cur_year, "projection": proj,
+            "currency": "KRW", "ticker": yf_ticker, "name": name or ""}
+
+
+def _cagr_projection(cur, cur_x, cur_year, growth, horizon=3):
+    """사용 가능한 CAGR(5>3>1년 우선) 복리로 향후 horizon년 EPS 추정."""
+    n = next((k for k in (5, 3, 1) if growth.get(k) is not None), None)
+    if n is None or cur <= 0:
+        return None
+    g = growth[n]
+    return {"source": "cagr", "basis": n, "cagr": g,
+            "points": [{"x": cur_x + k, "y": cur * (1 + g) ** k,
+                        "label": str(cur_year + k)} for k in range(1, horizon + 1)]}
+
+
+def eps_history(query, years=11):
+    """개별 종목 EPS 이력 + 성장률(CAGR) + 미래 EPS 추정.
+    1차: 야후 분기 보고 EPS(미국·대형 국내). 2차(국내 폴백): wisefn 연간.
+    반환 dict(아래 키) 또는 None:
+      granularity 'quarterly'|'annual', line_label,
+      bars[{x,y}](분기 막대·연간은 빈 배열), points[{x,y}](주 라인=TTM/연간),
+      growth{1/3/5/7/10: CAGR|None}, cur, cur_x,
+      projection{source,basis,cagr,points[{x,y,label}]}|None, currency, ticker, name
+    x는 모두 연 소수(2024.5)로 통일 → 프론트에서 분기/연간 동일 처리."""
+    yf_ticker, kr_code6, kr_name = kr_data.resolve_query(query)
+    if yf_ticker is None:
+        return None
+    now = time.time()
+    hit = _EPS_HIST_CACHE.get(yf_ticker)
+    if hit and now - hit[0] < _EPS_HIST_TTL:
+        return hit[1]
+    out = None
+    try:
+        out = _eps_from_yahoo(yf_ticker, kr_name, years)
+    except Exception:
+        out = None
+    if out is None and is_korean(yf_ticker):       # 국내 폴백
+        try:
+            out = _eps_from_wisefn(yf_ticker, kr_code6 or kr_code(yf_ticker),
+                                   kr_name, years)
+        except Exception:
+            out = None
+    _EPS_HIST_CACHE[yf_ticker] = (now, out)
+    return out
+
+
 if __name__ == "__main__":
     tickers = sys.argv[1:] or ["NVDA", "005930.KS", "AAPL", "000660.KS"]
     for t in tickers:

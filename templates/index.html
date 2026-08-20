@@ -582,6 +582,31 @@
   #tab-snp .snp-eps-stat b{color:var(--text);font-variant-numeric:tabular-nums}
   #tab-snp .snp-eps-stat .up-pos{color:var(--buy)}
   #tab-snp .snp-eps-stat .proj{color:#f5b544}
+  /* ===== EPS 성장률 · 미래 EPS 추정 패널 ===== */
+  .card.epsg .epsg-svg{width:100%;height:auto;display:block;margin:2px 0 6px}
+  .epsg-note{font-size:11.5px;color:var(--muted);line-height:1.6;margin-bottom:14px}
+  .epsg-sec{font-size:13.5px;font-weight:700;color:var(--text);margin:6px 0 9px}
+  .epsg-chips{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:14px}
+  .epsg-chip{display:flex;flex-direction:column;align-items:center;gap:2px;background:#131a28;
+    border:1px solid var(--line);border-radius:10px;padding:9px 4px;cursor:pointer;transition:.12s}
+  .epsg-chip .cn{font-size:11px;color:var(--muted)}
+  .epsg-chip .cv{font-size:15px;font-weight:800;font-variant-numeric:tabular-nums;color:var(--text)}
+  .epsg-chip.pos .cv{color:#37c98a}
+  .epsg-chip.neg .cv{color:#f0616d}
+  .epsg-chip:hover:not(:disabled){border-color:var(--accent)}
+  .epsg-chip.on{border-color:#f5b544;background:rgba(245,181,68,.12);box-shadow:0 0 0 1px #f5b544 inset}
+  .epsg-chip:disabled{opacity:.4;cursor:default}
+  .epsg-proj{background:#131a28;border:1px solid var(--line);border-left:4px solid #f5b544;
+    border-radius:10px;padding:12px 15px;margin-bottom:8px}
+  .epsg-proj.warn{border-left-color:var(--muted);color:var(--muted);font-size:12.5px;line-height:1.6}
+  .epsg-proj .pl{font-size:12.5px;color:var(--muted);margin-bottom:4px}
+  .epsg-proj .pv{font-size:17px;font-weight:800;color:var(--text);font-variant-numeric:tabular-nums}
+  .epsg-proj .pv b{color:#f5b544;font-weight:800}
+  .epsg-proj .ps{font-size:11.5px;color:var(--muted);margin-top:5px}
+  .epsg-proj .ps b{color:var(--text)}
+  .epsg-warn{font-size:11px;color:var(--muted);opacity:.75}
+  @media(max-width:560px){.epsg-chips{grid-template-columns:repeat(5,1fr);gap:4px}
+    .epsg-chip{padding:7px 2px}.epsg-chip .cv{font-size:12.5px}.epsg-chip .cn{font-size:9.5px}}
   /* ===== 기업 심층 분석 ===== */
   .dd-sec{margin-bottom:26px}
   .dd-h{font-size:18px;font-weight:800;margin:0 0 4px;padding-left:12px;border-left:4px solid var(--accent);line-height:1.3}
@@ -1541,6 +1566,11 @@ function render(d){
     ? `<div class="row2">` + headerCard + fgCard(d.fear_greed) + `</div>`
     : headerCard;
 
+  // EPS 성장률 · 미래 EPS 추정 (기본정보 카드 하단 · 분석 후 비동기 로드)
+  h += `<div class="card epsg" id="epsg"><h2>EPS 성장률 · 미래 EPS 추정
+      <span class="h2note">분기 EPS(최근 10년) 추이 · 연복리(CAGR) 성장률</span></h2>
+    <div id="epsg-body" class="muted" style="font-size:13px">EPS 이력 불러오는 중…</div></div>`;
+
   // 재무 흐름 (성장성·수익성·안정성·현금흐름) + AI 안정성 판단
   if(d.financials && d.financials.years) h += finCard(d.financials, d.fin_comment, d.usdkrw);
 
@@ -1609,6 +1639,154 @@ function render(d){
   initSigma();
   initTP();
   loadPeers(d.ticker, []);
+  loadEpsGrowth(d.ticker);
+}
+
+// ---------- EPS 성장률 · 미래 EPS 추정 ----------
+let EPSG = null;               // 현재 종목 EPS 이력 데이터 (칩 클릭 재계산용)
+let EPSG_BASIS = null;         // 사용자가 선택한 추정 기준 연수(null=기본)
+function loadEpsGrowth(ticker){
+  const box = $("#epsg-body");
+  if(!box) return;
+  fetch("/api/eps_history?ticker=" + encodeURIComponent(ticker))
+    .then(r => r.json())
+    .then(d => {
+      if(d.empty || d.error || !d.points || d.points.length < 2){
+        $("#epsg").style.display = "none";       // 데이터 없으면 카드 자체 숨김
+        return;
+      }
+      EPSG = d; EPSG_BASIS = null;
+      renderEpsGrowth();
+    })
+    .catch(() => { $("#epsg").style.display = "none"; });
+}
+
+// 통화별 EPS 숫자 포맷 (원화=정수+₩, 달러=소수2+$)
+function epsFmt(v){
+  if(v == null || isNaN(v)) return "-";
+  return EPSG && EPSG.currency === "KRW"
+    ? "₩" + Math.round(v).toLocaleString()
+    : "$" + (Math.abs(v) >= 100 ? Math.round(v).toLocaleString() : v.toFixed(2));
+}
+
+// 선택된 CAGR로 향후 3년 EPS 추정치 계산 (칩 클릭 시 즉시 반영)
+function epsgProjection(){
+  const d = EPSG;
+  if(EPSG_BASIS != null && d.growth[EPSG_BASIS] != null && d.cur > 0){
+    const g = d.growth[EPSG_BASIS], y = d.cur_year, x = d.cur_x;
+    return {source:"cagr", basis:EPSG_BASIS, cagr:g,
+      points:[1,2,3].map(k => ({x:x+k, y:d.cur*(1+g)**k, label:String(y+k)}))};
+  }
+  return d.projection;           // 기본(백엔드): CAGR 또는 국내 컨센서스
+}
+
+function renderEpsGrowth(){
+  const d = EPSG, box = $("#epsg-body");
+  if(!box) return;
+  const proj = epsgProjection();
+  const gOrder = [1,3,5,7,10];
+  const chips = gOrder.map(n => {
+    const g = d.growth[n];
+    const na = g == null;
+    const on = (!na && EPSG_BASIS === n) ? " on" : "";
+    const col = na ? "" : (g >= 0 ? " pos" : " neg");
+    const val = na ? "N/A" : ((g >= 0 ? "+" : "") + (g*100).toFixed(1) + "%");
+    return `<button type="button" class="epsg-chip${col}${on}" ${na?"disabled":`data-basis="${n}"`}>
+        <span class="cn">최근 ${n}년</span><span class="cv">${val}</span></button>`;
+  }).join("");
+  const projTxt = proj && proj.points && proj.points.length
+    ? proj.points.map(p => `<b>${p.label}년</b> ${epsFmt(p.y)}`).join(" · ")
+    : "추정 불가";
+  const projSrc = !proj ? ""
+    : proj.source === "consensus"
+      ? `증권사 컨센서스(FnGuide) 기준`
+      : `최근 <b>${proj.basis}년 CAGR ${proj.cagr>=0?"+":""}${(proj.cagr*100).toFixed(1)}%</b> 복리 적용`;
+  const noGrowth = gOrder.every(n => d.growth[n] == null);
+  box.innerHTML = `
+    ${epsgChartSVG(d, proj)}
+    <div class="epsg-note">ℹ️ <b style="color:#37c98a">초록 실선</b>=실제 ${d.granularity==="quarterly"?"EPS(4분기 합·TTM)":"연간 EPS"},
+      ${d.bars&&d.bars.length?`<b style="color:#4a5568">회색 막대</b>=매분기 EPS, `:""}<b style="color:#f5b544">주황 점선</b>=미래 추정.</div>
+    <div class="epsg-sec">EPS 성장률 <span class="muted" style="font-weight:400;font-size:11.5px">(연복리 · 클릭하면 그 성장률로 미래 추정)</span></div>
+    <div class="epsg-chips">${chips}</div>
+    ${noGrowth
+      ? `<div class="epsg-proj warn">⚠️ 최근 실적이 적자이거나 데이터가 짧아 성장률·추정을 계산할 수 없어요.</div>`
+      : `<div class="epsg-proj"><div class="pl">📈 미래 EPS 추정</div>
+          <div class="pv">${projTxt}</div>
+          <div class="ps">${projSrc}</div></div>`}
+    <div class="epsg-warn">단순 추정치입니다. 실제 실적·컨센서스와 다를 수 있어요.</div>`;
+  box.querySelectorAll(".epsg-chip[data-basis]").forEach(b => {
+    b.onclick = () => {
+      const n = +b.dataset.basis;
+      EPSG_BASIS = (EPSG_BASIS === n) ? null : n;   // 다시 누르면 기본으로
+      renderEpsGrowth();
+    };
+  });
+}
+
+// EPS 이력 SVG — x는 연 소수. 회색 막대(분기)+초록 실선(주 라인)+주황 점선(추정)
+function epsgChartSVG(d, proj){
+  const line = d.points, bars = d.bars || [];
+  const pj = (proj && proj.points) ? proj.points : [];
+  const W=900, H=300, ml=58, mr=64, mt=14, mb=26;
+  const iw=W-ml-mr, ih=H-mt-mb;
+  const xs = line.map(p=>p.x).concat(bars.map(p=>p.x)).concat(pj.map(p=>p.x));
+  const ys = line.map(p=>p.y).concat(bars.map(p=>p.y)).concat(pj.map(p=>p.y));
+  let xmin=Math.min(...xs), xmax=Math.max(...xs);
+  let ymin=Math.min(...ys,0), ymax=Math.max(...ys);
+  const pad=(ymax-ymin)*0.08 || 1; ymin-=pad*0.4; ymax+=pad;
+  const X = x => ml + iw*(x-xmin)/((xmax-xmin)||1);
+  const Y = v => mt + ih*(1-(v-ymin)/((ymax-ymin)||1));
+  const GRN="#37c98a", AMB="#f5b544";
+  const kr = d.currency==="KRW";
+  const yl = v => kr ? (Math.abs(v)>=1000?(v/1000).toFixed(0)+"k":Math.round(v).toString())
+                     : (Math.abs(v)>=100?Math.round(v):v.toFixed(1));
+  let g="";
+  // Y축 눈금 5개 (0선은 진하게)
+  for(let k=0;k<=4;k++){
+    const v=ymin+(ymax-ymin)*k/4, y=Y(v);
+    g+=`<line x1="${ml}" y1="${y.toFixed(1)}" x2="${ml+iw}" y2="${y.toFixed(1)}" stroke="var(--line)"/>`;
+    g+=`<text x="${(ml-6).toFixed(1)}" y="${(y+3.5).toFixed(1)}" font-size="10.5" fill="var(--muted)" text-anchor="end">${yl(v)}</text>`;
+  }
+  if(ymin<0 && ymax>0){ const zy=Y(0);
+    g+=`<line x1="${ml}" y1="${zy.toFixed(1)}" x2="${ml+iw}" y2="${zy.toFixed(1)}" stroke="var(--muted)" stroke-width="1" opacity="0.5"/>`; }
+  // 분기 EPS 막대 (연한 회색)
+  if(bars.length){
+    const bw=Math.max(1.5, iw/bars.length*0.5);
+    bars.forEach(p=>{ const x=X(p.x), y0=Y(0), y1=Y(p.y);
+      g+=`<rect x="${(x-bw/2).toFixed(1)}" y="${Math.min(y0,y1).toFixed(1)}" width="${bw.toFixed(1)}" height="${Math.abs(y1-y0).toFixed(1)}" fill="#5a6577" opacity="0.35"/>`;
+    });
+  }
+  // 주 라인(초록 실선)
+  const lp = line.map(p=>`${X(p.x).toFixed(1)},${Y(p.y).toFixed(1)}`).join(" ");
+  g+=`<polyline points="${lp}" fill="none" stroke="${GRN}" stroke-width="2.2"/>`;
+  // 추정(주황 점선) — 마지막 실제점에서 이어짐. 각 예상 연도마다 점+값 라벨
+  const last=line[line.length-1];
+  if(pj.length){
+    const pp=[`${X(last.x).toFixed(1)},${Y(last.y).toFixed(1)}`]
+      .concat(pj.map(p=>`${X(p.x).toFixed(1)},${Y(p.y).toFixed(1)}`)).join(" ");
+    g+=`<polyline points="${pp}" fill="none" stroke="${AMB}" stroke-width="2.2" stroke-dasharray="5 4"/>`;
+    pj.forEach((p,idx)=>{
+      const px=X(p.x), py=Y(p.y), isLast=idx===pj.length-1;
+      g+=`<circle cx="${px.toFixed(1)}" cy="${py.toFixed(1)}" r="4" fill="var(--bg)" stroke="${AMB}" stroke-width="2"/>`;
+      // 마지막 점은 오른쪽 여백 밖으로 나가지 않게 좌측 정렬, 나머지는 가운데
+      const anchor=(isLast && px>W-90)?"end":"middle";
+      const dx=anchor==="end"?-8:0;
+      g+=`<text x="${(px+dx).toFixed(1)}" y="${(py-8).toFixed(1)}" text-anchor="${anchor}" font-size="11" font-weight="700" fill="${AMB}">${epsFmt(p.y)}</text>`;
+    });
+  }
+  // 현재값 라벨
+  const cx=X(last.x), cy=Y(last.y), txt=epsFmt(last.y);
+  const bw=Math.max(46,txt.length*7.5+10);
+  g+=`<circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="4.5" fill="#fff" stroke="${GRN}" stroke-width="2.5"/>`;
+  g+=`<rect x="${(cx-bw-9).toFixed(1)}" y="${(cy-9.5).toFixed(1)}" width="${bw}" height="19" rx="5" fill="#1a2130" stroke="${GRN}" stroke-width="1.2"/>`;
+  g+=`<text x="${(cx-9-bw/2).toFixed(1)}" y="${(cy+4).toFixed(1)}" text-anchor="middle" font-size="11.5" font-weight="700" fill="#fff">${txt}</text>`;
+  // X축 연도 라벨
+  const seen={}, y0=Math.ceil(xmin), y1=Math.floor(xmax), stepY=Math.max(1,Math.round((y1-y0)/9));
+  for(let yy=y0; yy<=y1; yy+=stepY){
+    if(seen[yy]) continue; seen[yy]=1;
+    g+=`<text x="${X(yy).toFixed(1)}" y="${H-8}" text-anchor="middle" font-size="10.5" fill="var(--muted)">${yy}</text>`;
+  }
+  return `<svg class="epsg-svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(d.name||d.ticker)} EPS 추이 및 추정">${g}</svg>`;
 }
 
 // ---------- 동종업계 비교 ----------
