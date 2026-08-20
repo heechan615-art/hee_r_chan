@@ -1639,15 +1639,17 @@ function render(d){
   initSigma();
   initTP();
   loadPeers(d.ticker, []);
-  loadEpsGrowth(d.ticker);
+  loadEpsGrowth(d.ticker, d.eps_fwd);   // 예상 EPS(카드 값)를 미래 추정 앵커로 사용
 }
 
 // ---------- EPS 성장률 · 미래 EPS 추정 ----------
 let EPSG = null;               // 현재 종목 EPS 이력 데이터 (칩 클릭 재계산용)
 let EPSG_BASIS = null;         // 사용자가 선택한 추정 기준 연수(null=기본)
-function loadEpsGrowth(ticker){
+let EPSG_FWD = null;           // 예상 EPS(한국=네이버/미국=야후·핀헙) — 추정 앵커
+function loadEpsGrowth(ticker, fwdEps){
   const box = $("#epsg-body");
   if(!box) return;
+  EPSG_FWD = (typeof fwdEps === "number" && fwdEps > 0) ? fwdEps : null;
   fetch("/api/eps_history?ticker=" + encodeURIComponent(ticker))
     .then(r => r.json())
     .then(d => {
@@ -1669,15 +1671,32 @@ function epsFmt(v){
     : "$" + (Math.abs(v) >= 100 ? Math.round(v).toLocaleString() : v.toFixed(2));
 }
 
-// 선택된 CAGR로 향후 3년 EPS 추정치 계산 (칩 클릭 시 즉시 반영)
+// 기본 추정 기준연수 (5>3>1년 중 계산 가능한 첫 값)
+function epsgDefaultBasis(){
+  return [5,3,1].find(n => EPSG.growth[n] != null) ?? null;
+}
+
+// 미래 EPS 추정:
+//  · 앵커 = 예상 EPS(EPSG_FWD, 카드의 '예상 EPS')  ← 없으면 현재 TTM
+//  · 앵커 연도(fwd_year, 예: 2026) 값으로 놓고, 이후 해는 선택 CAGR 복리
+//  · 반환 points[0]은 예상 실적(anchor), 이후는 성장률 추정
 function epsgProjection(){
   const d = EPSG;
-  if(EPSG_BASIS != null && d.growth[EPSG_BASIS] != null && d.cur > 0){
-    const g = d.growth[EPSG_BASIS], y = d.cur_year, x = d.cur_x;
-    return {source:"cagr", basis:EPSG_BASIS, cagr:g,
-      points:[1,2,3].map(k => ({x:x+k, y:d.cur*(1+g)**k, label:String(y+k)}))};
-  }
-  return d.projection;           // 기본(백엔드): CAGR 또는 국내 컨센서스
+  const basis = (EPSG_BASIS != null && d.growth[EPSG_BASIS] != null)
+    ? EPSG_BASIS : epsgDefaultBasis();
+  if(basis == null) return null;                 // 성장률 계산 불가(적자·데이터 부족)
+  const g = d.growth[basis];
+  const base = (EPSG_FWD != null && EPSG_FWD > 0) ? EPSG_FWD : d.cur;
+  if(!(base > 0)) return null;
+  const y0 = d.fwd_year || d.cur_year;
+  const anchored = (EPSG_FWD != null && EPSG_FWD > 0);
+  // 연도 Y 포인트는 x=Y+0.9(연말 실현치 위치)에 배치 → 실제선과 겹치지 않음
+  const points = [0,1,2,3].map(k => ({
+    x: (y0 + k) + 0.9, y: base * (1+g)**k,
+    label: String(y0 + k), anchor: k === 0
+  }));
+  return {source: anchored ? "fwd" : "ttm", basis, cagr: g,
+          base, baseYear: y0, points};
 }
 
 function renderEpsGrowth(){
@@ -1695,20 +1714,22 @@ function renderEpsGrowth(){
         <span class="cn">최근 ${n}년</span><span class="cv">${val}</span></button>`;
   }).join("");
   const projTxt = proj && proj.points && proj.points.length
-    ? proj.points.map(p => `<b>${p.label}년</b> ${epsFmt(p.y)}`).join(" · ")
+    ? proj.points.map(p => `<b>${p.label}년${p.anchor?" 예상":""}</b> ${epsFmt(p.y)}`).join(" · ")
     : "추정 불가";
+  const fwdSrc = EPSG_FWD != null
+    ? (d.currency === "KRW" ? "네이버 컨센서스" : "야후·핀헙 예상")
+    : "현재 TTM";
   const projSrc = !proj ? ""
-    : proj.source === "consensus"
-      ? `증권사 컨센서스(FnGuide) 기준`
-      : `최근 <b>${proj.basis}년 CAGR ${proj.cagr>=0?"+":""}${(proj.cagr*100).toFixed(1)}%</b> 복리 적용`;
-  const noGrowth = gOrder.every(n => d.growth[n] == null);
+    : `<b>${proj.baseYear}년 예상 EPS</b>(${fwdSrc} ${epsFmt(proj.base)})를 기준으로, `
+      + `최근 <b>${proj.basis}년 CAGR ${proj.cagr>=0?"+":""}${(proj.cagr*100).toFixed(1)}%</b>를 복리로 적용`;
   box.innerHTML = `
     ${epsgChartSVG(d, proj)}
     <div class="epsg-note">ℹ️ <b style="color:#37c98a">초록 실선</b>=실제 ${d.granularity==="quarterly"?"EPS(4분기 합·TTM)":"연간 EPS"},
-      ${d.bars&&d.bars.length?`<b style="color:#4a5568">회색 막대</b>=매분기 EPS, `:""}<b style="color:#f5b544">주황 점선</b>=미래 추정.</div>
+      ${d.bars&&d.bars.length?`<b style="color:#4a5568">회색 막대</b>=매분기 EPS, `:""}<b style="color:#f5b544">주황 점선</b>=미래 추정
+      (첫 점 <b style="color:#f5b544">${proj?proj.baseYear:""}년</b>=예상 실적, 이후=성장률 추정).</div>
     <div class="epsg-sec">EPS 성장률 <span class="muted" style="font-weight:400;font-size:11.5px">(연복리 · 클릭하면 그 성장률로 미래 추정)</span></div>
     <div class="epsg-chips">${chips}</div>
-    ${noGrowth
+    ${!proj
       ? `<div class="epsg-proj warn">⚠️ 최근 실적이 적자이거나 데이터가 짧아 성장률·추정을 계산할 수 없어요.</div>`
       : `<div class="epsg-proj"><div class="pl">📈 미래 EPS 추정</div>
           <div class="pv">${projTxt}</div>
@@ -1767,11 +1788,16 @@ function epsgChartSVG(d, proj){
     g+=`<polyline points="${pp}" fill="none" stroke="${AMB}" stroke-width="2.2" stroke-dasharray="5 4"/>`;
     pj.forEach((p,idx)=>{
       const px=X(p.x), py=Y(p.y), isLast=idx===pj.length-1;
-      g+=`<circle cx="${px.toFixed(1)}" cy="${py.toFixed(1)}" r="4" fill="var(--bg)" stroke="${AMB}" stroke-width="2"/>`;
-      // 마지막 점은 오른쪽 여백 밖으로 나가지 않게 좌측 정렬, 나머지는 가운데
-      const anchor=(isLast && px>W-90)?"end":"middle";
-      const dx=anchor==="end"?-8:0;
-      g+=`<text x="${(px+dx).toFixed(1)}" y="${(py-8).toFixed(1)}" text-anchor="${anchor}" font-size="11" font-weight="700" fill="${AMB}">${epsFmt(p.y)}</text>`;
+      // 앵커(첫 점=예상 실적)는 채운 점, 이후 CAGR 추정점은 빈 점
+      g+= p.anchor
+        ? `<circle cx="${px.toFixed(1)}" cy="${py.toFixed(1)}" r="5" fill="${AMB}" stroke="var(--bg)" stroke-width="1.5"/>`
+        : `<circle cx="${px.toFixed(1)}" cy="${py.toFixed(1)}" r="4" fill="var(--bg)" stroke="${AMB}" stroke-width="2"/>`;
+      // 오른쪽 끝점은 여백 밖으로 안 나가게 좌측 정렬, 나머지는 가운데
+      const anc=(isLast && px>W-90)?"end":"middle";
+      const dx=anc==="end"?-8:0;
+      g+=`<text x="${(px+dx).toFixed(1)}" y="${(py-9).toFixed(1)}" text-anchor="${anc}" font-size="11" font-weight="700" fill="${AMB}">${epsFmt(p.y)}</text>`;
+      if(p.anchor)
+        g+=`<text x="${px.toFixed(1)}" y="${(py+16).toFixed(1)}" text-anchor="middle" font-size="9.5" font-weight="600" fill="${AMB}" opacity="0.85">예상</text>`;
     });
   }
   // 현재값 라벨

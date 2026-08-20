@@ -1218,9 +1218,14 @@ def _eps_from_yahoo(yf_ticker, name, years):
     cur_x = _yearfrac(str(ttm.index[-1])[:10])
     cur_year = int(str(ttm.index[-1])[:4])
     proj = _cagr_projection(cur, cur_x, cur_year, growth)
+    # 미래 추정 앵커 연도: 최신 보고 분기의 연도(=진행 중 회계연도, 2026).
+    # 해당 연도 4개 분기가 모두 보고됐으면 이미 지난 해 → 다음 해로.
+    reported_cur = len([i for i in s.index if int(str(i)[:4]) == cur_year])
+    fwd_year = cur_year + 1 if reported_cur >= 4 else cur_year
     return {"granularity": "quarterly", "line_label": "EPS (최근 4분기 합·TTM)",
             "bars": bars, "points": pts, "growth": growth, "cur": cur,
-            "cur_x": cur_x, "cur_year": cur_year, "projection": proj,
+            "cur_x": cur_x, "cur_year": cur_year, "fwd_year": fwd_year,
+            "projection": proj,
             "currency": "USD" if not is_korean(yf_ticker) else "KRW",
             "ticker": yf_ticker, "name": name or ""}
 
@@ -1246,9 +1251,12 @@ def _eps_from_wisefn(yf_ticker, code, name, years):
                             "label": y[:4]} for y, e in est]}
     else:
         proj = _cagr_projection(cur, float(cur_year), cur_year, growth)
+    # 앵커 연도: 첫 컨센서스 E연도(=2026E), 없으면 마지막 확정+1
+    fwd_year = int(est[0][0][:4]) if est else cur_year + 1
     return {"granularity": "annual", "line_label": "EPS (연간)",
             "bars": [], "points": pts, "growth": growth, "cur": cur,
-            "cur_x": float(cur_year), "cur_year": cur_year, "projection": proj,
+            "cur_x": float(cur_year), "cur_year": cur_year, "fwd_year": fwd_year,
+            "projection": proj,
             "currency": "KRW", "ticker": yf_ticker, "name": name or ""}
 
 
