@@ -227,18 +227,48 @@ def _us_news_raw(sym, key):
 _VIX_CACHE = [0.0, None]
 
 
+def _vix_chart_api():
+    """야후 차트 API(curl_cffi) 직접 호출 — 클라우드(Render) IP에서 .history가
+    빈 값을 받을 때 대체. ^VIX 2년치 일별 종가 시리즈 or None."""
+    try:
+        from curl_cffi import requests as creq
+        r = creq.get("https://query1.finance.yahoo.com/v8/finance/chart/%5EVIX",
+                     params={"range": "2y", "interval": "1d"},
+                     impersonate="chrome", timeout=12)
+        if r.status_code != 200:
+            return None
+        res = r.json()["chart"]["result"][0]
+        ts = res.get("timestamp") or []
+        cl = res["indicators"]["quote"][0]["close"]
+        pairs = [(pd.Timestamp(t, unit="s"), c) for t, c in zip(ts, cl) if c is not None]
+        if not pairs:
+            return None
+        idx, vals = zip(*pairs)
+        return pd.Series(vals, index=pd.DatetimeIndex(idx).tz_localize(None))
+    except Exception:
+        return None
+
+
 def _load_vix():
-    """VIX 지수 2년치 (캐시 6시간). 미국 시장 공포지수."""
+    """VIX 지수 2년치 (캐시 6시간). 미국 시장 공포지수.
+    1차 yfinance .history → 클라우드에서 막히면 차트 API로 폴백."""
     now = time.time()
     if _VIX_CACHE[1] is not None and now - _VIX_CACHE[0] < 6 * 3600:
         return _VIX_CACHE[1]
+    v = None
     try:
-        v = yfsess.ticker("^VIX").history(period="2y")["Close"].dropna()
-        v.index = v.index.tz_localize(None)
-        _VIX_CACHE[0], _VIX_CACHE[1] = now, v
-        return v if len(v) else None
+        s = yfsess.ticker("^VIX").history(period="2y")["Close"].dropna()
+        if len(s):
+            s.index = s.index.tz_localize(None)
+            v = s
     except Exception:
-        return None
+        v = None
+    if v is None or not len(v):        # 클라우드 차단 시 차트 API 폴백
+        v = _vix_chart_api()
+    if v is not None and len(v):
+        _VIX_CACHE[0], _VIX_CACHE[1] = now, v
+        return v
+    return None
 
 
 def _market_vol(market):
