@@ -585,6 +585,51 @@
   #tab-snp .snp-eps-stat b{color:var(--text);font-variant-numeric:tabular-nums}
   #tab-snp .snp-eps-stat .up-pos{color:var(--buy)}
   #tab-snp .snp-eps-stat .proj{color:#f5b544}
+  /* ===== S&P 매크로/컨센서스 밸류 체크 · 총 결과 해석 ===== */
+  #tab-snp .stat-row{display:flex;gap:14px;flex-wrap:wrap;background:#131a28;border:1px solid var(--line);
+    border-radius:10px;padding:11px 14px;margin-bottom:12px;font-size:12.5px;color:var(--muted)}
+  #tab-snp .stat-row .s b{display:block;color:var(--text);font-size:17px;font-weight:700;font-variant-numeric:tabular-nums;margin-top:2px}
+  #tab-snp .mx{width:100%;border-collapse:collapse;margin:6px 0 4px}
+  #tab-snp .mx th,#tab-snp .mx td{padding:10px 8px;text-align:center;border:1px solid var(--line)}
+  #tab-snp .mx th{color:var(--muted);font-weight:600;background:#131a28;font-size:12px}
+  #tab-snp .mx td.rowh{color:var(--text);font-weight:700;background:#131a28;text-align:left;font-size:13px}
+  #tab-snp .mx td .t{font-size:17px;font-weight:700;font-variant-numeric:tabular-nums}
+  #tab-snp .mx td.base{background:rgba(79,140,255,.08)}
+  #tab-snp .mx-up{display:block;font-size:11.5px;font-weight:700;margin-top:2px;font-variant-numeric:tabular-nums}
+  #tab-snp .mx-up.pos{color:var(--buy)} #tab-snp .mx-up.neg{color:var(--sell)}
+  #tab-snp .mx-cap{font-size:11px;color:var(--muted);margin-top:10px;line-height:1.6}
+  #tab-snp .mx-cap b{color:#c3ccdd}
+  #tab-snp .upl{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin:10px 0 2px}
+  #tab-snp .upl-btn{background:#131a28;border:1px solid var(--accent);color:var(--accent);border-radius:9px;
+    padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer}
+  #tab-snp .upl-btn:hover{background:var(--accent);color:#fff}
+  #tab-snp .upl-msg{font-size:12px;color:var(--muted)}
+  #tab-snp .gap-hero{display:flex;align-items:baseline;gap:12px;background:#131a28;border:1px solid var(--line);
+    border-left:4px solid var(--accent);border-radius:11px;padding:14px 17px;margin-bottom:14px}
+  #tab-snp .gap-hero .n{font-size:30px;font-weight:800;font-variant-numeric:tabular-nums}
+  #tab-snp .gap-hero .t{font-size:13px;color:var(--muted);line-height:1.55}
+  #tab-snp .scen{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
+  @media(max-width:640px){ #tab-snp .scen{grid-template-columns:1fr}}
+  #tab-snp .scen .sc{background:#131a28;border:1px solid var(--line);border-radius:11px;padding:14px 16px}
+  #tab-snp .scen .sc.opt{border-left:3px solid var(--buy)} #tab-snp .scen .sc.base2{border-left:3px solid var(--warn)}
+  #tab-snp .scen .sc h4{margin:0 0 4px;font-size:13.5px}
+  #tab-snp .scen .sc .big{font-size:23px;font-weight:800;font-variant-numeric:tabular-nums;margin:2px 0}
+  #tab-snp .scen .sc p{margin:6px 0 0;font-size:12px;color:var(--muted);line-height:1.55}
+  #tab-snp .chk{background:#131a28;border:1px solid var(--line);border-radius:11px;padding:14px 17px}
+  #tab-snp .chk h4{margin:0 0 8px;font-size:13.5px}
+  #tab-snp .chk ul{margin:0;padding-left:18px} #tab-snp .chk li{font-size:12.5px;color:var(--muted);line-height:1.7;margin-bottom:3px}
+  #tab-snp .chk li b{color:var(--text)}
+  #tab-snp .ov-chips{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px}
+  @media(max-width:640px){ #tab-snp .ov-chips{grid-template-columns:1fr}}
+  #tab-snp .ov-chip{background:#131a28;border:1px solid var(--line);border-radius:11px;padding:12px 14px;text-align:center}
+  #tab-snp .ov-chip .l{display:block;font-size:11.5px;color:var(--muted)}
+  #tab-snp .ov-chip .v{display:block;font-size:20px;font-weight:800;margin:3px 0}
+  #tab-snp .ov-chip .s{display:block;font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
+  #tab-snp .ov-verdict{background:#131a28;border:1px solid var(--line);border-left:4px solid var(--accent);border-radius:11px;padding:14px 17px}
+  #tab-snp .ov-verdict .vh{font-size:13.5px;font-weight:700;margin-bottom:5px}
+  #tab-snp .ov-verdict p{margin:0;font-size:13px;color:var(--text);line-height:1.65}
+  #tab-snp .ov-verdict .ov-caveat{margin-top:8px;font-size:12px;color:var(--muted)}
+  #tab-snp .ov-verdict .ov-caveat b{color:var(--warn)}
   /* ===== EPS 성장률 · 미래 EPS 추정 패널 ===== */
   .card.epsg .epsg-svg{width:100%;height:auto;display:block;margin:2px 0 6px}
   .epsg-note{font-size:11.5px;color:var(--muted);line-height:1.6;margin-bottom:14px}
@@ -3195,6 +3240,78 @@ function vixHTML(vix){
     <div class="vix-bands">${rows}</div>`;
 }
 
+// ── 매크로/컨센서스 밸류 체크 · 총 결과 해석 헬퍼 ──
+const snpFmtIdx = v => (v==null||isNaN(v)) ? "-" : Math.round(v).toLocaleString();
+const snpPct1 = v => (v==null||isNaN(v)) ? "-" : (v>=0?"+":"")+Number(v).toFixed(1)+"%";
+function snpUp(u){
+  if(u==null||isNaN(u)) return "";
+  return `<span class="mx-up ${u>=0?'pos':'neg'}">${snpPct1(u)}</span>`;
+}
+function snpMatrix(bands, rows){
+  const head = `<tr><th></th><th>베어<br>PER ${bands[0]}</th><th>베이스<br>PER ${bands[1]}</th><th>불<br>PER ${bands[2]}</th></tr>`;
+  const body = rows.map(r=>`<tr>
+    <td class="rowh">${esc(r.label)}</td>
+    <td><span class="t">${snpFmtIdx(r.targets.bear)}</span>${snpUp(r.upside&&r.upside.bear)}</td>
+    <td class="base"><span class="t">${snpFmtIdx(r.targets.base)}</span>${snpUp(r.upside&&r.upside.base)}</td>
+    <td><span class="t">${snpFmtIdx(r.targets.bull)}</span>${snpUp(r.upside&&r.upside.bull)}</td></tr>`).join("");
+  return `<table class="mx">${head}${body}</table>`;
+}
+function snpCap(c){
+  if(!c) return "";
+  const bits=[];
+  if(c.asof) bits.push(`기준일 <b>${esc(c.asof)}</b>`);
+  if(c.report_date) bits.push(`리포트 <b>${esc(c.report_date)}</b>`);
+  if(c.date) bits.push(`관측 <b>${esc(c.date)}</b>`);
+  if(c.source) bits.push(`출처 <b>${esc(c.source)}</b>`);
+  return `<div class="mx-cap">${bits.join(" · ")}</div>`;
+}
+function snpOverall(d, pe, cons, gap){
+  const fg=d.fear_greed||{}, vix=d.vix||{};
+  const z=pe.z, fwdPer=cons&&cons.fwd_per;
+  const vSig = z>=1 ? "고평가" : (z<=-1 ? "저평가" : "적정");
+  const vColor = z>=1 ? "var(--sell)" : (z<=-1 ? "var(--buy)" : "var(--muted)");
+  const s=fg.score;
+  const senti = s==null?"-":(s<=24?"극도의 공포":s<=44?"공포":s<=55?"중립":s<=75?"탐욕":"극도의 탐욕");
+  const sColor = s==null?"var(--muted)":(s<=44?"#f5926b":s<=55?"#aab4c8":"#37c98a");
+  const vv=vix.value;
+  const volt = vv==null?"-":(vv<20?"안정":vv<28?"주의":"위험");
+  const voColor = vv==null?"var(--muted)":(vv<20?"#37c98a":vv<28?"#f5b544":"#f0616d");
+  const greedy = s!=null && s>=56, fearful = s!=null && s<=44;
+  let verdict, vc;
+  if(vSig==="고평가" && greedy){ verdict="밸류에이션 부담이 큰데 심리도 과열입니다. 신규 진입은 분할·신중, 이익 실현과 리스크 관리를 우선하세요."; vc="var(--sell)"; }
+  else if(vSig==="저평가" && fearful){ verdict="밸류에이션 매력과 공포 심리가 겹칩니다. 역발상 분할 매수 기회를 관찰할 구간입니다."; vc="var(--buy)"; }
+  else if(vSig==="고평가"){ verdict="밸류에이션이 평균을 웃돕니다. 추격보다 조정 시 분할 접근이 유리합니다."; vc="var(--warn)"; }
+  else if(vSig==="저평가"){ verdict="밸류에이션이 평균을 밑돕니다. 심리 회복을 확인하며 분할 매수를 고려할 수 있습니다."; vc="var(--buy)"; }
+  else { verdict="밸류에이션은 적정 범위입니다. 실적·금리 흐름을 확인하며 중립적으로 대응하세요."; vc="var(--muted)"; }
+  if(vv!=null && vv>=28) verdict += " 다만 VIX가 높아 단기 변동성 확대에 유의하세요.";
+  else if(vv!=null && vv<20) verdict += " 변동성은 낮아 시장은 비교적 안정적입니다.";
+  const cav = (gap!=null)
+    ? `<p class="ov-caveat">⚠️ 컨센서스가 매크로(2027)보다 <b>${snpPct1(gap)}</b> ${gap>=0?'낙관적':'보수적'} —
+        ${gap>=0?'실적 서프라이즈 의존도가 높아, 실적 실망 시 조정 폭이 커질 수 있습니다.':'거시 전제 대비 눈높이가 낮습니다.'}</p>` : "";
+  return `
+    <div class="ov-chips">
+      <div class="ov-chip"><span class="l">밸류에이션</span><span class="v" style="color:${vColor}">${vSig}</span>
+        <span class="s">${pe.z>0?'+':''}${f2(pe.z)}σ · 선행PER ${fwdPer!=null?f2(fwdPer):'-'}</span></div>
+      <div class="ov-chip"><span class="l">시장 심리</span><span class="v" style="color:${sColor}">${senti}</span>
+        <span class="s">공탐 ${s!=null?s:'-'}</span></div>
+      <div class="ov-chip"><span class="l">변동성</span><span class="v" style="color:${voColor}">${volt}</span>
+        <span class="s">VIX ${vv!=null?f2(vv):'-'}</span></div>
+    </div>
+    <div class="ov-verdict" style="border-left-color:${vc}">
+      <div class="vh">🧭 종합 판단</div><p>${verdict}</p>${cav}</div>`;
+}
+// FactSet PDF 업로드 → 컨센서스 EPS 갱신 후 재렌더
+function uploadFactset(inp){
+  const file = inp.files[0]; if(!file) return;
+  const msg = document.getElementById("snp-upl-msg");
+  if(msg) msg.textContent = "업로드·분석 중…";
+  const fd = new FormData(); fd.append("file", file);
+  fetch("/api/snp/upload_factset?period=" + encodeURIComponent(SNP_PERIOD), {method:"POST", body:fd})
+    .then(r=>r.json())
+    .then(d=>{ if(d.error){ if(msg) msg.textContent="⚠️ "+d.error; return;} render(d); })
+    .catch(e=>{ if(msg) msg.textContent="⚠️ 실패: "+e; });
+}
+
 function render(d){
   document.getElementById("snp-updated").innerHTML =
     `업데이트: <b>${esc(d.updated)}</b>${d.cached?' (캐시)':''}`;
@@ -3208,6 +3325,67 @@ function render(d){
   const curDef=BAND_DEFS.find(x=>x.k===curK);
   const eps=d.eps||{};
   const macro=d.macro||{};
+  // 자동 밸류에이션 파이프라인
+  const fs=d.factset||{}, sep=d.sep, val=d.valuation||{}, cap=d.captions||{};
+  const cfg=d.config||{}, bands=val.per_bands||cfg.per_bands||[18,20,22];
+  const macroV=val.macro, cons=val.consensus, gap=val.gap;
+  const iv=(d.index&&d.index.value!=null)?d.index.value:fs.index;
+  const tenYr=cfg.ten_year_avg_fwd_per;
+  // ③ 매크로 기반 밸류 체크
+  const macroSec = (macroV && fs.ttm_eps!=null) ? `
+      <div class="stat-row">
+        <div class="s">현재 TTM EPS (base)<b>${f2(fs.ttm_eps)}</b></div>
+        <div class="s">명목성장 2027 (GDP+PCE)<b>${snpPct1(macroV.nominal["2027"])}</b></div>
+        <div class="s">명목성장 2028<b>${snpPct1(macroV.nominal["2028"])}</b></div>
+        <div class="s">추정 EPS 2027<b>${f2(macroV.eps["2027"])}</b></div>
+        <div class="s">추정 EPS 2028<b>${f2(macroV.eps["2028"])}</b></div>
+      </div>
+      ${snpMatrix(bands,[
+        {label:"2027 목표", targets:macroV.targets["2027"], upside:macroV.upside["2027"]},
+        {label:"2028 목표", targets:macroV.targets["2028"], upside:macroV.upside["2028"]}])}
+      ${snpCap(cap.sep)} ${snpCap(cap.factset)}`
+    : `<div class="desc">SEP 전망 또는 EPS 데이터를 준비 중입니다. 잠시 후 새로고침해 주세요.</div>`;
+  // ④ 컨센서스 기반 밸류 체크
+  const uplUI = `<div class="upl">
+      <label class="upl-btn">📄 FactSet PDF 업로드
+        <input type="file" accept="application/pdf" style="display:none" onchange="uploadFactset(this)"></label>
+      <span class="upl-msg" id="snp-upl-msg">최신 주간 리포트를 자동으로 가져옵니다. 특정 주차가 필요하면 PDF를 올리세요.</span></div>`;
+  const consSec = (cons && cons.fwd_eps!=null) ? `
+      <div class="stat-row">
+        <div class="s">선행 12M EPS<b>${f2(cons.fwd_eps)}</b></div>
+        <div class="s">현재 선행 PER<b>${f2(cons.fwd_per)}</b></div>
+        ${tenYr!=null?`<div class="s">10년 평균 선행 PER<b>${f2(tenYr)}</b></div>`:""}
+      </div>
+      ${snpMatrix(bands,[{label:"선행 12M 목표", targets:cons.targets, upside:cons.upside}])}
+      <div class="mx-cap">📐 <b>PER 밴드 근거</b> — <b>베이스 ${bands[1]}</b>: 현재 선행 PER(${f2(cons.fwd_per)})·10년 평균(${f2(tenYr)}) 수준 /
+        <b>베어 ${bands[0]}</b>: 금리↑·성장둔화 디레이팅(≈−2) / <b>불 ${bands[2]}</b>: 성장 재가속 리레이팅(≈+2). config에서 조정.</div>
+      ${uplUI}${snpCap(cap.factset)}`
+    : `<div class="desc">FactSet 컨센서스 EPS를 아직 못 가져왔습니다. 자동 조달이 안 되면 FactSet Earnings Insight PDF를 올려주세요.</div>${uplUI}`;
+  // ⑤ 결과 해석
+  const interpSec = (macroV && cons && gap!=null) ? (()=>{
+      const richer=gap>=0, cb=cons.targets.base, cbu=cons.upside.base;
+      const mb=macroV.targets["2027"].base, mbu=macroV.upside["2027"].base;
+      return `
+      <div class="gap-hero">
+        <div class="n" style="color:${richer?'var(--warn)':'var(--buy)'}">${snpPct1(gap)}</div>
+        <div class="t">컨센서스(선행 EPS) 기준 적정지수가 매크로(2027 SEP) 기준보다
+          <b style="color:var(--text)">${richer?'높습니다':'낮습니다'}</b>.
+          ${richer?'시장은 거시 성장률만으로 설명되는 수준보다 <b style="color:var(--text)">이익 서프라이즈·마진 확대</b>를 더 반영하고 있습니다.':'컨센서스가 거시 전제보다 보수적입니다.'}</div>
+      </div>
+      <div class="scen">
+        <div class="sc opt"><h4>🟢 컨센서스 실현 시 (낙관)</h4>
+          <div class="big">${snpFmtIdx(cb)} ${snpUp(cbu)}</div>
+          <p>FactSet 선행 12M EPS <b>${f2(cons.fwd_eps)}</b> × 베이스 PER <b>${bands[1]}</b>.</p></div>
+        <div class="sc base2"><h4>🟡 거시 전제만 반영 (중립)</h4>
+          <div class="big">${snpFmtIdx(mb)} ${snpUp(mbu)}</div>
+          <p>TTM EPS <b>${f2(fs.ttm_eps)}</b>를 SEP 명목성장+프리미엄으로 2027까지 키운 <b>${f2(macroV.eps["2027"])}</b> × 베이스 PER <b>${bands[1]}</b>.</p></div>
+      </div>
+      <div class="chk"><h4>✅ 체크포인트</h4><ul>
+        <li>현재 <b>선행 PER ${f2(cons.fwd_per)}</b> vs 10년 평균 <b>${f2(tenYr)}</b> — ${cons.fwd_per>tenYr?'평균 <b>위</b>(밸류 부담)':'평균 <b>아래</b>(상대적 매력)'}</li>
+        <li>현재 <b>후행 PER 위치 ${pe.z>0?'+':''}${f2(pe.z)}σ</b> (${curDef.name}) — ${curDef.act}</li>
+        <li>갭 <b>${snpPct1(gap)}</b>: 클수록 컨센서스의 <b>이익 서프라이즈 의존도</b>가 높습니다.</li>
+      </ul></div>`;
+    })() : `<div class="desc">매크로·컨센서스 두 값이 모두 있어야 비교 해석이 표시됩니다.</div>`;
   const html = `
   <div class="kpis">
     <div class="kpi"><div class="k">현재 PER</div><div class="v">${f2(pe.current)}</div>
@@ -3249,55 +3427,45 @@ function render(d){
   </div>
 
   <div class="card">
-    <h2>④ S&P500 추정 EPS 성장 계산기</h2>
-    <div class="desc">현재 EPS에 <b>실질GDP성장률 + 기대인플레이션(BEI)</b>만큼의 명목 성장을 적용해 내년 추정 EPS를 구하고,
-      현재 PER을 곱해 <b>추정 지수</b>를 계산합니다. 두 입력값은 수정할 수 있어요.</div>
+    <h2>④ 매크로 기반 밸류 체크</h2>
+    <div class="desc">현재 <b>TTM EPS</b>에 <b>명목성장률(FOMC SEP 실질GDP+PCE) + 이익 프리미엄 ${cfg.eps_premium!=null?cfg.eps_premium:1.5}%p</b>를
+      복리로 적용해 미래 EPS를 추정하고, PER 밴드(${bands.join('·')})를 곱해 목표지수를 구합니다. <span style="color:var(--muted)">괄호 %는 현재가 대비 괴리율.</span></div>
+    ${macroSec}
+  </div>
 
-    <div class="calc-base">
-      <div class="cb"><div class="k">현재 EPS (TTM)</div>
-        <div class="v" id="snp-cEps">${eps.ttm!=null?f2(eps.ttm):'-'}</div>
-        <div class="s">${eps.asof?esc(eps.asof)+' 기준':''}</div></div>
-      <div class="cb"><div class="k">현재 PER</div>
-        <div class="v" id="snp-cPer">${f2(pe.current)}</div>
-        <div class="s">현재 지수 반영</div></div>
-    </div>
+  <div class="card">
+    <h2>⑤ 컨센서스 기반 밸류 체크</h2>
+    <div class="desc">FactSet <b>선행 12개월 EPS</b>(애널리스트 컨센서스)에 PER 밴드를 곱해 목표지수를 구합니다. 선행 PER = 현재 지수 ÷ 선행 EPS.</div>
+    ${consSec}
+  </div>
 
-    <div class="calc-in">
-      <div class="ci">
-        <label>실질 GDP 성장률 (%)<span class="src">애틀랜타 연은 GDPNow${macro.gdp_date?' · '+esc(macro.gdp_date):''}</span></label>
-        <input type="number" step="0.1" id="snp-inGdp" value="${macro.gdp!=null?macro.gdp:1.7}">
-      </div>
-      <div class="ci">
-        <label>기대인플레이션 BEI (%)<span class="src">FRED 10년 BEI${macro.bei_date?' · '+esc(macro.bei_date):''}</span></label>
-        <input type="number" step="0.1" id="snp-inBei" value="${macro.bei!=null?macro.bei:2.3}">
-      </div>
-    </div>
-
-    <div class="calc-out">
-      <div class="co"><div class="k">명목 성장률 (GDP+BEI)</div><div class="v" id="snp-outG">-</div></div>
-      <div class="co arrow">→</div>
-      <div class="co"><div class="k">추정 EPS</div><div class="v hl" id="snp-outEps">-</div></div>
-      <div class="co arrow">×PER →</div>
-      <div class="co"><div class="k">추정 S&P500 지수</div><div class="v hl" id="snp-outIdx">-</div></div>
-    </div>
-    <div class="calc-note" id="snp-calcNote"></div>
+  <div class="card">
+    <h2>⑥ 결과 해석</h2>
+    <div class="desc">거시(SEP)로만 설명되는 수준과 시장 컨센서스가 얼마나 벌어져 있는지로 지금의 낙관/보수 정도를 읽습니다.</div>
+    ${interpSec}
   </div>
 
   <div class="two">
     <div class="card">
-      <h2>⑤ CNN 공포·탐욕 지수</h2>
+      <h2>⑦ CNN 공포·탐욕 지수</h2>
       <div class="desc">시장 심리 0(극공포)~100(극탐욕). 남들이 공포일 때가 기회일 수 있어요.</div>
       ${fearGreedHTML(d.fear_greed)}
     </div>
     <div class="card">
-      <h2>⑥ VIX 변동성지수</h2>
+      <h2>⑧ VIX 변동성지수</h2>
       <div class="desc">시장의 '공포 온도'. 낮을수록 안정, 높을수록 급락 위험이 큽니다.</div>
       ${vixHTML(d.vix)}
     </div>
   </div>
 
   <div class="card">
-    <h2>⑦ 이 지수에 투자하려면?</h2>
+    <h2>⑨ 총 결과 해석 — 밸류 × 심리 × 변동성</h2>
+    <div class="desc">밸류에이션(고/저평가)·시장 심리(공포/탐욕)·변동성(VIX)을 함께 읽어 지금 국면을 한 번에 종합합니다.</div>
+    ${snpOverall(d, pe, cons, gap)}
+  </div>
+
+  <div class="card">
+    <h2>⑩ 이 지수에 투자하려면?</h2>
     <div class="desc">S&P500을 그대로 담는 대표 ETF입니다.</div>
     <div class="etf">
       <div class="box"><div class="t">🇰🇷 국내 상장 (원화 투자)</div>
@@ -3307,7 +3475,6 @@ function render(d){
     </div>
   </div>`;
   document.getElementById("snp-app").innerHTML = html;
-  setupCalc(eps.ttm, pe.current);
 }
 
 // EPS 성장 계산기 — 입력 바뀔 때마다 즉시 재계산
@@ -3379,6 +3546,7 @@ document.addEventListener("click", function(e){
   if(b && b.dataset.snpperiod) loadSnp(false, b.dataset.snpperiod);
 });
 window.loadSnp = loadSnp;
+window.uploadFactset = uploadFactset;   // 인라인 onchange가 IIFE 밖에서 찾도록 노출
 
 })();
 </script>

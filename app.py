@@ -364,13 +364,30 @@ def api_final_verdict():
 
 @app.route("/api/snp")
 def api_snp():
-    """S&P500 밸류에이션 대시보드 — PER σ밴드·EPS·공포탐욕·VIX. (snp.py에서 6시간 캐시)"""
+    """S&P500 밸류에이션 대시보드 — PER σ밴드·EPS·공포탐욕·VIX·매크로/컨센서스 밸류."""
     import snp
     try:
         return jsonify(clean(snp.overview(force=bool(request.args.get("force")),
                                           period=request.args.get("period", "2020"))))
     except Exception as e:
         return jsonify({"error": f"S&P500 데이터 실패: {repr(e)[:150]}"}), 500
+
+
+@app.route("/api/snp/upload_factset", methods=["POST"])
+def api_snp_upload_factset():
+    """FactSet Earnings Insight PDF 수동 업로드 → 컨센서스 EPS 갱신."""
+    import snp
+    f = request.files.get("file")
+    if not f:
+        return jsonify({"error": "PDF 파일을 첨부해 주세요."}), 400
+    try:
+        parsed = snp.apply_factset_upload(f.read())
+    except Exception as e:
+        return jsonify({"error": f"PDF 파싱 실패: {repr(e)[:120]}"}), 400
+    if not parsed:
+        return jsonify({"error": "FactSet 리포트에서 값을 찾지 못했습니다. "
+                                 "정식 Earnings Insight PDF인지 확인해 주세요."}), 400
+    return jsonify(clean(snp.overview(period=request.args.get("period", "2020"))))
 
 
 def _preview_briefing(out):
