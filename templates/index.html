@@ -585,6 +585,8 @@
   #tab-snp .snp-eps-stat b{color:var(--text);font-variant-numeric:tabular-nums}
   #tab-snp .snp-eps-stat .up-pos{color:var(--buy)}
   #tab-snp .snp-eps-stat .proj{color:#f5b544}
+  #tab-snp .snp-qoq{margin-top:16px;border-top:1px solid var(--line);padding-top:14px}
+  #tab-snp .snp-qoq svg{width:100%;height:auto;display:block}
   /* ===== S&P 매크로/컨센서스 밸류 체크 · 총 결과 해석 ===== */
   #tab-snp .stat-row{display:flex;gap:14px;flex-wrap:wrap;background:#131a28;border:1px solid var(--line);
     border-radius:10px;padding:11px 14px;margin-bottom:12px;font-size:12.5px;color:var(--muted)}
@@ -3300,6 +3302,49 @@ function snpOverall(d, pe, cons, gap){
     <div class="ov-verdict" style="border-left-color:${vc}">
       <div class="vh">🧭 종합 판단</div><p>${verdict}</p>${cav}</div>`;
 }
+// 분기 QoQ 막대차트 (실제 초록/빨강 + 추정 주황)
+function qoqSVG(eq){
+  const act=(eq.series||[]).filter(s=>s.qoq!=null).map(s=>({d:s.date,q:s.qoq,p:false}));
+  const prj=(eq.projection||[]).map(p=>({d:p.date,q:p.qoq,p:true}));
+  const all=act.concat(prj); if(!all.length) return "";
+  const W=900,H=230,ml=38,mr=14,mt=14,mb=34,iw=W-ml-mr,ih=H-mt-mb;
+  const qs=all.map(a=>a.q); let ymin=Math.min(0,...qs),ymax=Math.max(0,...qs);
+  const pad=(ymax-ymin)*0.12||1; ymin-=pad; ymax+=pad;
+  const n=all.length, bw=Math.max(3, iw/n*0.72);
+  const X=i=>ml+iw*(i+0.5)/n, Y=v=>mt+ih*(1-(v-ymin)/((ymax-ymin)||1)), zy=Y(0);
+  let g=`<line x1="${ml}" y1="${zy.toFixed(1)}" x2="${ml+iw}" y2="${zy.toFixed(1)}" stroke="var(--muted)" opacity="0.5"/>`;
+  g+=`<text x="${(ml-5).toFixed(1)}" y="${(zy+3).toFixed(1)}" text-anchor="end" font-size="9" fill="var(--muted)">0%</text>`;
+  all.forEach((a,i)=>{
+    const x=X(i),y=Y(a.q),h=Math.abs(y-zy);
+    const col=a.p?"#f5b544":(a.q>=0?"#37c98a":"#f0616d");
+    g+=`<rect x="${(x-bw/2).toFixed(1)}" y="${Math.min(y,zy).toFixed(1)}" width="${bw.toFixed(1)}" height="${Math.max(0.6,h).toFixed(1)}" fill="${col}" ${a.p?'opacity="0.9"':''} rx="1.5"/>`;
+  });
+  all.forEach((a,i)=>{
+    if(a.p || a.d.endsWith("-03"))
+      g+=`<text x="${X(i).toFixed(1)}" y="${H-12}" text-anchor="middle" font-size="8.5" fill="${a.p?'#f5b544':'var(--muted)'}" ${a.p?'font-weight="700"':''}>${a.p?a.d.slice(2):a.d.slice(0,4)}</text>`;
+    if(a.p){ const x=X(i),y=Y(a.q);
+      g+=`<text x="${x.toFixed(1)}" y="${(y-4).toFixed(1)}" text-anchor="middle" font-size="8.5" font-weight="700" fill="#f5b544">${a.q>=0?'+':''}${a.q}%</text>`; }
+  });
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="분기 EPS QoQ 성장률">${g}</svg>`;
+}
+function qoqBlock(eq){
+  if(!eq || eq.avg_qoq==null) return "";
+  const proj=eq.projection||[];
+  const projTxt=proj.map(p=>`<span>${p.date} 예상 <b class="proj">$${Math.round(p.eps)}</b></span>`).join("");
+  const sign=eq.avg_qoq>=0?'+':'';
+  return `<div class="snp-qoq">
+    <h2 style="font-size:14px;margin-top:0">분기 EPS(TTM) 성장률 · 향후 분기 추정 <span class="h2note">전분기比(QoQ)</span></h2>
+    <div class="desc">multpl은 <b>${eq.last_date}</b>까지만 실적을 제공 → 최근 기간 <b>평균 QoQ ${sign}${eq.avg_qoq}%</b>를 복리로 적용해 다음 분기(4~6·7~9·10~12월) TTM EPS를 추정합니다.</div>
+    <div class="snp-eps-stat">
+      <span>평균 QoQ <b class="${eq.avg_qoq>=0?'up-pos':'up-neg'}">${sign}${eq.avg_qoq}%</b></span>
+      <span>최근 실제(${eq.last_date}) <b>$${Math.round(eq.current)}</b></span>
+      ${projTxt}
+    </div>
+    ${qoqSVG(eq)}
+    <div class="snp-period-note">ℹ️ 막대=분기별 전분기比(QoQ). <b style="color:#37c98a">초록</b>/<b style="color:#f0616d">빨강</b>=실제, <b style="color:#f5b544">주황</b>=평균 QoQ로 추정한 향후 분기. TTM(최근 4분기 합) 기준이라 개별 분기 실적과 다릅니다. 기간을 바꾸면 평균 QoQ·추정도 달라집니다.</div>
+  </div>`;
+}
+
 // FactSet PDF 업로드 → 컨센서스 EPS 갱신 후 재렌더
 function uploadFactset(inp){
   const file = inp.files[0]; if(!file) return;
@@ -3418,6 +3463,7 @@ function render(d){
     </div>
     ${epsChartSVG(d.eps_hist)}
     <div class="snp-period-note">ℹ️ <b style="color:#37c98a">초록 실선</b>=실제 EPS, <b style="color:#f5b544">주황 점선</b>=선택 기간 CAGR(${d.eps_hist.cagr!=null?d.eps_hist.cagr+'%':'-'})을 <b>복리로 적용</b>한 향후 2년 예상. 기간을 바꾸면 CAGR·예상치도 달라집니다. (실제 실적과 다를 수 있는 단순 추정)</div>
+    ${d.eps_qoq ? qoqBlock(d.eps_qoq) : ''}
   </div>` : ''}
 
   <div class="card">

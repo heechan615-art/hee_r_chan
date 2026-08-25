@@ -196,6 +196,51 @@ def sp500_eps_history(start):
     }
 
 
+def sp500_eps_qoq(start, horizon=4):
+    """분기말 TTM EPS(월별 테이블에서 3·6·9·12월 샘플링) + 전분기比(QoQ) +
+    평균 QoQ를 복리로 적용한 향후 horizon개 분기 추정. multpl이 최신 분기까지만
+    실적을 주므로, 다음 분기(4~6·7~9·10~12월) TTM EPS를 이 방식으로 예측한다."""
+    q, seen = [], set()
+    for d, v in _fetch_eps_rows():
+        if d < start or d.month not in (3, 6, 9, 12):
+            continue
+        key = (d.year, d.month)
+        if key not in seen:
+            seen.add(key)
+            q.append((d, v))
+    if len(q) < 3:
+        return None
+    series = []
+    for i, (d, v) in enumerate(q):
+        qoq = round((v / q[i - 1][1] - 1) * 100, 2) if i >= 1 and q[i - 1][1] > 0 else None
+        series.append({"date": d.strftime("%Y-%m"), "eps": round(v, 2), "qoq": qoq})
+    # 평균 QoQ = 분기 성장비의 기하평균(= 분기 CAGR)
+    ratios = [q[i][1] / q[i - 1][1] for i in range(1, len(q)) if q[i - 1][1] > 0]
+    avg_qoq = None
+    if ratios:
+        gm = 1.0
+        for r in ratios:
+            gm *= r
+        avg_qoq = round((gm ** (1.0 / len(ratios)) - 1) * 100, 2)
+    # 향후 분기 추정 — 마지막 실제 TTM에서 avg_qoq 복리
+    proj, last_d, cur = [], q[-1][0], q[-1][1]
+    dd = last_d
+    if avg_qoq is not None:
+        rate = avg_qoq / 100.0
+        for _ in range(horizon):
+            m, y = dd.month + 3, dd.year
+            if m > 12:
+                m -= 12
+                y += 1
+            dd = dt.datetime(y, m, 1)
+            cur *= (1 + rate)
+            proj.append({"date": dd.strftime("%Y-%m"), "eps": round(cur, 2),
+                         "qoq": avg_qoq})
+    return {"series": series, "projection": proj, "avg_qoq": avg_qoq,
+            "current": round(q[-1][1], 2), "last_date": last_d.strftime("%Y-%m"),
+            "start": series[0]["date"], "end": series[-1]["date"], "points": len(series)}
+
+
 # ------------------------------------------------------------ ③ CNN 공포·탐욕
 def cnn_fear_greed():
     """CNN 공포·탐욕 지수 (0~100) + 최근 1년 타임라인."""
@@ -604,6 +649,11 @@ def overview(force=False, period="2020"):
     except Exception as e:
         eps_hist = None
         errors.append(f"EPS추이: {repr(e)[:120]}")
+    try:
+        eps_qoq = sp500_eps_qoq(start_dt)
+    except Exception as e:
+        eps_qoq = None
+        errors.append(f"EPS QoQ: {repr(e)[:120]}")
 
     # ② PER 외 지표 — 기간과 무관, 6시간 캐시 공유
     if not force and _BASE["data"] and now - _BASE["ts"] < _TTL:
@@ -641,7 +691,8 @@ def overview(force=False, period="2020"):
                   "source": "FRED / S&P Dow Jones Indices"},
     }
 
-    data = {"pe": pe, "eps_hist": eps_hist, "period": period, "periods": PERIODS,
+    data = {"pe": pe, "eps_hist": eps_hist, "eps_qoq": eps_qoq,
+            "period": period, "periods": PERIODS,
             "index": idx or ({"value": (fs or {}).get("index"), "date": None,
                               "source": "FactSet"} if fs else None),
             "factset": fs, "sep": sep, "valuation": valuation,
