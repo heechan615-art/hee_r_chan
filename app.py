@@ -261,6 +261,31 @@ def api_eps_history():
     return jsonify(out)
 
 
+@app.route("/api/related")
+def api_related():
+    """관련주 찾기 — 키워드/테마 → 한국·미국 관련 상장사 각 10개+ (특징·비즈니스모델).
+    공개(비회원도 조회). 키워드 기반이라 24시간 서버 캐시로 Gemini 호출 최소화."""
+    kw = (request.args.get("keyword") or "").strip()
+    if not kw:
+        return jsonify({"error": "키워드를 입력하세요."}), 400
+    if len(kw) > 40:
+        return jsonify({"error": "키워드가 너무 깁니다."}), 400
+    ck = "related:" + kw.lower()
+    out = _cache_get(ck, 24 * 3600)
+    if out is None:
+        try:
+            import deepdive
+            d = deepdive.related_stocks(kw)
+        except Exception as e:
+            return jsonify({"error": f"검색 실패: {repr(e)[:150]}"}), 500
+        if not d or (not d.get("kr") and not d.get("us")):
+            return jsonify({"error": "관련 기업을 찾지 못했습니다. 다른 키워드로 시도해 보세요.",
+                            "empty": True}), 200
+        out = clean(d)
+        _cache_put(ck, out)
+    return jsonify(out)
+
+
 @app.route("/api/company_analysis")
 def api_company_analysis():
     """기업 심층 분석(비즈니스모델·기술·시장기대) — 회원 전용."""

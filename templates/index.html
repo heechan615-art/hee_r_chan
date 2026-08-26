@@ -801,6 +801,29 @@
   /* 카드 — 참고 사이트 톤(라운드 16 · 소프트 그림자) */
   .card{border-radius:16px;box-shadow:var(--shadow)}
   .card h2{color:var(--ink)}
+  /* ===== 관련주 찾기 ===== */
+  #rel-chips{margin-bottom:22px}
+  #related-body{margin-top:4px}
+  .rel-sum{background:linear-gradient(135deg,#0e1c36,#17304f);border-radius:14px;padding:16px 20px;margin-bottom:18px;box-shadow:var(--shadow)}
+  .rel-sum-k{font-size:13.5px;font-weight:800;color:#f0d9a3;margin-bottom:5px}
+  .rel-sum p{margin:0;font-size:13.5px;line-height:1.65;color:#dbe6f5}
+  .rel-cols{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  @media(max-width:900px){.rel-cols{grid-template-columns:1fr}}
+  .rel-colh{display:flex;align-items:center;gap:8px;font-size:15px;font-weight:800;color:#fff;
+    background:linear-gradient(90deg,#0e1c36,#1a3252);border-left:4px solid var(--accent);
+    padding:11px 15px;border-radius:10px;margin-bottom:12px;box-shadow:var(--shadow)}
+  .rel-cnt{font-size:12px;font-weight:700;color:#c9a86a;margin-left:auto}
+  .rel-card{background:var(--card);border:1px solid var(--line);border-left:3px solid var(--accent);
+    border-radius:12px;padding:14px 16px;margin-bottom:11px;box-shadow:var(--shadow)}
+  .rel-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:7px}
+  .rel-name{font-size:15.5px;font-weight:800;color:var(--ink)}
+  .rel-tk{font-size:11.5px;font-weight:700;color:var(--muted);background:var(--panel);border:1px solid var(--line);
+    border-radius:6px;padding:1px 7px;font-variant-numeric:tabular-nums}
+  .rel-tag{font-size:11.5px;font-weight:700;color:var(--accent);background:rgba(176,136,58,.12);border-radius:6px;padding:2px 9px}
+  .rel-desc{font-size:13.5px;line-height:1.62;color:var(--text);margin-bottom:11px}
+  .rel-deep{background:var(--panel);border:1px solid var(--line);color:var(--accent);border-radius:8px;
+    padding:7px 13px;font-size:12.5px;font-weight:700;cursor:pointer;box-shadow:none}
+  .rel-deep:hover{background:var(--accent);color:#fff;border-color:var(--accent)}
 </style>
 </head>
 <body>
@@ -813,6 +836,7 @@
     <nav class="tabs">
       <button class="tab-btn active" data-tab="value">📊 기업 밸류에이션</button>
       <button class="tab-btn" data-tab="deep">🔬 기업 심층 분석</button>
+      <button class="tab-btn" data-tab="related">🧭 관련주 찾기</button>
       <button class="tab-btn" data-tab="snp">📈 S&amp;P500 밸류에이션</button>
       <button class="tab-btn" data-tab="briefing" data-mkt="KR">🇰🇷 한국 브리핑</button>
       <button class="tab-btn" data-tab="briefing" data-mkt="US">🇺🇸 미국 브리핑</button>
@@ -859,6 +883,32 @@
   <div id="tab-deep" style="display:none">
     <div class="sub">기업이 무엇을 하는 회사인지(비즈니스·기술·시장 기대)와 증권사 리포트(PDF)를 AI가 분석 · 회원 전용</div>
     <div id="deep-body"></div>
+  </div>
+
+  <!-- 관련주 찾기 탭 -->
+  <div id="tab-related" style="display:none">
+    <div class="sub">테마·키워드를 검색하면 한국·미국 관련 상장사(각 10개+)를 특징·비즈니스 모델과 함께 찾아드립니다 · AI 추정, 참고용</div>
+    <form id="rel-f">
+      <input id="rel-q" placeholder="테마·키워드 (예: 데이터센터, 광통신, 메모리, CPU, HBM, 원전)" autocomplete="off">
+      <button id="rel-go" type="submit">검색</button>
+    </form>
+    <div class="chips" id="rel-chips">
+      <span class="chip" data-k="데이터센터">데이터센터</span>
+      <span class="chip" data-k="HBM">HBM</span>
+      <span class="chip" data-k="광통신">광통신</span>
+      <span class="chip" data-k="메모리">메모리</span>
+      <span class="chip" data-k="CPU">CPU</span>
+      <span class="chip" data-k="AI반도체">AI반도체</span>
+      <span class="chip" data-k="2차전지">2차전지</span>
+      <span class="chip" data-k="원전">원전</span>
+      <span class="chip" data-k="방산">방산</span>
+      <span class="chip" data-k="로봇">로봇</span>
+      <span class="chip" data-k="자율주행">자율주행</span>
+      <span class="chip" data-k="우주항공">우주항공</span>
+    </div>
+    <div id="rel-loading" style="display:none"><div class="spin"></div>관련 기업을 찾는 중… (10~20초)</div>
+    <div id="rel-error"></div>
+    <div id="related-body"></div>
   </div>
 
   <!-- S&P500 밸류에이션 대시보드 탭 -->
@@ -1142,6 +1192,7 @@ document.querySelectorAll(".tab-btn").forEach(b => b.onclick = () => {
   $("#tab-briefing").style.display = t === "briefing" ? "" : "none";
   $("#tab-snp").style.display = t === "snp" ? "" : "none";
   $("#tab-deep").style.display = t === "deep" ? "" : "none";
+  $("#tab-related").style.display = t === "related" ? "" : "none";
   if(t === "snp" && !$("#tab-snp").dataset.loaded){   // 처음 열 때 한 번만 로드
     $("#tab-snp").dataset.loaded = "1";
     loadSnp();
@@ -1162,6 +1213,70 @@ document.querySelectorAll(".tab-btn").forEach(b => b.onclick = () => {
         <button type="button" id="brief-gen" class="tab-gen">📰 오늘의 브리핑 생성</button>`;
     }
   }
+});
+
+// ---------- 관련주 찾기 ----------
+function doRelated(kw){
+  kw = (kw||"").trim();
+  if(!kw) return;
+  $("#rel-q").value = kw;
+  $("#rel-error").innerHTML = "";
+  $("#related-body").innerHTML = "";
+  $("#rel-loading").style.display = "block";
+  fetch("/api/related?keyword=" + encodeURIComponent(kw))
+    .then(r => r.json())
+    .then(d => {
+      $("#rel-loading").style.display = "none";
+      if(d.error && !d.kr && !d.us){ $("#rel-error").innerHTML = `<div class="warnbox">${esc(d.error)}</div>`; return; }
+      renderRelated(d);
+    })
+    .catch(e => { $("#rel-loading").style.display = "none"; $("#rel-error").innerHTML = `<div class="warnbox">검색 실패: ${esc(e)}</div>`; });
+}
+function relCard(c){
+  const nm = esc(c.name||"");
+  const tk = c.ticker ? `<span class="rel-tk">${esc(c.ticker)}</span>` : "";
+  const tag = c.tag ? `<span class="rel-tag">${esc(c.tag)}</span>` : "";
+  return `<div class="rel-card">
+    <div class="rel-top"><span class="rel-name">${nm}</span>${tk}${tag}</div>
+    ${c.desc?`<div class="rel-desc">${esc(c.desc)}</div>`:""}
+    <button type="button" class="rel-deep" data-name="${esc(c.name||c.ticker||"")}">🔬 기업 심층 분석 →</button>
+  </div>`;
+}
+function relCol(flag, title, arr){
+  const list = (arr||[]).map(relCard).join("");
+  return `<div class="rel-col">
+    <div class="rel-colh">${flag} ${title} <span class="rel-cnt">${(arr||[]).length}개</span></div>
+    ${list || `<div class="muted" style="font-size:13px;padding:8px 2px">결과가 없습니다.</div>`}
+  </div>`;
+}
+function renderRelated(d){
+  let h = "";
+  if(d.summary){
+    h += `<div class="rel-sum"><div class="rel-sum-k">🧭 ${esc(d.keyword||"")}</div><p>${esc(d.summary)}</p></div>`;
+  }
+  h += `<div class="rel-cols">
+    ${relCol("🇰🇷","한국 관련주", d.kr)}
+    ${relCol("🇺🇸","미국 관련주", d.us)}
+  </div>
+  <div class="disclaimer" style="margin-top:16px">⚠️ AI가 추정한 관련 기업 목록입니다. 실제 사업 연관·수혜 정도는 다를 수 있으며, 투자 판단의 참고용입니다.</div>`;
+  $("#related-body").innerHTML = h;
+}
+// 카드의 "기업 심층 분석 →" → 심층분석 탭으로 이동 + 자동 분석
+function goDeep(name){
+  const btn = document.querySelector('.tab-btn[data-tab="deep"]');
+  if(btn) btn.click();
+  setTimeout(() => {
+    const q = $("#dd-q");   // 회원일 때만 존재(비회원은 잠금 화면)
+    if(q){ q.value = name; const go = $("#dd-go"); if(go) go.click(); }
+    window.scrollTo({top:0, behavior:"smooth"});
+  }, 30);
+}
+$("#rel-f").onsubmit = e => { e.preventDefault(); doRelated($("#rel-q").value); };
+$("#rel-chips").addEventListener("click", e => {
+  const c = e.target.closest(".chip"); if(c) doRelated(c.dataset.k);
+});
+$("#related-body").addEventListener("click", e => {
+  const b = e.target.closest(".rel-deep"); if(b) goDeep(b.dataset.name);
 });
 
 // ---------- 기업 심층 분석 ----------
