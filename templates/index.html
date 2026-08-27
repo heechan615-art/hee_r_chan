@@ -788,16 +788,29 @@
   .sidebar .authbar a{color:#e2c584}
   .sidebar .authbar .ghost{border-color:rgba(255,255,255,.22);color:#e6eefb}
   .wrap{flex:1;min-width:0;max-width:1280px;margin:0;padding:30px 36px 96px}
-  @media(max-width:860px){
-    .app-shell{flex-direction:column}
-    .sidebar{width:auto;height:auto;padding:12px 16px;gap:11px;z-index:60;
-      display:grid;grid-template-columns:1fr auto;grid-template-areas:"brand auth" "nav nav"}
-    .brand{grid-area:brand;border-bottom:0;padding:0}
-    .sidebar .authbar{grid-area:auth;margin:0;border-top:0;padding:0;flex-direction:row;align-items:center;gap:8px}
-    .sidebar .tabs{grid-area:nav;flex-direction:row;overflow-x:auto;gap:2px}
-    .sidebar .tab-btn{padding:8px 12px;font-size:13px}
-    .wrap{padding:18px 16px 84px}
-  }
+  /* ===== 모바일 뷰 (html.is-mobile) — 화면 폭 자동 + 수동 전환 겸용 ===== */
+  html.is-mobile .app-shell{flex-direction:column}
+  html.is-mobile .sidebar{width:auto;height:auto;position:sticky;top:0;padding:11px 14px;gap:10px;z-index:60;
+    display:grid;grid-template-columns:1fr auto;grid-template-areas:"brand auth" "nav nav";
+    box-shadow:0 2px 12px rgba(13,30,51,.28)}
+  html.is-mobile .brand{grid-area:brand;border-bottom:0;padding:0}
+  html.is-mobile .brand-mark{width:32px;height:32px;font-size:17px}
+  html.is-mobile .brand-name{font-size:14px}
+  html.is-mobile .brand-name em{display:none}
+  html.is-mobile .sidebar .authbar{grid-area:auth;margin:0;border-top:0;padding:0;flex-direction:row;align-items:center;gap:7px;font-size:12px}
+  html.is-mobile .sidebar .authbar button{padding:6px 11px;font-size:12px}
+  html.is-mobile .sidebar .tabs{grid-area:nav;flex-direction:row;overflow-x:auto;gap:6px;padding-bottom:3px;-webkit-overflow-scrolling:touch}
+  html.is-mobile .sidebar .tabs::-webkit-scrollbar{height:0}
+  html.is-mobile .sidebar .tab-btn{flex:none;padding:8px 14px;font-size:13px;border-radius:20px;background:rgba(255,255,255,.06)}
+  html.is-mobile .sidebar .tab-btn.active{background:linear-gradient(135deg,#B0883A,#8f6d2b)}
+  html.is-mobile .wrap{padding:16px 15px 92px;max-width:820px;margin:0 auto}
+  /* 다열 그리드 접기(폴더블 등 넓은 화면에서 '모바일 버전' 강제 시에도 폰처럼) */
+  html.is-mobile .kpis,html.is-mobile .brf-idx{grid-template-columns:repeat(2,1fr)}
+  html.is-mobile .two,html.is-mobile .row2,html.is-mobile .grid,html.is-mobile .brf-mv,
+  html.is-mobile .rp-supply,html.is-mobile .rel-cols{grid-template-columns:1fr}
+  html.is-mobile #tab-snp .scen,html.is-mobile #tab-snp .ov-chips{grid-template-columns:1fr}
+  html.is-mobile .rp-title{font-size:20px}
+  html.is-mobile .price{font-size:26px}
   /* 카드 — 참고 사이트 톤(라운드 16 · 소프트 그림자) */
   .card{border-radius:16px;box-shadow:var(--shadow)}
   .card h2{color:var(--ink)}
@@ -824,9 +837,23 @@
   .rel-deep{background:var(--panel);border:1px solid var(--line);color:var(--accent);border-radius:8px;
     padding:7px 13px;font-size:12.5px;font-weight:700;cursor:pointer;box-shadow:none}
   .rel-deep:hover{background:var(--accent);color:#fff;border-color:var(--accent)}
+  /* ===== 화면 모드 토글 (자동 / PC / 모바일) ===== */
+  .view-toggle{position:fixed;right:14px;bottom:14px;z-index:300;display:flex;gap:2px;
+    background:rgba(14,28,54,.94);border:1px solid rgba(255,255,255,.16);border-radius:11px;padding:3px;
+    box-shadow:0 5px 18px rgba(0,0,0,.28);backdrop-filter:blur(4px)}
+  .view-btn{background:transparent;border:0;color:#c4d0e2;font-size:11.5px;font-weight:700;
+    padding:6px 10px;border-radius:8px;cursor:pointer;box-shadow:none;white-space:nowrap;transition:.12s}
+  .view-btn:hover:not(.on){color:#fff;background:rgba(255,255,255,.08)}
+  .view-btn.on{background:var(--accent);color:#fff}
+  @media print{.view-toggle{display:none}}
 </style>
 </head>
 <body>
+<div class="view-toggle" id="view-toggle" title="화면 모드">
+  <button type="button" class="view-btn" data-view="auto">자동</button>
+  <button type="button" class="view-btn" data-view="pc">💻 PC</button>
+  <button type="button" class="view-btn" data-view="mobile">📱 모바일</button>
+</div>
 <div class="app-shell">
   <aside class="sidebar">
     <div class="brand">
@@ -1181,6 +1208,27 @@ document.addEventListener("keydown", e => {
   if(e.key === "Escape") document.querySelectorAll(".modal-bg.on").forEach(m => m.classList.remove("on"));
 });
 authRefresh();
+
+// ---------- 화면 모드(자동/PC/모바일) — 폭 자동 감지 + 수동 강제 ----------
+const MOBILE_MAX = 860;
+function applyView(){
+  const pref = localStorage.getItem("viewMode");   // "pc" | "mobile" | null(자동)
+  const mobile = pref === "mobile" ||
+    (pref !== "pc" && window.matchMedia("(max-width:" + MOBILE_MAX + "px)").matches);
+  document.documentElement.classList.toggle("is-mobile", mobile);
+  document.querySelectorAll(".view-btn").forEach(b =>
+    b.classList.toggle("on", (b.dataset.view || "auto") === (pref || "auto")));
+}
+function setView(mode){
+  if(mode === "auto") localStorage.removeItem("viewMode");
+  else localStorage.setItem("viewMode", mode);
+  applyView();
+}
+document.getElementById("view-toggle").addEventListener("click", e => {
+  const b = e.target.closest(".view-btn"); if(b) setView(b.dataset.view || "auto");
+});
+window.addEventListener("resize", applyView);
+applyView();
 
 // ---------- 탭 전환 ----------
 let BRIEF_MKT = "KR";   // 현재 브리핑 시장
