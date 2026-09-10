@@ -854,6 +854,120 @@
   .view-btn:hover:not(.on){color:#fff;background:rgba(255,255,255,.08)}
   .view-btn.on{background:var(--accent);color:#fff}
   @media print{.view-toggle{display:none}}
+  /* ─── 재무제표 진단 ─── */
+  .diag{border:1px solid var(--line)}
+  .diag-sum{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;justify-content:space-between;
+    padding:13px 16px;border-radius:12px;margin:2px 0 16px;font-weight:800}
+  .diag-sum .diag-badge{font-size:16px}
+  .diag-sum .diag-count{font-size:13px;font-weight:700;opacity:.85}
+  .diag-sum.green{background:rgba(31,157,87,.12);color:var(--good);border:1px solid rgba(31,157,87,.35)}
+  .diag-sum.yellow{background:rgba(201,138,30,.12);color:var(--warn);border:1px solid rgba(201,138,30,.35)}
+  .diag-sum.red{background:rgba(227,33,30,.10);color:var(--up);border:1px solid rgba(227,33,30,.35)}
+  .diag-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px}
+  @media(max-width:820px){.diag-grid{grid-template-columns:repeat(2,1fr)}}
+  @media(max-width:520px){.diag-grid{grid-template-columns:1fr}}
+  .diag-check{border:1px solid var(--line);border-left:4px solid var(--muted);border-radius:10px;
+    padding:11px 13px;background:var(--panel)}
+  .diag-check.pass{border-left-color:var(--good)}
+  .diag-check.warn{border-left-color:var(--warn)}
+  .diag-check.fail{border-left-color:var(--up)}
+  .diag-check.na{border-left-color:#9aa7b8;opacity:.72}
+  .dc-top{display:flex;justify-content:space-between;align-items:center;gap:6px}
+  .dc-label{font-size:12.5px;font-weight:800;color:var(--text)}
+  .dc-pill{font-size:10.5px;font-weight:800;padding:2px 8px;border-radius:20px;white-space:nowrap;color:#fff}
+  .diag-check.pass .dc-pill{background:var(--good)}
+  .diag-check.warn .dc-pill{background:var(--warn)}
+  .diag-check.fail .dc-pill{background:var(--up)}
+  .diag-check.na .dc-pill{background:#9aa7b8}
+  .dc-val{font-size:23px;font-weight:800;color:var(--text);margin:7px 0 1px;font-variant-numeric:tabular-nums}
+  .diag-check.na .dc-val{font-size:15px;color:var(--muted)}
+  .dc-th{font-size:11px;color:var(--muted)}
+  .dc-reason{font-size:11.5px;color:var(--muted);margin-top:6px;line-height:1.5;border-top:1px dashed var(--line);padding-top:6px}
+  .diag-charts{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:4px 0 18px}
+  @media(max-width:820px){.diag-charts{grid-template-columns:1fr}}
+  .diag-chart{border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:var(--panel)}
+  .diag-chart h3{font-size:12.5px;margin:0 0 6px;color:var(--text);font-weight:800}
+  .diag-interp{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:6px 16px 12px}
+  .di-para{padding:12px 0;border-bottom:1px dashed var(--line)}
+  .di-para:last-child{border-bottom:0}
+  .di-tag{display:inline-block;font-size:11px;font-weight:800;color:var(--accent);
+    background:rgba(176,136,58,.10);border-radius:6px;padding:2px 9px;margin-bottom:6px}
+  .di-para p{margin:0;font-size:13.5px;line-height:1.85;color:var(--text)}
+  .diag-disc{margin-top:14px;font-size:11.5px;color:var(--muted);line-height:1.7;text-align:center;
+    border-top:1px solid var(--line);padding-top:12px}
+  .wf-lab{fill:var(--muted);font-size:8px}
+  .diag-chart .cbar{fill:transparent}
+  /* ─── 기업 재무제표 분석 탭 ─── */
+  .fd-table{width:100%;border-collapse:collapse;font-size:13px;overflow:hidden;border-radius:10px}
+  .fd-table th{background:var(--ink);color:#fff;font-weight:800;font-size:12.5px;padding:12px;text-align:center;white-space:nowrap}
+  .fd-table th:first-child{text-align:left}
+  .fd-table td{padding:10px 12px;border-bottom:1px solid var(--line);text-align:center;vertical-align:middle}
+  .fd-table tr:last-child td{border-bottom:0}
+  .fd-item{text-align:left!important;font-weight:800;color:var(--text);background:var(--panel);white-space:nowrap}
+  .fd-val{white-space:nowrap}
+  .fd-num{width:118px;font-size:20px;font-weight:800;color:var(--good);text-align:right;
+    border:1px solid transparent;border-radius:7px;background:transparent;padding:5px 8px;font-variant-numeric:tabular-nums}
+  .fd-num:hover{border-color:var(--line);background:#fff}
+  .fd-num:focus{border-color:var(--accent);background:#fff;outline:none;box-shadow:0 0 0 3px rgba(176,136,58,.12)}
+  .fd-suf{color:var(--muted);font-size:12px;margin-left:3px}
+  .fd-num::placeholder{color:var(--accent);font-weight:700;font-size:13px;opacity:.7}
+  .fd-empty{border:1px dashed var(--line);background:rgba(176,136,58,.04)}
+  .fd-trend th{padding:10px 8px;font-size:12px;text-align:center}
+  .fd-trend td.fd-cell{padding:6px 7px;text-align:right}
+  .fd-trend .fd-num{width:74px;font-size:15px;font-weight:800;padding:5px 6px;text-align:right}
+  .fd-spark{padding:4px 8px;text-align:center;vertical-align:middle}
+  .fd-spark svg{margin:0 auto}
+  .fd-seg{background:transparent;border:1px solid var(--line);color:var(--muted);font-size:12px;font-weight:700;padding:4px 12px;cursor:pointer}
+  .fd-seg.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+  .fd-segwrap{display:inline-flex;border-radius:8px;overflow:hidden;vertical-align:middle;margin-left:8px}
+  .fd-segwrap .fd-seg{border-radius:0;border-left:0}
+  .fd-segwrap .fd-seg:first-child{border-left:1px solid var(--line);border-radius:8px 0 0 8px}
+  .fd-segwrap .fd-seg:last-child{border-radius:0 8px 8px 0}
+  .fd-trend th.fd-fc{background:#43506a}
+  .fd-cell.fd-fc{background:rgba(176,136,58,.06)}
+  .fd-trend .fd-fc .fd-num{color:var(--accent)}
+  .fd-gctrl{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
+  .fd-gctrl select{border:1px solid var(--line);border-radius:8px;padding:6px 10px;font-size:13px;background:#fff;color:var(--text);font-weight:700}
+  .fd-gctrl .fd-segwrap{margin-left:0}
+  .fd-chartbox{border:1px solid var(--line);border-radius:10px;padding:10px 12px 6px;background:var(--panel)}
+  .fd-overall{font-size:14px;line-height:1.95;color:var(--text);margin:2px 0 0}
+  .fd-unit{margin-left:auto;font-size:12.5px;font-weight:800;color:var(--accent);background:rgba(176,136,58,.10);
+    border:1px solid rgba(176,136,58,.3);border-radius:8px;padding:5px 11px}
+  .fd-up{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:6px}
+  .fd-up input[type=file]{font-size:12.5px;color:var(--text)}
+  .fd-osec{margin-top:14px} .fd-osec h3{font-size:13.5px;margin:0 0 6px;color:var(--text)}
+  .fd-osec p{margin:0;font-size:13.5px;line-height:1.85;color:var(--text)}
+  .fd-note{border-left:3px solid var(--accent);background:var(--panel);border-radius:0 8px 8px 0;padding:8px 12px;margin-bottom:8px}
+  .fd-note b{display:block;font-size:13px;color:var(--text);margin-bottom:2px}
+  .fd-note p{font-size:12.5px;color:var(--muted)}
+  .fd-omain{background:rgba(176,136,58,.06);border:1px solid rgba(176,136,58,.25);border-radius:12px;padding:12px 16px}
+  .fd-omain h3{color:var(--accent)}
+  .fd-watch{margin:4px 0 0;padding-left:18px} .fd-watch li{font-size:13px;line-height:1.8;color:var(--text)}
+  .pt-stats{display:flex;flex-wrap:wrap;gap:10px;margin:2px 0 12px}
+  .pt-stat{flex:1;min-width:88px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:9px 12px}
+  .pt-lb{font-size:11.5px;color:var(--muted);margin-bottom:3px}
+  .pt-v{font-size:20px;font-weight:800;color:var(--text);font-variant-numeric:tabular-nums}
+  .pt-v.accent{color:var(--accent)} .pt-v.pt-hi{color:var(--up)} .pt-v.pt-lo{color:var(--good)}
+  .per-ctrl{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:0 0 8px}
+  .per-btn{padding:5px 11px;font-size:12px;border:1px solid var(--line);background:var(--panel);color:var(--text);border-radius:999px;cursor:pointer}
+  .per-btn:hover{border-color:var(--accent);color:var(--accent)}
+  .per-range{margin-left:auto;font-size:11.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+  .fd-chg{color:var(--muted);font-size:12.5px;font-variant-numeric:tabular-nums}
+  .fd-src{color:var(--muted);font-size:12px}
+  .fd-na{color:var(--muted);font-size:13px}
+  .fd-cmp-wrap{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:14px 0 8px}
+  @media(max-width:640px){.fd-cmp-wrap{grid-template-columns:1fr}}
+  .kpi-table{width:100%;border-collapse:separate;border-spacing:0 6px}
+  .kpi-table th{text-align:center;font-size:12.5px;color:#fff;background:var(--navy,#26305f);padding:9px 10px}
+  .kpi-table th:first-child{border-radius:8px 0 0 8px} .kpi-table th:last-child{border-radius:0 8px 8px 0}
+  .kpi-table td{text-align:center;padding:11px 10px;background:var(--panel);border-top:1px solid var(--line);border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums}
+  .kpi-table td:first-child{border-left:1px solid var(--line);border-radius:8px 0 0 8px}
+  .kpi-table td:last-child{border-right:1px solid var(--line);border-radius:0 8px 8px 0}
+  .kpi-table td.fd-item{text-align:left;font-weight:700;color:var(--text)}
+  .kpi-table td.muted{color:var(--muted);font-size:12.5px}
+  .kpi-val{font-weight:800;color:var(--good);font-size:15px}
+  .fd-cmp{border:1px solid var(--line);border-radius:12px;padding:8px 12px 6px;background:var(--panel)}
+  .fd-cmp h3{font-size:13px;margin:0 0 2px;text-align:center;color:var(--text);font-weight:800}
 </style>
 </head>
 <body>
@@ -871,6 +985,7 @@
     <nav class="tabs">
       <button type="button" class="tab-arrow tab-arrow-l" data-step="-1" aria-label="이전 탭">«</button>
       <button class="tab-btn active" data-tab="value">📊 기업 밸류에이션</button>
+      <button class="tab-btn" data-tab="findiag">🧾 기업 재무제표 분석</button>
       <button class="tab-btn" data-tab="deep">🔬 기업 심층 분석</button>
       <button class="tab-btn" data-tab="related">🧭 관련주 찾기</button>
       <button class="tab-btn" data-tab="snp">📈 S&amp;P500 밸류에이션</button>
@@ -907,6 +1022,27 @@
   <div id="loading"><div class="spin"></div>데이터 수집 중… (야후·네이버 조회, 5~15초)</div>
   <div id="result"></div>
   <div id="bar-tip"></div>
+  </div>
+
+  <!-- 기업 재무제표 분석 탭 -->
+  <div id="tab-findiag" style="display:none">
+  <div class="sub">종목을 검색하면 재무 6개 항목을 자동 판정하고 해석까지 만들어 줍니다 · 국내 + 미국</div>
+  <form id="fd-f">
+    <input id="fd-q" placeholder="회사 이름 또는 티커 (예: 삼성전자, SK하이닉스, NVDA)" autocomplete="off">
+    <button id="fd-btn" type="submit">진단</button>
+  </form>
+  <div class="hint">숫자는 자동으로 채워지며, <b>표의 값을 직접 고치면</b> 판정·해석·차트가 다시 계산됩니다.
+    <div class="chips">
+      <span class="chip" data-t="삼성전자">삼성전자</span>
+      <span class="chip" data-t="SK하이닉스">SK하이닉스</span>
+      <span class="chip" data-t="현대차">현대차</span>
+      <span class="chip" data-t="NVDA">NVDA</span>
+      <span class="chip" data-t="AAPL">AAPL</span>
+    </div>
+  </div>
+  <div id="fd-error"></div>
+  <div id="fd-loading" style="display:none;padding:20px 0;color:var(--muted)"><div class="spin"></div>데이터 수집 중… (야후·네이버 조회, 5~15초)</div>
+  <div id="fd-result"></div>
   </div>
 
   <!-- 브리핑 탭 (한국/미국 공용, BRIEF_MKT로 구분) -->
@@ -1264,6 +1400,7 @@ document.querySelectorAll(".tab-btn").forEach(b => b.onclick = () => {
   document.querySelectorAll(".tab-btn").forEach(x => x.classList.toggle("active", x === b));
   const t = b.dataset.tab;
   $("#tab-value").style.display = t === "value" ? "" : "none";
+  $("#tab-findiag").style.display = t === "findiag" ? "" : "none";
   $("#tab-briefing").style.display = t === "briefing" ? "" : "none";
   $("#tab-snp").style.display = t === "snp" ? "" : "none";
   $("#tab-deep").style.display = t === "deep" ? "" : "none";
@@ -1982,6 +2119,454 @@ $("#f").onsubmit = async e => {
 
 function showError(msg){ const e=$("#error"); e.textContent="⚠️ "+msg; e.style.display="block"; }
 
+// ================= 기업 재무제표 분석 탭 =================
+let FD_FIN = null, FD_DIAG = null, FD_META = null;
+
+$("#fd-f").onsubmit = async e => {
+  e.preventDefault();
+  const t = $("#fd-q").value.trim(); if(!t) return;
+  $("#fd-error").style.display = "none"; $("#fd-result").innerHTML = "";
+  $("#fd-loading").style.display = "block"; $("#fd-btn").disabled = true;
+  try{
+    const r = await fetch("/api/analyze?ticker=" + encodeURIComponent(t));
+    const d = await r.json();
+    if(d.locked){ openAuth("signup", d.error); AUTH.guest_left = 0; renderAuthbar(); }
+    else if(d.error){ fdErr(d.error); }
+    else { if(d.guest_left != null){ AUTH.guest_left = d.guest_left; renderAuthbar(); } renderFinDiag(d); }
+  }catch(err){ fdErr("요청 실패: " + err); }
+  finally{ $("#fd-loading").style.display = "none"; $("#fd-btn").disabled = false; }
+};
+document.querySelectorAll("#tab-findiag .chip").forEach(c =>
+  c.onclick = () => { $("#fd-q").value = c.dataset.t; $("#fd-f").requestSubmit(); });
+function fdErr(m){ const e = $("#fd-error"); e.innerHTML = `<div class="warnbox">⚠️ ${esc(m)}</div>`; e.style.display = "block"; }
+
+function fdActualIdx(){ const ys = (FD_FIN && FD_FIN.years) || []; const idx = [];
+  ys.forEach((y,i) => { if(!/E$/.test(String(y))) idx.push(i); }); return idx; }
+
+let FD_FREQ = "Y";       // 'Y' 연간 | 'Q' 분기
+let FD_KPI_VIEW = "table"; // 핵심 지표 카드: 'table' | 'chart'
+let FD_GTYPE = "line";   // 'line' | 'bar'
+let FD_GMETRIC = "revenue";
+let FD_FC = [];          // 예상 연도 [F1, F2]
+const FD_METRIC_KEYS = ["revenue","opinc","opmargin","netinc","ocf","fcf","debtratio","roe","intexp"];
+const FD_ROWS = [
+  {k:"revenue",  l:"매출액",           t:"money"},
+  {k:"opinc",    l:"영업이익",         t:"money"},
+  {k:"opmargin", l:"영업이익률",       t:"pct"},
+  {k:"netinc",   l:"순이익",           t:"money"},
+  {k:"ocf",      l:"영업활동 현금흐름", t:"money"},
+  {k:"debtratio",l:"부채비율",         t:"pct"},
+  {k:"intexp",   l:"이자비용",         t:"money"},
+  {k:"roe",      l:"ROE",             t:"pct"},
+];
+const FD_QMETRICS = ["revenue","opinc","opmargin","netinc"];   // 분기 제공 지표
+
+function fdEnsureForecast(){
+  FD_FC = [];
+  const idx = fdActualIdx(); if(!idx.length) return;
+  const Y = Math.max(...idx.map(i => parseInt(FD_FIN.years[i])));
+  FD_FC = [Y + 1, Y + 2];
+  FD_FC.forEach(fy => {
+    if(!FD_FIN.years.some(y => parseInt(String(y)) === fy)) FD_FIN.years.push(fy + "E");
+  });
+  FD_METRIC_KEYS.forEach(k => {
+    if(!Array.isArray(FD_FIN[k])) FD_FIN[k] = [];
+    while(FD_FIN[k].length < FD_FIN.years.length) FD_FIN[k].push(null);
+  });
+  // 내후년(F2, 2027F)은 리포트로 직접 입력하도록 자동값을 비움
+  const f2 = fdFcIdx(FD_FC[1]);
+  if(f2 >= 0) FD_METRIC_KEYS.forEach(k => { FD_FIN[k][f2] = null; });
+}
+function fdFcIdx(fy){ return FD_FIN.years.findIndex(y => parseInt(String(y)) === fy); }
+
+function renderFinDiag(d){
+  FD_FIN = JSON.parse(JSON.stringify(d.financials || {}));
+  FD_DIAG = d.diagnosis;
+  FD_META = {ticker: d.ticker, name: d.name,
+    sector: (d.diagnosis && d.diagnosis.sector) || "",
+    isCyclical: d.diagnosis ? d.diagnosis.isCyclical : null,
+    isFinancial: d.diagnosis ? d.diagnosis.isFinancial : null};
+  if(!d.diagnosis || !FD_FIN.years){
+    $("#fd-result").innerHTML = `<div class="warnbox">이 종목은 재무 데이터가 부족해 진단할 수 없습니다.</div>`; return;
+  }
+  fdEnsureForecast();
+  $("#fd-result").innerHTML = `
+    <div class="card"><div class="name">${esc(d.name)} <span class="muted">(${esc(d.ticker)})</span></div>
+      <div class="src">데이터 출처: ${esc(d.source || "")} · 표의 숫자를 고치면 판정·해석·그래프가 다시 계산됩니다</div></div>
+    <div id="fd-verdict"></div>
+    <div class="card" id="fd-kpi"></div>
+    <div id="fd-waterfall"></div>
+    <div class="card" id="fd-tablecard"></div>
+    <div class="card" id="fd-graphcard"></div>
+    <div id="fd-interp"></div>
+    <div class="card" id="fd-report"></div>`;
+  fdRenderVerdict(); fdRenderKpi(); fdRenderWaterfall(); fdRenderTable(); fdRenderGraph(); fdRenderInterp(); fdRenderReport();
+}
+
+// ── ⑥ 리포트·실적보고서 → 과거+미래 종합 전망 (회원 전용, AI) ──
+function fdRenderReport(){
+  $("#fd-report").innerHTML = `<h2>📄 리포트·실적보고서로 보는 전망 <span class="h2note">재무제표(과거) + 리포트(미래)</span></h2>
+    <p class="muted" style="font-size:12.5px;margin:0 0 10px;line-height:1.6">증권사 리포트나 기업 <b>실적보고서(사업·분기보고서, 주석 포함)</b> PDF를 <b>최대 5개</b> 올리면,
+      AI가 <b>재무제표 특이사항</b>(예: 영업이익 대비 순이익이 큰 이유를 주석에서 확인)과 <b>향후 전망</b>을 위 재무 데이터와 함께 종합해 드립니다.</p>
+    <div class="fd-up">
+      <input type="file" id="fd-files" accept="application/pdf" multiple>
+      <button class="ai-btn" id="fd-outlook-btn" onclick="fdRunOutlook()">🔮 종합 전망 생성</button>
+    </div>
+    <div id="fd-outlook"></div>`;
+}
+function fdFinLines(){
+  const unit = FD_FIN.unit || "", money = _mconv(unit), mu = _munit(unit);
+  const idx = fdActualIdx().slice(-4);
+  const line = (k,l,t) => `${l}: ` + idx.map(i => {
+    const r = (FD_FIN[k]||[])[i];
+    const v = r == null ? "-" : (t === "money" ? fmt(money(r),1)+mu : fmt(r,1)+"%");
+    return `${FD_FIN.years[i]} ${v}`;
+  }).join(", ");
+  return [line("revenue","매출","money"), line("opinc","영업이익","money"), line("opmargin","영업이익률","pct"),
+          line("netinc","순이익","money"), line("roe","ROE","pct"), line("debtratio","부채비율","pct")].join("\n");
+}
+function fdRunOutlook(){
+  const fi = $("#fd-files"), files = (fi && fi.files) ? [...fi.files] : [];
+  const out = $("#fd-outlook");
+  if(!files.length){ out.innerHTML = `<div class="warnbox">리포트·보고서 PDF를 첨부하세요.</div>`; return; }
+  if(files.length > 5){ out.innerHTML = `<div class="warnbox">최대 5개까지 올릴 수 있습니다.</div>`; return; }
+  const fd = new FormData();
+  files.forEach(f => fd.append("files", f));
+  fd.append("company", FD_META.name || "");
+  fd.append("overall", (FD_DIAG && FD_DIAG.interpretation && FD_DIAG.interpretation.overall) || "");
+  fd.append("fin", fdFinLines());
+  out.innerHTML = `<div class="muted" style="padding:14px 0"><span class="spin"></span> 리포트를 읽고 종합 전망을 만드는 중… (10~40초)</div>`;
+  $("#fd-outlook-btn").disabled = true;
+  fetch("/api/fin_outlook", {method:"POST", body:fd}).then(r => r.json()).then(o => {
+    $("#fd-outlook-btn").disabled = false;
+    if(o.locked){ openAuth("signup", o.error); return; }
+    if(o.error){ out.innerHTML = `<div class="warnbox">⚠️ ${esc(o.error)}</div>`; return; }
+    fdRenderOutlook(o);
+  }).catch(e => { $("#fd-outlook-btn").disabled = false; out.innerHTML = `<div class="warnbox">요청 실패: ${esc(e)}</div>`; });
+}
+function fdRenderOutlook(o){
+  let h = "";
+  if(o.notables && o.notables.length)
+    h += `<div class="fd-osec"><h3>📌 재무제표 특이사항 <span class="muted" style="font-weight:400;font-size:11px">주석 근거</span></h3>`
+      + o.notables.map(x => `<div class="fd-note"><b>${esc(x.item||"")}</b><p>${esc(x.detail||"")}</p></div>`).join("") + `</div>`;
+  if(o.report_view)
+    h += `<div class="fd-osec"><h3>🏦 증권사 리포트의 시각</h3><p>${esc(o.report_view)}</p></div>`;
+  if(o.outlook)
+    h += `<div class="fd-osec fd-omain"><h3>🔮 과거 + 미래 종합 전망</h3><p>${esc(o.outlook)}</p></div>`;
+  if(o.watch && o.watch.length)
+    h += `<div class="fd-osec"><h3>👀 앞으로 확인할 점</h3><ul class="fd-watch">` + o.watch.map(w => `<li>${esc(w)}</li>`).join("") + `</ul></div>`;
+  h += `<div class="diag-disc">AI가 첨부 문서를 근거로 생성한 요약입니다. 투자 권유가 아니며, 반드시 원문과 함께 확인하세요.</div>`;
+  $("#fd-outlook").innerHTML = h || `<div class="muted">생성된 내용이 없습니다.</div>`;
+}
+
+// ── ① 요약 배지 + 6개 체크리스트 (맨 위) ──
+function fdRenderVerdict(){
+  const g = FD_DIAG; if(!g){ return; }
+  const finUnit = FD_FIN.unit || "";
+  const S = g.summary || {}, badge = {green:"✅", yellow:"⚠️", red:"🚨"}[S.level] || "";
+  const stMap = {pass:"통과", warn:"주의", fail:"실패", na:"데이터 없음"};
+  let h = `<div class="card diag"><h2>재무 진단 결과 <span class="h2note">6개 항목 자동 판정</span></h2>
+    <div class="diag-sum ${S.level}"><span class="diag-badge">${badge} ${esc(S.text)}</span>
+      <span class="diag-count">${g.passCount} / ${g.evaluatedCount}개 항목 통과</span></div>
+    <div class="diag-grid">`;
+  (g.checks||[]).forEach(c => {
+    const val = c.status === "na" ? "데이터 없음" : fmtDiagVal(c, finUnit);
+    h += `<div class="diag-check ${c.status}"><div class="dc-top"><span class="dc-label">${c.id}. ${esc(c.label)}</span>
+      <span class="dc-pill">${stMap[c.status]||""}</span></div><div class="dc-val">${val}</div>
+      <div class="dc-th">기준 · ${esc(c.threshold)}</div><div class="dc-reason">${esc(c.reason)}</div></div>`;
+  });
+  $("#fd-verdict").innerHTML = h + `</div></div>`;
+}
+
+// ── ② 손익 폭포 ──
+function fdRenderWaterfall(){
+  const g = FD_DIAG; if(!g) return;
+  $("#fd-waterfall").innerHTML = `<div class="card"><h2>손익 폭포 <span class="h2note">매출→순이익, 어디서 얼마가 빠지나</span></h2>
+    ${wfChart(g, FD_FIN.unit || "")}</div>`;
+}
+
+// ── ③ 핵심 숫자 표 (연간=실적+예상 / 분기) ──
+function fdFreqCtrl(){
+  return `<span class="fd-segwrap"><button class="fd-seg${FD_FREQ==="Y"?" on":""}" onclick="fdSetFreq('Y')">연간</button><button class="fd-seg${FD_FREQ==="Q"?" on":""}" onclick="fdSetFreq('Q')">분기</button></span>`;
+}
+function fdSetFreq(v){ FD_FREQ = v; fdRenderTable(); fdRenderGraph(); }
+function fdRenderTable(){
+  const unit = FD_FIN.unit || "", money = _mconv(unit), mu = _munit(unit);
+  let h = `<h2>핵심 숫자 <span class="h2note">수정 가능 · 최근 추이</span>${fdFreqCtrl()}</h2>`;
+  h += (FD_FREQ === "Q") ? fdTableQ(money, mu) : fdTableY(money, mu);
+  $("#fd-tablecard").innerHTML = h;
+  if(FD_FREQ !== "Q") bindFdInputs();
+}
+function fdTableY(money, mu){
+  const cols = fdActualIdx().slice(-4).map(i => ({i, lab: String(FD_FIN.years[i]), fc:0}));
+  if(FD_FC[0] != null){ const i = fdFcIdx(FD_FC[0]); if(i>=0) cols.push({i, lab:`${FD_FC[0]}F`, fc:1}); }
+  if(FD_FC[1] != null){ const i = fdFcIdx(FD_FC[1]); if(i>=0) cols.push({i, lab:`${FD_FC[1]}F-리포트`, fc:2}); }
+  let h = `<div style="overflow-x:auto"><table class="fd-table fd-trend"><thead><tr><th>항목</th>`;
+  cols.forEach(c => h += `<th class="${c.fc?"fd-fc":""}">${esc(c.lab)}</th>`);
+  h += `</tr></thead><tbody>`;
+  FD_ROWS.forEach(r => {
+    h += `<tr><td class="fd-item">${r.l}</td>`;
+    cols.forEach(c => {
+      const raw = (FD_FIN[r.k] || [])[c.i];
+      const disp = raw == null ? "" : (r.t === "money" ? fmt(money(raw), Math.abs(money(raw)) < 100 ? 1 : 0) : fmt(raw, 1));
+      const ph = raw == null ? (c.fc ? "리포트 입력" : "입력") : "";
+      h += `<td class="fd-cell${c.fc?" fd-fc":""}"><input class="fd-num${raw==null?" fd-empty":""}" data-k="${r.k}" data-i="${c.i}" data-t="${r.t}" value="${disp}" placeholder="${ph}"></td>`;
+    });
+    h += `</tr>`;
+  });
+  h += `</tbody></table></div><div class="muted" style="font-size:11px;margin-top:8px">금액 단위 ${mu} · % 항목 그대로 · <b>F</b>=예상치, <b>${FD_FC[1]!=null?FD_FC[1]+"F-리포트":"리포트"}</b>는 증권사 리포트 값을 직접 입력 · 예상치는 통과 판정에는 반영되지 않습니다.</div>`;
+  return h;
+}
+function fdTableQ(money, mu){
+  const q = FD_FIN.quarterly;
+  if(!q || !q.quarters || !q.quarters.length)
+    return `<div class="muted" style="padding:16px 0">이 종목은 분기 데이터가 없습니다.</div>`;
+  const qs = q.quarters.slice(-6), off = q.quarters.length - qs.length;
+  const rows = FD_QMETRICS.map(k => FD_ROWS.find(r => r.k === k));
+  const qval = (k, qi) => {
+    if(k === "opmargin"){ const r=(q.revenue||[])[qi], o=(q.opinc||[])[qi]; return (r&&o!=null)? o/r*100 : null; }
+    return (q[k]||[])[qi];
+  };
+  let h = `<div style="overflow-x:auto"><table class="fd-table fd-trend"><thead><tr><th>항목</th>`;
+  qs.forEach(qq => h += `<th>${esc(qq)}</th>`);
+  h += `</tr></thead><tbody>`;
+  rows.forEach(r => {
+    h += `<tr><td class="fd-item">${r.l}</td>`;
+    qs.forEach((qq,j) => {
+      const raw = qval(r.k, off + j);
+      const disp = raw == null ? "—" : (r.t === "money" ? fmt(money(raw), Math.abs(money(raw)) < 100 ? 1 : 0) : fmt(raw, 1));
+      h += `<td class="fd-cell" style="font-weight:800;color:var(--text)">${disp}</td>`;
+    });
+    h += `</tr>`;
+  });
+  h += `</tbody></table></div><div class="muted" style="font-size:11px;margin-top:8px">최근 ${qs.length}개 분기 · 금액 단위 ${mu} · 분기는 <b>추이 조회용</b>(진단·수정은 연간 기준)</div>`;
+  return h;
+}
+function bindFdInputs(){
+  document.querySelectorAll("#fd-tablecard .fd-num").forEach(inp => {
+    inp.onchange = () => {
+      const k = inp.dataset.k, t = inp.dataset.t, i = +inp.dataset.i;
+      if(!Number.isInteger(i)) return;
+      const unit = FD_FIN.unit || "";
+      const s = String(inp.value).replace(/,/g, "").trim();
+      const v = parseFloat(s);
+      if(!FD_FIN[k]) FD_FIN[k] = FD_FIN.years.map(() => null);
+      FD_FIN[k][i] = (s === "" || !isFinite(v)) ? null : (t === "money" ? v * (unit === "억원" ? 1e4 : 1e3) : v);
+      const rev = (FD_FIN.revenue||[])[i], op = (FD_FIN.opinc||[])[i];
+      if((k === "revenue" || k === "opinc") && rev && op != null){
+        if(!FD_FIN.opmargin) FD_FIN.opmargin = FD_FIN.years.map(() => null);
+        FD_FIN.opmargin[i] = op / rev * 100;
+      }
+      recomputeFinDiag();
+    };
+  });
+}
+function recomputeFinDiag(){
+  fdRenderTable();
+  fdRenderGraph();
+  fetch("/api/diagnose", {method:"POST", headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({ticker:FD_META.ticker, name:FD_META.name, sector:FD_META.sector,
+      isCyclical:FD_META.isCyclical, isFinancial:FD_META.isFinancial, financials:FD_FIN})})
+    .then(r => r.json())
+    .then(g => { if(g && !g.error){ FD_DIAG = g; fdRenderVerdict(); fdRenderKpi(); fdRenderWaterfall(); fdRenderInterp(); } })
+    .catch(() => {});
+}
+
+// ── ④ 핵심 숫자 그래프 (지표 선택 · 선/막대 · 연간/분기) ──
+function fdSetGType(v){ FD_GTYPE = v; fdRenderGraph(); }
+function fdSetGMetric(v){ FD_GMETRIC = v; fdRenderGraph(); }
+function fdRenderGraph(){
+  const unit = FD_FIN.unit || "", money = _mconv(unit), mu = _munit(unit);
+  const keys = FD_FREQ === "Q" ? FD_QMETRICS : FD_ROWS.map(r => r.k);
+  let mk = FD_GMETRIC; if(!keys.includes(mk)) mk = keys[0];
+  const row = FD_ROWS.find(r => r.k === mk) || FD_ROWS[0];
+  const isMoney = row.t === "money";
+  let labels = [], raw = [], fcFrom = -1;
+  if(FD_FREQ === "Q"){
+    const q = FD_FIN.quarterly || {};
+    const qs = (q.quarters || []).slice(-8), off = (q.quarters||[]).length - qs.length;
+    labels = qs;
+    raw = qs.map((_,j) => { const qi = off + j;
+      if(mk === "opmargin"){ const r=(q.revenue||[])[qi], o=(q.opinc||[])[qi]; return (r&&o!=null)? o/r*100 : null; }
+      return (q[mk]||[])[qi]; });
+  } else {
+    const act = fdActualIdx().slice(-5);
+    const fc = FD_FC.map(fy => fdFcIdx(fy)).filter(i => i >= 0);
+    const all = act.concat(fc);
+    fcFrom = act.length;
+    labels = all.map(i => String(FD_FIN.years[i]).replace(/E$/, "F"));
+    raw = all.map(i => (FD_FIN[mk]||[])[i]);
+  }
+  const vals = raw.map(v => v == null ? null : (isMoney ? money(v) : v));
+  const unitLabel = isMoney ? (unit === "억원" ? "조원" : "십억 달러") : "%";
+  const opts = keys.map(k => { const rr = FD_ROWS.find(x => x.k === k); return `<option value="${k}" ${k===mk?"selected":""}>${rr?rr.l:k}</option>`; }).join("");
+  const h = `<h2>핵심 숫자 그래프 <span class="h2note">${esc(row.l)} · ${FD_FREQ==="Q"?"분기":"연간(F=예상)"}</span></h2>
+    <div class="fd-gctrl">
+      <select onchange="fdSetGMetric(this.value)">${opts}</select>
+      <span class="fd-segwrap"><button class="fd-seg${FD_GTYPE==="line"?" on":""}" onclick="fdSetGType('line')">선</button><button class="fd-seg${FD_GTYPE==="bar"?" on":""}" onclick="fdSetGType('bar')">막대</button></span>
+      ${fdFreqCtrl()}
+      <span class="fd-unit">단위: ${esc(unitLabel)}</span>
+    </div>
+    <div class="fd-chartbox">${fdMetricChart(labels, vals, {type:FD_GTYPE, fcFrom, unit: unitLabel})}</div>`;
+  $("#fd-graphcard").innerHTML = h;
+}
+function fdMetricChart(labels, vals, opt){
+  const type = opt.type || "line", fcFrom = (opt.fcFrom==null?-1:opt.fcFrom), unit = opt.unit || "";
+  const pts = vals.filter(v => v != null);
+  if(pts.length < 1) return `<div class="muted" style="padding:34px 0;text-align:center">데이터 없음</div>`;
+  const n = labels.length;
+  let dlo = Math.min(...pts), dhi = Math.max(...pts);
+  let lo = (type === "bar" || dlo > 0) ? Math.min(0, dlo) : dlo;
+  let hi = Math.max(dhi, 0);
+  let span = (hi - lo) || Math.abs(hi) || 1;
+  hi += span * 0.20;                          // 값 라벨용 위쪽 여백
+  if(type !== "bar" && lo < dlo) { /* keep */ }
+  if(type !== "bar" && lo === dlo && dlo > 0) lo -= span * 0.06;
+  span = (hi - lo) || 1;
+  const W = 720, H = 300, padT = 30, padB = 40, padL = 56, padR = 26;
+  const band = (W - padL - padR) / Math.max(n, 1);
+  const xx = i => padL + band * (i + 0.5);    // 밴드 중앙 정렬 → 양끝 막대 안 잘림
+  const yv = v => padT + (H - padT - padB) * (1 - (v - lo) / span);
+  let g = "";
+  for(let t = 0; t <= 3; t++){ const gv = lo + span * t / 3, y = yv(gv);
+    g += `<line x1="${padL}" x2="${W-padR}" y1="${y.toFixed(1)}" y2="${y.toFixed(1)}" stroke="var(--line)" opacity=".5"/>
+      <text x="${(padL-8).toFixed(1)}" y="${(y+3.5).toFixed(1)}" text-anchor="end" style="fill:var(--muted);font-size:11px">${fmt(gv, Math.abs(gv)<100?1:0)}</text>`; }
+  const base = (lo < 0 && hi > 0) ? yv(0) : yv(Math.max(lo, 0));
+  if(lo < 0 && hi > 0) g += `<line x1="${padL}" x2="${W-padR}" y1="${base}" y2="${base}" stroke="var(--muted)" opacity=".7"/>`;
+  if(type === "bar"){
+    vals.forEach((v,i) => { if(v==null) return; const cx = xx(i), bw = Math.min(46, band*0.46);
+      const top = yv(v), hh = Math.max(2, Math.abs(top - base)), y = Math.min(top, base);
+      const fc = fcFrom >= 0 && i >= fcFrom;
+      g += `<rect x="${(cx-bw/2).toFixed(1)}" y="${y.toFixed(1)}" width="${bw.toFixed(1)}" height="${hh.toFixed(1)}" rx="2" fill="${fc?"none":"var(--accent)"}"${fc?' stroke="var(--accent)" stroke-width="1.5" stroke-dasharray="4 2.5"':""}/>
+        <text x="${cx.toFixed(1)}" y="${(y-6).toFixed(1)}" text-anchor="middle" style="fill:var(--text);font-size:11px;font-weight:700">${fmt(v,Math.abs(v)<100?1:0)}</text>`; });
+  } else {
+    const seg = (from,to) => { let d=""; for(let i=from;i<to;i++){ if(vals[i]==null) continue; d += (d?"L":"M") + xx(i).toFixed(1) + " " + yv(vals[i]).toFixed(1) + " "; } return d; };
+    const actEnd = fcFrom < 0 ? n : fcFrom;
+    const da = seg(0, actEnd);
+    let df = "";
+    if(fcFrom >= 0 && fcFrom < n){ let st = actEnd - 1; while(st >= 0 && vals[st] == null) st--; df = seg(Math.max(0, st), n); }
+    if(da) g += `<path d="${da}" fill="none" stroke="var(--accent)" stroke-width="2.4" stroke-linejoin="round"/>`;
+    if(df) g += `<path d="${df}" fill="none" stroke="var(--accent)" stroke-width="2.4" stroke-dasharray="5 3" opacity=".85"/>`;
+    vals.forEach((v,i) => { if(v==null) return; const fc = fcFrom >= 0 && i >= fcFrom;
+      g += `<circle cx="${xx(i).toFixed(1)}" cy="${yv(v).toFixed(1)}" r="3.2" fill="${fc?"#fff":"var(--accent)"}" stroke="var(--accent)" stroke-width="2"/>
+        <text x="${xx(i).toFixed(1)}" y="${(yv(v)-10).toFixed(1)}" text-anchor="middle" style="fill:var(--text);font-size:11px;font-weight:700">${fmt(v,Math.abs(v)<100?1:0)}</text>`; });
+  }
+  labels.forEach((lb,i) => g += `<text x="${xx(i).toFixed(1)}" y="${H-14}" text-anchor="middle" style="fill:var(--muted);font-size:11.5px">${esc(String(lb))}</text>`);
+  g += `<text x="${(padL-8).toFixed(1)}" y="${(padT-12).toFixed(1)}" text-anchor="end" style="fill:var(--accent);font-size:11px;font-weight:700">${esc(unit)}</text>`;
+  return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block" role="img" aria-label="핵심 숫자 그래프">${g}</svg>`;
+}
+
+// ── ①-b 핵심 지표 — 전분기 대비 (표 ↔ 그래프) ──
+function fdKpiData(){
+  const q = FD_FIN.quarterly || {}, qs = q.quarters || [];
+  const actQ = [];
+  qs.forEach((lb, i) => { if(!/E$/.test(String(lb))) actQ.push(i); });   // 실적(예상 분기 제외)
+  let quarter = null;
+  if(actQ.length >= 2){
+    const ci = actQ[actQ.length - 1], pi = actQ[actQ.length - 2];
+    const pick = k => ({cur:(q[k]||[])[ci], prev:(q[k]||[])[pi]});
+    const rev = pick("revenue"), op = pick("opinc"), net = pick("netinc");
+    const mc = (rev.cur && op.cur != null) ? op.cur / rev.cur * 100 : null;
+    const mp = (rev.prev && op.prev != null) ? op.prev / rev.prev * 100 : null;
+    quarter = {curLab: qs[ci], prevLab: qs[pi], revenue: rev, opinc: op, netinc: net, opmargin: {cur: mc, prev: mp}};
+  }
+  const roeAll = FD_FIN.roe || [], actSet = new Set(fdActualIdx());
+  const roeAct = fdActualIdx().map(i => roeAll[i]).filter(v => v != null && isFinite(v));
+  const roeFwd = (FD_FIN.years || []).map((_, i) => i).filter(i => !actSet.has(i))   // 예상(E) 연도
+                      .map(i => roeAll[i]).filter(v => v != null && isFinite(v));
+  const mean = a => a.length ? a.reduce((x,y)=>x+y,0)/a.length : null;
+  const roe = {past: mean(roeAct), fwd: mean(roeFwd), latest: roeAct.length ? roeAct[roeAct.length-1] : null,
+               nPast: roeAct.length, nFwd: roeFwd.length};
+  return {quarter, roe, unit: FD_FIN.unit || ""};
+}
+function fdSetKpiView(v){ FD_KPI_VIEW = v; fdRenderKpi(); }
+function fdRenderKpi(){
+  const el = $("#fd-kpi"); if(!el) return;
+  const D = fdKpiData();
+  if(!D.quarter && D.roe.past == null){ el.style.display = "none"; el.innerHTML = ""; return; }
+  el.style.display = "";
+  const toggle = `<span class="fd-segwrap"><button class="fd-seg${FD_KPI_VIEW==="table"?" on":""}" onclick="fdSetKpiView('table')">표</button><button class="fd-seg${FD_KPI_VIEW==="chart"?" on":""}" onclick="fdSetKpiView('chart')">그래프</button></span>`;
+  const body = FD_KPI_VIEW === "chart" ? fdKpiCharts(D) : fdKpiTable(D);
+  el.innerHTML = `<h2>핵심 지표 — 전분기 대비 <span class="h2note">이번 분기가 얼마나 좋아졌나</span>${toggle}</h2>${body}`;
+}
+function fdKpiTable(D){
+  const q = D.quarter, unit = D.unit, money = _mconv(unit), mu = (unit === "억원" ? "조원" : "B$");
+  const mmoney = v => v == null ? "—" : fmt(money(v), 1) + mu;
+  const qoq = (c,p) => (c != null && p != null && p !== 0) ? (c/p - 1) * 100 : null;
+  const chgTd = v => v == null ? `<td class="muted">—</td>`
+    : `<td class="${v>=0?"up-pos":"up-neg"}" style="font-weight:800">${(v>=0?"+":"")+fmt(v,1)}%</td>`;
+  let rows = "";
+  if(q){
+    const moneyRow = (lab, o) => `<tr><td class="fd-item">${lab}</td><td class="kpi-val">${mmoney(o.cur)}</td>${chgTd(qoq(o.cur,o.prev))}<td class="muted">손익계산서</td></tr>`;
+    rows += moneyRow("매출액", q.revenue);
+    rows += moneyRow("영업이익", q.opinc);
+    // 영업이익률: 전분기 → 이번분기 (%p)
+    const mc = q.opmargin.cur, mp = q.opmargin.prev;
+    let marginChg = `<td class="muted">—</td>`;
+    if(mc != null && mp != null){ const dp = mc - mp;
+      marginChg = `<td><span style="color:var(--muted)">${fmt(mp,1)}% → ${fmt(mc,1)}%</span> <b class="${dp>=0?"up-pos":"up-neg"}">(${dp>=0?"+":""}${fmt(dp,1)}%p)</b></td>`; }
+    rows += `<tr><td class="fd-item">영업이익률</td><td class="kpi-val">${mc!=null?fmt(mc,1)+"%":"—"}</td>${marginChg}<td class="muted">직접 계산</td></tr>`;
+    rows += moneyRow("순이익", q.netinc);
+  }
+  if(D.roe.fwd != null || D.roe.past != null){
+    const hasFwd = D.roe.fwd != null;
+    const rv = hasFwd ? fmt(D.roe.fwd,0)+"%" : (D.roe.latest!=null ? fmt(D.roe.latest,0)+"%" : "—");
+    const mult = (hasFwd && D.roe.past) ? ` <b class="up-pos">(평균의 ${fmt(D.roe.fwd/D.roe.past,1)}배)</b>` : "";
+    const base = D.roe.past != null ? `<span class="muted">과거 평균 ${fmt(D.roe.past,0)}%</span>` : `<span class="muted">—</span>`;
+    rows += `<tr><td class="fd-item">${hasFwd?"ROE (전망)":"ROE"}</td><td class="kpi-val">${rv}</td><td>${base}${mult}</td><td class="muted">${hasFwd?"증권사 추정":"재무제표"}</td></tr>`;
+  }
+  const cap = q ? `${esc(q.curLab)} 기준 · 직전 분기(${esc(q.prevLab)}) 대비` : "연간 ROE 기준";
+  return `<div style="overflow-x:auto"><table class="fd-table kpi-table">
+      <thead><tr><th>항목</th><th>이번 분기</th><th>직전 대비</th><th>어디서</th></tr></thead>
+      <tbody>${rows}</tbody></table></div>
+    <div class="muted" style="font-size:11px;margin-top:8px">${cap} · 분기 손익 기준(E=예상 분기 제외). ROE는 연간 실적 평균 대비 전망(연간 표에서 수정 시 반영).</div>`;
+}
+function fdKpiCharts(D){
+  const q = D.quarter, cards = [];
+  if(q && q.opmargin.cur != null && q.opmargin.prev != null){
+    const dp = q.opmargin.cur - q.opmargin.prev;
+    cards.push(fdKpi2Bar("영업이익률",
+      [{label:q.prevLab, val:q.opmargin.prev, color:"var(--muted)"},
+       {label:q.curLab,  val:q.opmargin.cur, color:"var(--good)"}],
+      `${dp>=0?"한 분기 만에 +":"−"}${fmt(Math.abs(dp),1)}%p`, dp>=0?"var(--good)":"var(--down)", "%"));
+  }
+  if(D.roe.past != null && D.roe.fwd != null){
+    cards.push(fdKpi2Bar("ROE",
+      [{label:"과거 평균", val:D.roe.past, color:"var(--muted)"},
+       {label:"향후 전망", val:D.roe.fwd,  color:"var(--up)"}],
+      D.roe.past ? `평균의 ${fmt(D.roe.fwd/D.roe.past,1)}배` : "", "var(--up)", "%"));
+  }
+  if(!cards.length) return `<div class="muted" style="padding:16px 0">그래프로 표시할 분기·ROE 데이터가 부족합니다.</div>`;
+  return `<div class="fd-cmp-wrap">${cards.join("")}</div>`;
+}
+function fdKpi2Bar(title, items, note, noteColor, unit){
+  const vals = items.map(x => x.val).filter(v => v != null);
+  if(!vals.length) return "";
+  const hi = (Math.max(...vals, 0) * 1.30) || 1;
+  const W = 340, H = 250, padT = 44, padB = 34, padL = 20, padR = 14;
+  const n = items.length, band = (W - padL - padR) / n, base = H - padB;
+  const yv = v => padT + (H - padT - padB) * (1 - v / hi);
+  let g = `<text x="${W/2}" y="20" text-anchor="middle" style="fill:var(--text);font-size:14px;font-weight:800">${esc(title)}</text>`;
+  g += `<line x1="${padL}" x2="${W-padR}" y1="${base}" y2="${base}" stroke="var(--line)"/>`;
+  items.forEach((it,i) => { if(it.val == null) return; const cx = padL + band*(i+0.5), bw = Math.min(72, band*0.5), y = yv(it.val);
+    g += `<rect x="${(cx-bw/2).toFixed(1)}" y="${y.toFixed(1)}" width="${bw.toFixed(1)}" height="${(base-y).toFixed(1)}" rx="3" fill="${it.color}"/>`
+      + `<text x="${cx.toFixed(1)}" y="${(y-9).toFixed(1)}" text-anchor="middle" style="fill:${it.color};font-size:18px;font-weight:800">${fmt(it.val,1)}${unit||""}</text>`
+      + `<text x="${cx.toFixed(1)}" y="${(H-11).toFixed(1)}" text-anchor="middle" style="fill:var(--muted);font-size:12px">${esc(it.label)}</text>`; });
+  if(note) g += `<text x="${(W-padR).toFixed(1)}" y="${(padT-10).toFixed(1)}" text-anchor="end" style="fill:${noteColor||"var(--good)"};font-size:13px;font-weight:800">${esc(note)}</text>`;
+  return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block" role="img" aria-label="${esc(title)}">${g}</svg>`;
+}
+
+// ── ⑤ 종합 해석 ──
+function fdRenderInterp(){
+  const g = FD_DIAG; if(!g) return;
+  const it = g.interpretation || {};
+  const overall = it.overall || [it.facts, it.context, it.judgment].filter(Boolean).join(" ");
+  $("#fd-interp").innerHTML = `<div class="card"><h2>종합 해석 <span class="h2note">자동 생성</span></h2>
+    <p class="fd-overall">${esc(overall)}</p>
+    <div class="diag-disc">재무제표는 과거 기록입니다. 앞으로도 같을 것이라는 보장은 없습니다.<br>
+      이 페이지는 투자 판단을 돕는 참고 자료이며 투자 권유가 아닙니다.</div></div>`;
+}
+
 function render(d){
   const cur = d.currency === "KRW" ? "₩" : (d.currency || "");  // 국내는 원화 기호
   RCUR = cur;
@@ -2008,8 +2593,14 @@ function render(d){
     ? `<div class="row2">` + headerCard + fgCard(d.fear_greed) + `</div>`
     : headerCard;
 
+  // 재무제표 자동 진단 (6개 항목 판정 + 해석) — 결과 상단에 우선 노출
+  if(d.diagnosis) h += diagCard(d.diagnosis, cur, d.financials);
+
   // 재무 흐름 (성장성·수익성·안정성·현금흐름) + AI 안정성 판단
   if(d.financials && d.financials.years) h += finCard(d.financials, d.fin_comment, d.usdkrw);
+
+  // 과거 PER 추이 (과거→현재 PER 수치) — 재무제표 아래 · 표준편차 밴드 위
+  h += perTrendCard(d);
 
   // 표준편차 밴드 (평균 기준 ±1σ/±2σ/±3σ, 양옆 배치)
   h += `<div class="row2">`
@@ -2082,6 +2673,7 @@ function render(d){
   initTP();
   loadPeers(d.ticker, []);
   loadEpsGrowth(d.ticker, d.eps_fwd);   // 예상 EPS(카드 값)를 미래 추정 앵커로 사용
+  loadPerHist(d);                       // 미국: EDGAR 장기 과거 PER, 아니면 sigma 폴백
 }
 
 // ---------- EPS 성장률 · 미래 EPS 추정 ----------
@@ -2480,6 +3072,175 @@ function finMini(title, tag, arr, years, conv, unit, tip, refLine, isQ, krwFx){
 }
 
 // ---------- 공포탐욕지수 (반원 게이지 + 지표별 미니 막대) ----------
+// ================= 재무제표 진단 =================
+function _mconv(u){ return u === "억원" ? (v => v / 1e4) : (v => v / 1e3); }   // 억원→조 / 백만$→십억$
+function _munit(u){ return u === "억원" ? "조" : "B$"; }
+
+function fmtDiagVal(c, finUnit){
+  if(c.value === null || c.value === undefined) return "—";
+  if(c.unit === "%") return fmt(c.value, 1) + "%";
+  if(c.unit === "배") return fmt(c.value, 2) + "배";
+  const m = _mconv(finUnit)(c.value);
+  return fmt(m, Math.abs(m) < 100 ? 1 : 0) + _munit(finUnit);
+}
+
+function diagCard(g, cur, fin){
+  if(!g) return "";
+  const finUnit = (fin && fin.unit) || "";
+  const S = g.summary || {level: "", text: ""};
+  const badge = {green: "✅", yellow: "⚠️", red: "🚨"}[S.level] || "";
+  let h = `<div class="card diag"><h2>🩺 재무제표 진단
+    <span class="h2note">6개 항목 자동 판정 + 사람이 읽는 해석</span></h2>`;
+  // 섹션1 — 한 줄 요약
+  h += `<div class="diag-sum ${S.level}"><span class="diag-badge">${badge} ${esc(S.text)}</span>
+    <span class="diag-count">${g.passCount} / ${g.evaluatedCount}개 항목 통과</span></div>`;
+  // 섹션2 — 6개 체크리스트
+  const stMap = {pass: "통과", warn: "주의", fail: "실패", na: "데이터 없음"};
+  h += `<div class="diag-grid">`;
+  (g.checks || []).forEach(c => {
+    const val = c.status === "na" ? "데이터 없음" : fmtDiagVal(c, finUnit);
+    h += `<div class="diag-check ${c.status}">
+      <div class="dc-top"><span class="dc-label">${c.id}. ${esc(c.label)}</span>
+        <span class="dc-pill">${stMap[c.status] || ""}</span></div>
+      <div class="dc-val">${val}</div>
+      <div class="dc-th">기준 · ${esc(c.threshold)}</div>
+      <div class="dc-reason">${esc(c.reason)}</div></div>`;
+  });
+  h += `</div>`;
+  // 섹션3 — 시각화 3개
+  h += `<div class="diag-charts">
+    <div class="diag-chart"><h3>손익 폭포 <span class="muted" style="font-weight:400;font-size:10.5px">매출→순이익, 어디서 얼마가 빠지나</span></h3>${wfChart(g, finUnit)}</div>
+    <div class="diag-chart"><h3>순이익 vs 영업활동현금흐름 <span class="muted" style="font-weight:400;font-size:11px">최근 3년</span></h3>${niCashChart(g, finUnit)}</div>
+    <div class="diag-chart"><h3>ROE 추이 <span class="muted" style="font-weight:400;font-size:11px">최근 5년 · 기준 10%</span></h3>${roeTrendChart(g)}</div>
+  </div>`;
+  // 섹션4 — 종합 해석
+  const it = g.interpretation || {};
+  const overall = it.overall || [it.facts, it.context, it.judgment].filter(Boolean).join(" ");
+  h += `<div class="diag-interp"><div class="di-para"><span class="di-tag">종합 해석</span>
+    <p style="margin:0;font-size:13.5px;line-height:1.9;color:var(--text)">${esc(overall)}</p></div></div>`;
+  h += `<div class="diag-disc">재무제표는 과거 기록입니다. 앞으로도 같을 것이라는 보장은 없습니다.<br>
+    이 페이지는 투자 판단을 돕는 참고 자료이며 투자 권유가 아닙니다.</div>`;
+  return h + `</div>`;
+}
+
+// 손익 폭포차트 (매출→…→순이익). 완전 데이터면 9단계, 아니면 매출→영업이익→순이익 3앵커.
+function wfChart(g, finUnit){
+  const wf = g.waterfall || {};
+  const hist = (g.history && g.history.length) ? g.history[g.history.length - 1] : {};
+  const rev = wf.revenue != null ? wf.revenue : hist.revenue;
+  const op = wf.opinc != null ? wf.opinc : hist.operatingProfit;
+  const ni = wf.netinc != null ? wf.netinc : hist.netIncome;
+  if(rev == null && op == null && ni == null)
+    return `<div class="muted" style="font-size:12px;padding:24px 0;text-align:center">데이터 없음</div>`;
+  const full = wf && wf.cogs != null && wf.pretax != null && wf.tax != null &&
+               rev != null && op != null && ni != null;
+  let steps;
+  if(full){
+    const gross = wf.grossProfit != null ? wf.grossProfit : rev - wf.cogs;
+    const sga = wf.sga != null ? wf.sga : gross - op;
+    const nonop = wf.pretax - op;
+    steps = [
+      {l: "매출액", k: "a", v: rev},
+      {l: "매출원가", k: "d", v: -wf.cogs},
+      {l: "매출총이익", k: "a", v: gross},
+      {l: "판관비", k: "d", v: -sga},
+      {l: "영업이익", k: "a", v: op, hl: 1},
+      {l: "영업외", k: "d", v: nonop},
+      {l: "세전이익", k: "a", v: wf.pretax},
+      {l: "법인세", k: "d", v: -wf.tax},
+      {l: "순이익", k: "a", v: ni},
+    ];
+  } else {
+    steps = [
+      {l: "매출액", k: "a", v: rev},
+      {l: "비용", k: "d", v: (op != null && rev != null) ? op - rev : null},
+      {l: "영업이익", k: "a", v: op, hl: 1},
+      {l: "세금·기타", k: "d", v: (ni != null && op != null) ? ni - op : null},
+      {l: "순이익", k: "a", v: ni},
+    ].filter(s => s.v != null);
+  }
+  const conv = _mconv(finUnit), mu = _munit(finUnit);
+  // running 계산 → 각 막대 [top,bottom]
+  let run = 0; const bars = [];
+  steps.forEach(s => {
+    if(s.k === "a"){ bars.push({l: s.l, lo: Math.min(0, s.v), hi: Math.max(0, s.v), v: s.v, hl: s.hl}); run = s.v; }
+    else { const e = run + s.v; bars.push({l: s.l, lo: Math.min(run, e), hi: Math.max(run, e), v: s.v}); run = e; }
+  });
+  const lo = Math.min(0, ...bars.map(b => b.lo)), hi = Math.max(0, ...bars.map(b => b.hi));
+  const span = (hi - lo) || 1;
+  const W = 360, H = 168, padT = 12, padB = 44, padL = 6, padR = 6, n = bars.length;
+  const gap = (W - padL - padR) / n, bw = gap * 0.62;
+  const yv = v => padT + ((hi - v) / span) * (H - padT - padB);
+  let sv = `<line x1="${padL}" x2="${W - padR}" y1="${yv(0).toFixed(1)}" y2="${yv(0).toFixed(1)}" stroke="var(--line)"/>`;
+  bars.forEach((b, i) => {
+    const cx = padL + gap * i + gap / 2;
+    const col = b.hl ? "#B0883A" : (b.k === "a" ? "#7d8aa0" : (b.v < 0 ? "#d64550" : "var(--good)"));
+    const fill = b.hl ? "#B0883A" : (b.v < 0 ? "#d64550" : (b.k === "a" ? "#8a97ad" : "var(--good)"));
+    sv += `<rect x="${(cx - bw / 2).toFixed(1)}" y="${yv(b.hi).toFixed(1)}" width="${bw.toFixed(1)}"
+      height="${Math.max(1.5, Math.abs(yv(b.hi) - yv(b.lo))).toFixed(1)}" rx="2" fill="${fill}"${b.hl ? ' stroke="#8f6d2b"' : ""}/>`;
+    const mv = conv(b.v);
+    sv += `<text x="${cx.toFixed(1)}" y="${(yv(b.hi) - 3).toFixed(1)}" text-anchor="middle" class="wf-lab" style="fill:var(--text)">${fmt(mv, Math.abs(mv) < 100 ? 1 : 0)}</text>`;
+    sv += `<text x="${cx.toFixed(1)}" y="${H - padB + 12}" text-anchor="end" class="wf-lab" transform="rotate(-40 ${cx.toFixed(1)} ${H - padB + 12})">${b.l}</text>`;
+  });
+  return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block" role="img" aria-label="손익 폭포">${sv}</svg>
+    <div class="muted" style="font-size:10.5px;margin-top:2px">단위 ${mu}${full ? "" : " · 간이(매출·영업이익·순이익)"}</div>`;
+}
+
+// 순이익 vs 영업활동현금흐름 (최근 3년). 현금흐름이 순이익보다 작은 해는 빨강.
+function niCashChart(g, finUnit){
+  const hs = (g.history || []).filter(x => x.netIncome != null || x.operatingCashFlow != null).slice(-3);
+  if(!hs.length) return `<div class="muted" style="font-size:12px;padding:24px 0;text-align:center">데이터 없음</div>`;
+  const conv = _mconv(finUnit), mu = _munit(finUnit);
+  const vals = [];
+  hs.forEach(x => { if(x.netIncome != null) vals.push(conv(x.netIncome)); if(x.operatingCashFlow != null) vals.push(conv(x.operatingCashFlow)); });
+  const lo = Math.min(0, ...vals), hi = Math.max(0, ...vals), span = (hi - lo) || 1;
+  const W = 360, H = 150, padT = 12, padB = 26, padL = 6, padR = 6, n = hs.length;
+  const slot = (W - padL - padR) / n, bw = Math.min(34, slot * 0.30);
+  const yv = v => padT + ((hi - v) / span) * (H - padT - padB);
+  let sv = `<line x1="${padL}" x2="${W - padR}" y1="${yv(0).toFixed(1)}" y2="${yv(0).toFixed(1)}" stroke="var(--line)"/>`;
+  hs.forEach((x, i) => {
+    const cx = padL + slot * i + slot / 2;
+    const ni = x.netIncome, oc = x.operatingCashFlow;
+    const cashLow = (ni != null && oc != null && oc < ni);
+    const draw = (v, dx, col) => {
+      if(v == null) return "";
+      const mv = conv(v), top = mv >= 0 ? yv(mv) : yv(0), hgt = Math.max(1.5, Math.abs(yv(mv) - yv(0)));
+      return `<rect x="${(cx + dx).toFixed(1)}" y="${top.toFixed(1)}" width="${bw}" height="${hgt.toFixed(1)}" rx="2" fill="${col}"/>
+        <text x="${(cx + dx + bw / 2).toFixed(1)}" y="${(top - 3).toFixed(1)}" text-anchor="middle" class="wf-lab" style="fill:var(--text)">${fmt(mv, Math.abs(mv) < 100 ? 1 : 0)}</text>`;
+    };
+    sv += draw(ni, -bw - 2, "#7d8aa0");
+    sv += draw(oc, 2, cashLow ? "#d64550" : "var(--good)");
+    sv += `<text x="${cx.toFixed(1)}" y="${H - 8}" text-anchor="middle" class="wf-lab">${String(x.year).replace(/^20/, "").replace("E", "ᴱ")}</text>`;
+  });
+  return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block" role="img" aria-label="순이익 vs 현금흐름">${sv}</svg>
+    <div class="muted" style="font-size:10.5px;margin-top:2px"><span style="color:#7d8aa0">■</span> 순이익
+      <span style="color:var(--good)">■</span> 영업현금흐름 <span style="color:#d64550">■</span> 현금 < 이익 · 단위 ${mu}</div>`;
+}
+
+// ROE 추이 (최근 5년 + 기준 10% 점선)
+function roeTrendChart(g){
+  const hs = (g.history || []).filter(x => x.roe != null).slice(-5);
+  if(hs.length < 2) return `<div class="muted" style="font-size:12px;padding:24px 0;text-align:center">데이터 없음</div>`;
+  const vals = hs.map(x => x.roe);
+  const lo = Math.min(0, ...vals), hi = Math.max(10, ...vals), span = (hi - lo) || 1;
+  const W = 360, H = 150, padT = 14, padB = 26, padL = 24, padR = 8, n = hs.length;
+  const xx = i => padL + (W - padL - padR) * (n === 1 ? 0.5 : i / (n - 1));
+  const yv = v => padT + ((hi - v) / span) * (H - padT - padB);
+  let sv = `<line x1="${padL}" x2="${W - padR}" y1="${yv(0).toFixed(1)}" y2="${yv(0).toFixed(1)}" stroke="var(--line)"/>`;
+  // 기준 10% 점선
+  sv += `<line x1="${padL}" x2="${W - padR}" y1="${yv(10).toFixed(1)}" y2="${yv(10).toFixed(1)}" stroke="var(--warn)" stroke-dasharray="3 2" opacity=".6"/>
+    <text x="${W - padR}" y="${(yv(10) - 3).toFixed(1)}" text-anchor="end" class="wf-lab" style="fill:var(--warn)">기준 10%</text>`;
+  let d = "";
+  hs.forEach((x, i) => { d += (i ? "L" : "M") + xx(i).toFixed(1) + " " + yv(x.roe).toFixed(1) + " "; });
+  sv += `<path d="${d}" fill="none" stroke="var(--accent)" stroke-width="2"/>`;
+  hs.forEach((x, i) => {
+    sv += `<circle cx="${xx(i).toFixed(1)}" cy="${yv(x.roe).toFixed(1)}" r="3" fill="#fff" stroke="var(--accent)" stroke-width="2"/>
+      <text x="${xx(i).toFixed(1)}" y="${(yv(x.roe) - 7).toFixed(1)}" text-anchor="middle" class="wf-lab" style="fill:var(--text)">${fmt(x.roe, 1)}</text>
+      <text x="${xx(i).toFixed(1)}" y="${H - 8}" text-anchor="middle" class="wf-lab">${String(x.year).replace(/^20/, "").replace("E", "ᴱ")}</text>`;
+  });
+  return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block" role="img" aria-label="ROE 추이">${sv}</svg>`;
+}
+
 function fgCard(fg){
   let h = `<div class="card fg"><h2>공포탐욕지수 <span class="h2note">심리 참고용</span></h2>`;
   h += fgGauge(fg);
@@ -3141,6 +3902,118 @@ function computeReport(){
 // ---------- 표준편차 밴드 (PER/PBR 공용) ----------
 // 주간 배수 추이 실선 + 평균 기준 ±1σ/±2σ/±3σ 수평선 + 레벨 박스(사다리)
 let SIGMODE = {PER:"trail", PBR:"trail"};   // σ밴드 표시 기준: trail(과거) | fwd(선행)
+// 과거 PER 추이 (과거→현재 PER 수치) — d.sigma.series(주간 PER) 재사용, 백엔드 변경 없음
+// 과거 PER 추이 — 미국은 EDGAR(장기)로 비동기 로드, 없으면 sigma(4~5년) 폴백
+let PERH = null, perRange = null, _perdrag = null, _perA = 0;
+const PERW = 720, PERHT = 260, PPADL = 48, PPADR = 16, PPADT = 16, PPADB = 30;
+function perTrendCard(d){
+  return `<div class="card"><h2>과거 PER 추이 <span class="h2note">주가 ÷ TTM EPS · 마우스로 기간 지정</span></h2>
+    <div id="per-body"><div class="muted" style="font-size:13px;padding:12px 0">과거 PER 불러오는 중…</div></div></div>`;
+}
+function loadPerHist(d){
+  PERH = null; perRange = null;
+  fetch("/api/per_history?ticker=" + encodeURIComponent(d.ticker)).then(r => r.json()).then(res => {
+    const el = document.getElementById("per-body"); if(!el) return;
+    if(res && res.series && res.series.length >= 20){ PERH = res; perRenderBody(); }
+    else el.innerHTML = perSigmaFallback(d);
+  }).catch(() => { const el = document.getElementById("per-body"); if(el) el.innerHTML = perSigmaFallback(d); });
+}
+function perViewSlice(){
+  const s = PERH.series, N = s.length; let a, b = N - 1;
+  if(perRange){ a = Math.max(0, perRange[0]); b = Math.min(N - 1, perRange[1]); if(b - a < 4){ a = 0; b = N - 1; } }
+  else a = Math.max(0, N - 260);        // 기본: 최근 5년(주간)
+  _perA = a;
+  return s.slice(a, b + 1);
+}
+function perSet(w){ const N = PERH.series.length; perRange = (w <= 0) ? [0, N - 1] : [Math.max(0, N - w), N - 1]; perRenderBody(); }
+function perRenderBody(){
+  const el = document.getElementById("per-body"); if(!el || !PERH) return;
+  const slice = perViewSlice(), vals = slice.map(p => p.per);
+  const avg = vals.reduce((x, y) => x + y, 0) / vals.length, mx = Math.max(...vals), mn = Math.min(...vals), cur = PERH.latest;
+  const stat = (lb, v, cls) => `<div class="pt-stat"><div class="pt-lb">${lb}</div><div class="pt-v ${cls||""}">${v==null?"—":fmt(v,1)}</div></div>`;
+  const presets = [["1년",52],["3년",156],["5년",260],["10년",520],["전체",0]];
+  const btns = presets.map(([l,w]) => `<button class="per-btn" onclick="perSet(${w})">${l}</button>`).join("");
+  el.innerHTML =
+    `<div class="pt-stats">${stat("현재 PER",cur,"accent")}${stat("구간 평균",avg)}${stat("구간 최저",mn,"pt-lo")}${stat("구간 최고",mx,"pt-hi")}</div>`+
+    `<div class="per-ctrl">${btns}<span class="per-range">${slice[0].d} ~ ${slice[slice.length-1].d} · ${slice.length}주</span></div>`+
+    perChart(slice)+
+    `<div class="muted" style="font-size:11px;margin-top:6px">SEC EDGAR EPS(TTM) ÷ 야후 주가 · 최대 ${PERH.years}년 · <b>차트를 좌우 드래그</b>하면 그 구간으로 확대(‘전체’로 리셋). 평균·최고·최저는 <b>보는 구간</b> 기준.</div>`;
+}
+function perChart(slice){
+  const n = slice.length, vals = slice.map(p => p.per);
+  const srt = [...vals].sort((a,b)=>a-b), p97 = srt[Math.min(srt.length-1, Math.floor(srt.length*0.97))];
+  let lo = Math.min(...vals), hi = Math.min(Math.max(...vals), p97*1.08);
+  if(hi <= lo) hi = lo + 1; const sp0 = hi - lo; lo = Math.max(0, lo - sp0*0.08); hi += sp0*0.10; const sp = (hi - lo) || 1;
+  const avg = vals.reduce((a,b)=>a+b,0)/vals.length;
+  const W=PERW,H=PERHT,padL=PPADL,padR=PPADR,padT=PPADT,padB=PPADB;
+  const X = i => padL + (W-padL-padR)*(n<=1?0.5:i/(n-1));
+  const Yr = v => padT + (hi-v)/sp*(H-padT-padB);
+  const Y = v => Math.max(padT, Math.min(H-padB, Yr(v)));
+  let g = "";
+  for(let t=0;t<=3;t++){ const gv=lo+sp*t/3, y=Yr(gv);
+    g+=`<line x1="${padL}" x2="${W-padR}" y1="${y.toFixed(1)}" y2="${y.toFixed(1)}" stroke="var(--line)" opacity=".5"/>`
+      +`<text x="${(padL-6).toFixed(1)}" y="${(y+3).toFixed(1)}" text-anchor="end" style="fill:var(--muted);font-size:10px">${fmt(gv,1)}</text>`; }
+  { const y=Yr(avg); if(y>padT&&y<H-padB) g+=`<line x1="${padL}" x2="${W-padR}" y1="${y.toFixed(1)}" y2="${y.toFixed(1)}" stroke="var(--warn)" stroke-dasharray="4 3" opacity=".85"/><text x="${W-padR}" y="${(y-4).toFixed(1)}" text-anchor="end" style="fill:var(--warn);font-size:10px">평균 ${fmt(avg,1)}</text>`; }
+  let d=""; slice.forEach((p,i)=>{ d+=(i?"L":"M")+X(i).toFixed(1)+" "+Y(p.per).toFixed(1)+" "; });
+  g+=`<path d="${d}" fill="none" stroke="var(--accent)" stroke-width="1.8" stroke-linejoin="round"/>`;
+  g+=`<circle cx="${X(n-1).toFixed(1)}" cy="${Y(slice[n-1].per).toFixed(1)}" r="3.5" fill="var(--accent)" stroke="#fff" stroke-width="1.5"/>`;
+  let py=""; slice.forEach((p,i)=>{ const yr=String(p.d).slice(0,4); if(yr!==py){ py=yr; g+=`<text x="${X(i).toFixed(1)}" y="${H-10}" text-anchor="middle" style="fill:var(--muted);font-size:10px">${yr}</text>`; } });
+  g+=`<rect id="per-sel" x="0" y="${padT}" width="0" height="${H-padT-padB}" fill="var(--accent)" opacity="0.16" style="pointer-events:none"/>`;
+  g+=`<rect x="${padL}" y="${padT}" width="${W-padL-padR}" height="${H-padT-padB}" fill="transparent" style="cursor:col-resize" onmousedown="perDown(event)" onmousemove="perMove(event)" onmouseup="perUp(event)" onmouseleave="perCancel()"/>`;
+  return `<svg viewBox="0 0 ${W} ${H}" data-n="${n}" style="width:100%;height:auto;display:block;touch-action:none;user-select:none">${g}</svg>`;
+}
+function _perx(ev){ const svg=ev.currentTarget.ownerSVGElement, r=svg.getBoundingClientRect(); return (ev.clientX-r.left)/r.width*PERW; }
+function perDown(ev){ _perdrag={x0:_perx(ev)}; }
+function perMove(ev){ if(!_perdrag) return; const sel=document.getElementById("per-sel"); if(!sel) return;
+  const x1=_perx(ev), a=Math.min(_perdrag.x0,x1), b=Math.max(_perdrag.x0,x1); sel.setAttribute("x",a.toFixed(1)); sel.setAttribute("width",Math.max(0,b-a).toFixed(1)); }
+function perCancel(){ if(_perdrag){ _perdrag=null; const s=document.getElementById("per-sel"); if(s) s.setAttribute("width","0"); } }
+function perUp(ev){ if(!_perdrag) return; const x0=_perdrag.x0, x1=_perx(ev); _perdrag=null;
+  const n=+ev.currentTarget.ownerSVGElement.getAttribute("data-n"), f=px=>Math.max(0,Math.min(1,(px-PPADL)/(PERW-PPADL-PPADR)));
+  const i0=Math.round(f(Math.min(x0,x1))*(n-1)), i1=Math.round(f(Math.max(x0,x1))*(n-1));
+  if(i1-i0<4){ const s=document.getElementById("per-sel"); if(s) s.setAttribute("width","0"); return; }
+  perRange=[_perA+i0,_perA+i1]; perRenderBody();
+}
+function perSigmaFallback(d){
+  const sg=d.sigma;
+  if(!sg||!sg.series||sg.series.length<5) return `<div class="muted" style="font-size:13px;padding:8px 0">과거 PER 데이터가 부족합니다.</div>`;
+  const vals=sg.series.map(p=>p.v), mn=Math.min(...vals), mx=Math.max(...vals), mean=sg.mean;
+  const cur=(typeof d.per_ttm==="number"&&d.per_ttm>0)?d.per_ttm:sg.cur;
+  const stat=(lb,v,cls)=>`<div class="pt-stat"><div class="pt-lb">${lb}</div><div class="pt-v ${cls||""}">${v==null?"—":fmt(v,1)}</div></div>`;
+  return `<div class="pt-stats">${stat("현재 PER",cur,"accent")}${stat("평균",mean)}${stat("최저",mn,"pt-lo")}${stat("최고",mx,"pt-hi")}</div>`+
+    perTrendChart(sg.series, mean, cur)+
+    `<div class="muted" style="font-size:11px;margin-top:8px">해외/데이터 제약으로 최근 ${sg.years}년만 표시(야후 EPS). 미국 종목은 EDGAR로 장기(최대 15년+) 표시됩니다.</div>`;
+}
+function perTrendChart(series, mean, cur){
+  const n = series.length, vals = series.map(p => p.v);
+  let lo = Math.min(...vals, mean), hi = Math.max(...vals, mean);
+  const sp0 = (hi - lo) || 1; lo -= sp0 * 0.08; hi += sp0 * 0.12; const sp = (hi - lo) || 1;
+  const W = 680, H = 240, padT = 16, padB = 30, padL = 46, padR = 16;
+  const xx = i => padL + (W - padL - padR) * (n <= 1 ? 0.5 : i / (n - 1));
+  const yv = v => padT + (H - padT - padB) * (1 - (v - lo) / sp);
+  let g = "";
+  for(let t = 0; t <= 3; t++){ const gv = lo + sp * t / 3, y = yv(gv);
+    g += `<line x1="${padL}" x2="${W-padR}" y1="${y.toFixed(1)}" y2="${y.toFixed(1)}" stroke="var(--line)" opacity=".5"/>
+      <text x="${(padL-8).toFixed(1)}" y="${(y+3.5).toFixed(1)}" text-anchor="end" style="fill:var(--muted);font-size:10.5px">${fmt(gv,1)}</text>`; }
+  // 평균 점선
+  if(mean != null){ const y = yv(mean);
+    g += `<line x1="${padL}" x2="${W-padR}" y1="${y.toFixed(1)}" y2="${y.toFixed(1)}" stroke="var(--muted)" stroke-dasharray="4 3" opacity=".8"/>
+      <text x="${W-padR}" y="${(y-4).toFixed(1)}" text-anchor="end" style="fill:var(--muted);font-size:10px">평균 ${fmt(mean,1)}</text>`; }
+  // PER 선
+  let dpath = "";
+  series.forEach((p,i) => { dpath += (i?"L":"M") + xx(i).toFixed(1) + " " + yv(p.v).toFixed(1) + " "; });
+  g += `<path d="${dpath}" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linejoin="round"/>`;
+  // 현재 PER 점(마지막)
+  const li = n - 1;
+  g += `<circle cx="${xx(li).toFixed(1)}" cy="${yv(series[li].v).toFixed(1)}" r="4" fill="var(--accent)" stroke="#fff" stroke-width="1.5"/>
+    <text x="${xx(li).toFixed(1)}" y="${(yv(series[li].v)-9).toFixed(1)}" text-anchor="end" style="fill:var(--accent);font-size:11px;font-weight:800">${fmt(series[li].v,1)}</text>`;
+  // x축 연도 라벨 (연도 바뀌는 지점)
+  let prevY = "";
+  series.forEach((p,i) => { const yr = String(p.d).slice(0,4);
+    if(yr !== prevY){ prevY = yr;
+      g += `<text x="${xx(i).toFixed(1)}" y="${H-12}" text-anchor="middle" style="fill:var(--muted);font-size:10.5px">${yr}</text>`; } });
+  return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block" role="img" aria-label="과거 PER 추이">${g}</svg>`;
+}
+
 function sigmaCard(title, sgTrail, sgFwd, ind, dec, price){
   const mode = SIGMODE[ind] === "fwd" && sgFwd ? "fwd" : "trail";
   const sg = mode === "fwd" ? sgFwd : sgTrail;

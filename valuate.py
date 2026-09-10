@@ -488,8 +488,10 @@ def _us_financials(tk):
     equity = row(bs, ["Stockholders Equity", "Common Stock Equity"])
     ocf = row(cf, ["Operating Cash Flow", "Cash Flow From Continuing Operating Activities"])
     fcf = row(cf, ["Free Cash Flow"])
+    intexp = row(inc, ["Interest Expense", "Interest Expense Non Operating"])
     rev_v, op_v, ni_v = series(rev), series(opinc), series(netinc)
     debt_v, eq_v = series(debt), series(equity)
+    ie_v = [None if x is None else abs(x) for x in series(intexp)]   # 이자비용(양수화)
     # 파생 지표: 부채비율(부채/자본×100), 영업이익률(영업이익/매출×100)
     dr = [None if (d is None or e in (None, 0)) else round(d / e * 100, 1)
           for d, e in zip(debt_v, eq_v)]
@@ -506,14 +508,31 @@ def _us_financials(tk):
             years.append(fc["year"] + "E")
             rev_v.append(fc.get("revenue")); op_v.append(fc.get("opinc"))
             ni_v.append(fc.get("netinc")); ocf_v.append(None); fcf_v.append(fc.get("fcf"))
-            dr.append(None); roe.append(None)
+            dr.append(None); roe.append(None); ie_v.append(None)
             om.append(round(fc["opinc"] / fc["revenue"] * 100, 1)
                       if (fc.get("opinc") and fc.get("revenue")) else None)
     except Exception:
         pass
+    # 손익 폭포차트용 — 최신 확정연도 손익 구성 (매출→매출원가→매출총이익→판관비→영업이익→세전→법인세→순이익)
+    def _latest(r):
+        if r is None:
+            return None
+        for c in reversed(cols):
+            if c in r.index and not pd.isna(r[c]):
+                return float(r[c]) / 1e6
+        return None
+    breakdown = {
+        "revenue": _latest(rev), "cogs": _latest(row(inc, ["Cost Of Revenue"])),
+        "grossProfit": _latest(row(inc, ["Gross Profit"])),
+        "sga": _latest(row(inc, ["Operating Expense", "Total Operating Expenses",
+                                 "Selling General And Administration"])),
+        "opinc": _latest(opinc), "pretax": _latest(row(inc, ["Pretax Income", "Income Before Tax"])),
+        "tax": _latest(row(inc, ["Tax Provision", "Income Tax Expense"])),
+        "netinc": _latest(netinc), "unit": "M$",
+    }
     return {"years": years, "revenue": rev_v, "opinc": op_v, "netinc": ni_v, "roe": roe,
-            "ocf": ocf_v, "fcf": fcf_v, "debtratio": dr, "opmargin": om,
-            "unit": "M$", "cur": "USD"}
+            "ocf": ocf_v, "fcf": fcf_v, "debtratio": dr, "opmargin": om, "intexp": ie_v,
+            "breakdown": breakdown, "unit": "M$", "cur": "USD"}
 
 
 _US_FC_CACHE = {}   # {symbol: (ts, dict)}
@@ -601,11 +620,48 @@ def build_financials(tk, nv_annual, kr_code=None):
                 out["quarterly"] = {"quarters": q["quarters"],
                                     "revenue": q.get("revenue"), "opinc": q.get("opinc"),
                                     "netinc": q.get("netinc")}
+            # 상세 손익(이자비용·매출원가·판관비·법인세) — 이자보상배율 + 손익 폭포용
+            try:
+                det = kr_data.wisefn_income_detail(kr_code)
+                if det:
+                    base = lambda y: str(y).replace("E", "")
+                    dmap = {base(y): i for i, y in enumerate(det.get("years", []))}
+                    di = det.get("intexp") or []
+                    out["intexp"] = [di[dmap[base(y)]] if (base(y) in dmap and dmap[base(y)] < len(di)) else None
+                                     for y in out["years"]]
+                    if det.get("breakdown"):
+                        out["breakdown"] = det["breakdown"]
+            except Exception:
+                pass
         return out
     us = _us_financials(tk)
     if us:
         us["quarterly"] = _us_quarterly(tk)
     return us
+
+
+def _build_diagnosis(ticker, name, info, fin_data):
+    """재무제표 자동 진단 — diagnose.diagnose 순수 함수 호출용 어댑터.
+    데이터가 부족하면 None(프론트에서 '재무 데이터 부족'으로 안내)."""
+    if not fin_data or not fin_data.get("years"):
+        return None
+    try:
+        import diagnose
+    except Exception:
+        return None
+    sector = " ".join(x for x in [(info or {}).get("sector"),
+                                  (info or {}).get("industry")] if x).strip()
+    try:
+        diag = diagnose.diagnose({
+            "ticker": ticker, "companyName": name, "sector": sector,
+            "isCyclical": None, "isFinancial": None,
+            "financials": fin_data,
+        })
+        if diag is not None:
+            diag["waterfall"] = (fin_data or {}).get("breakdown")
+        return diag
+    except Exception:
+        return None
 
 
 # ------------------- 재무 안정성 AI 판단 -------------------
@@ -1088,6 +1144,7 @@ def analyze_data(ticker):
         "cyclical": cyclical, "cyc_max": cyc_max,
         "eps_hist": [round(float(v), 4) for v in eps_hist] if eps_hist else [],
         "financials": fin_data, "fin_comment": fin_comment,
+        "diagnosis": _build_diagnosis(ticker, name, info, fin_data),
         "usdkrw": _usdkrw() if not is_korean(ticker) else None,
         "fear_greed": _fear_greed(hist_df, info, ticker, eps_series, ttm_eps, per_daily,
                                   news_titles=[n.get("title") for n in (news or [])]),

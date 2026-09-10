@@ -69,6 +69,31 @@ def _gemini_json(prompt, pdf_parts=None, max_tokens=8192, temp=0.4, tries=3):
     return None
 
 
+# -------- 재무제표(과거) + 리포트·실적보고서(미래) 종합 전망 --------
+def fin_outlook(company, fin_lines, overall, files):
+    """업로드한 증권사 리포트/기업 실적보고서(주석 포함) PDF + 재무 요약·진단을
+    종합해 재무 특이사항 + 향후 전망을 생성. files: [(filename, bytes)] 최대 5개."""
+    files = (files or [])[:MAX_REPORTS]
+    pdf_parts = [("application/pdf", raw) for (_fn, raw) in files if raw]
+    if not pdf_parts:
+        return {"error": "PDF가 없습니다."}
+    prompt = (
+        f"너는 증권사 리서치센터 애널리스트야. 아래는 '{company}'의 최근 재무 요약과 "
+        f"자동 재무진단 종합, 그리고 사용자가 올린 증권사 리포트 및 기업 실적보고서"
+        f"(사업·분기보고서 등, 주석 포함) 원문(PDF 첨부)이야.\n\n"
+        f"[최근 재무 요약]\n{fin_lines}\n\n[자동 재무진단 종합]\n{overall}\n\n"
+        "첨부 문서를 읽고, 재무제표(과거)와 리포트(미래 전망)를 함께 종합해 아래 JSON으로만 답해:\n"
+        "{\n"
+        '  "notables": [ {"item":"재무제표 특이사항 제목", "detail":"주석·본문을 근거로 2~3문장. 예: 영업이익 대비 순이익이 큰(작은) 이유 — 일회성 손익·지분법이익·외환·중단사업·법인세 등"} ],\n'
+        '  "report_view": "첨부 증권사 리포트들이 보는 실적 전망·목표주가·핵심 논리 3~5문장(리포트 근거, 추정 전제)",\n'
+        '  "outlook": "과거 재무 흐름 + 리포트의 미래 가정을 종합한 판단 재료 4~6문장. 재무제표는 과거이므로, 리포트가 제시하는 성장률·업황 가정이 과거 추세와 견줘 타당해 보이는지 함께 짚어줘",\n'
+        '  "watch": [ "앞으로 확인해야 할 점 2~4개" ]\n'
+        "}\n"
+        "규칙: 첨부 문서에 있는 내용만 근거로. 없는 수치·사실을 지어내지 마. 문서에 근거가 없으면 해당 항목을 비워. "
+        "존댓말. 매수·매도 권유 금지('저평가','지금이 기회','매수' 등 표현 금지), '~한 상태입니다/~를 확인해야 합니다' 서술형. 반드시 유효한 JSON.")
+    return _gemini_json(prompt, pdf_parts=pdf_parts, max_tokens=6144, temp=0.35)
+
+
 # ----------------------------- 1) 기업 개요 분석 -----------------------------
 def company_analysis(ticker, name=None):
     """기업 비즈니스모델·기술·사업성·시장기대 분석 (AI 지식 기반)."""

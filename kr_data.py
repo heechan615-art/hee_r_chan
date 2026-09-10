@@ -166,6 +166,86 @@ def wisefn_annual(code, freq="Y"):
     return out
 
 
+_DETAIL_CACHE = {}   # {code: (ts, dict)}
+
+
+def wisefn_income_detail(code):
+    """WISEfn 상세 손익계산서(연결, 억원) — 요약표(wisefn_annual)에 없는
+    매출원가·판매비와관리비·이자비용·법인세비용까지. cF3002.aspx JSON 파싱.
+    반환: {"years":[...], "intexp":[...연도별 이자비용], "breakdown":{최신확정 손익구성}} / 실패 시 None.
+    → 이자보상배율(이자비용) + 국내 손익 폭포차트용."""
+    now = time.time()
+    hit = _DETAIL_CACHE.get(code)
+    if hit and now - hit[0] < _WISE_TTL:
+        return hit[1]
+    out = None
+    try:
+        s = requests.Session()
+        page = f"https://navercomp.wisereport.co.kr/v2/company/c1030001.aspx?cmp_cd={code}"
+        html = s.get(page, headers=_UA_FULL, timeout=10).text
+        i = html.find("cF3002.aspx")
+        encs = re.findall(r"encparam:\s*'([^']+)'", html[:i] if i > 0 else html)
+        if encs:
+            j = s.get("https://navercomp.wisereport.co.kr/v2/company/cF3002.aspx",
+                      params={"cmp_cd": code, "fin_typ": "0", "frqTyp": "0", "cn": "",
+                              "encparam": encs[-1], "frq": "0", "finGubun": "MAIN"},
+                      headers={**_UA_FULL, "Referer": page, "X-Requested-With": "XMLHttpRequest"},
+                      timeout=10).json()
+            yymm = j.get("YYMM") or []
+            # 실적/예상 연도만(전년대비 컬럼 제외) — 'YYYY/12 ... (E)'
+            years, cols = [], []
+            for idx, s2 in enumerate(yymm):
+                m = re.search(r"(20\d{2})/\d{2}\s*(\(E\))?", str(s2))
+                if m and "전년대비" not in str(s2):
+                    years.append(m.group(1) + ("E" if m.group(2) else ""))
+                    cols.append(idx + 1)              # DATA1..DATAn
+            data = j.get("DATA") or []
+
+            def clean(nm):
+                return re.sub(r"<.*?>", "", str(nm)).strip().lstrip(".·*[ ]").strip()
+
+            def pick(*names, need_val=True):
+                """이름이 정확히 일치하는 행의 값 배열(연도 정렬). 값이 있는 행 우선."""
+                cand = None
+                for row in data:
+                    if clean(row.get("ACC_NM")) in names:
+                        vals = [row.get(f"DATA{c}") for c in cols]
+                        if not need_val or any(v is not None for v in vals):
+                            return vals
+                        cand = cand or vals
+                return cand
+
+            intexp = pick("이자비용")                      # 금융원가 하위 실제 이자비용
+            rev = pick("매출액(수익)", "매출액", "수익(매출액)")
+            cogs = pick("매출원가")
+            gross = pick("매출총이익")
+            sga = pick("판매비와관리비")
+            opinc = pick("영업이익")
+            pretax = pick("법인세비용차감전계속사업이익", "세전계속사업이익")
+            tax = pick("법인세비용")
+            netinc = pick("당기순이익")
+
+            def latest(arr):
+                if not arr:
+                    return None
+                for k in range(len(years) - 1, -1, -1):
+                    if not years[k].endswith("E") and arr[k] is not None:
+                        return round(float(arr[k]), 1)
+                return None
+
+            breakdown = {"revenue": latest(rev), "cogs": latest(cogs),
+                         "grossProfit": latest(gross), "sga": latest(sga),
+                         "opinc": latest(opinc), "pretax": latest(pretax),
+                         "tax": latest(tax), "netinc": latest(netinc), "unit": "억원"}
+            out = {"years": years,
+                   "intexp": [None if v is None else round(float(v), 1) for v in (intexp or [None] * len(years))],
+                   "breakdown": breakdown}
+    except Exception:
+        out = None
+    _DETAIL_CACHE[code] = (now, out)
+    return out
+
+
 _VKOSPI_CACHE = [0.0, None, 0.0]   # [성공시각, 시계열, 마지막 실패시각]
 
 

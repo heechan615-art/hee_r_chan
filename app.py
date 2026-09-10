@@ -239,6 +239,49 @@ def api_analyze():
     return jsonify(out)
 
 
+@app.route("/api/diagnose", methods=["POST"])
+def api_diagnose():
+    """사용자가 수정한 재무 숫자로 재무제표 진단 재계산 (순수 함수 diagnose)."""
+    import diagnose
+    d = request.get_json(silent=True) or {}
+    fin = d.get("financials")
+    if not fin or not fin.get("years"):
+        return jsonify({"error": "재무 데이터가 없습니다."}), 400
+    try:
+        g = diagnose.diagnose({
+            "ticker": d.get("ticker"), "companyName": d.get("name") or d.get("ticker"),
+            "sector": d.get("sector") or "",
+            "isCyclical": d.get("isCyclical"), "isFinancial": d.get("isFinancial"),
+            "financials": fin,
+        })
+        if g is not None:
+            g["waterfall"] = (fin or {}).get("breakdown")
+        return jsonify(clean(g))
+    except Exception as e:
+        return jsonify({"error": f"진단 실패: {repr(e)[:150]}"}), 500
+
+
+@app.route("/api/per_history")
+def api_per_history():
+    """미국 개별주 장기 과거 PER (EDGAR EPS ÷ 야후 주가). 공개·6시간 캐시. 미국만."""
+    ticker = (request.args.get("ticker") or "").strip()
+    if not ticker:
+        return jsonify({"error": "종목 코드를 입력하세요."}), 400
+    ck = "perhist:" + ticker.lower()
+    out = _cache_get(ck, 6 * 3600)
+    if out is None:
+        try:
+            import per_hist
+            out = per_hist.per_history(ticker)
+        except Exception as e:
+            return jsonify({"error": f"PER 이력 조회 실패: {repr(e)[:120]}"}), 500
+        if not out:
+            return jsonify({"empty": True}), 200      # 미국 아님/EDGAR 없음 → 프론트 폴백
+        out = clean(out)
+        _cache_put(ck, out)
+    return jsonify(out)
+
+
 @app.route("/api/eps_history")
 def api_eps_history():
     """개별 종목 분기/연간 EPS 이력 + 성장률 + 미래 EPS 추정.
@@ -365,6 +408,34 @@ def api_report_analysis():
         out = deepdive.report_analysis(payload)
         code = 500 if out.get("error") else 200
         return jsonify(clean(out)), code
+    except Exception as e:
+        return jsonify({"error": f"분석 실패: {repr(e)[:150]}"}), 500
+
+
+@app.route("/api/fin_outlook", methods=["POST"])
+def api_fin_outlook():
+    """재무제표(과거) + 업로드한 리포트·실적보고서(미래) 종합 전망 — 회원 전용."""
+    if not _is_member():
+        return jsonify({"error": "회원 전용 기능입니다. 로그인해 주세요.", "locked": True}), 402
+    import deepdive
+    files = [f for f in request.files.getlist("files") if f and f.filename]
+    if not files:
+        return jsonify({"error": "PDF 파일을 첨부하세요."}), 400
+    if len(files) > deepdive.MAX_REPORTS:
+        return jsonify({"error": f"리포트·보고서는 최대 {deepdive.MAX_REPORTS}개까지 올릴 수 있습니다."}), 400
+    payload = []
+    for f in files:
+        if not f.filename.lower().endswith(".pdf"):
+            return jsonify({"error": f"PDF 파일만 지원합니다: {f.filename}"}), 400
+        payload.append((f.filename, f.read()))
+    try:
+        out = deepdive.fin_outlook(request.form.get("company", ""),
+                                   request.form.get("fin", ""),
+                                   request.form.get("overall", ""), payload)
+        if not out or out.get("error"):
+            return jsonify({"error": (out or {}).get("error")
+                            or "AI 전망 생성에 실패했습니다. (Gemini 키/과부하를 확인해 주세요.)"}), 502
+        return jsonify(clean(out))
     except Exception as e:
         return jsonify({"error": f"분석 실패: {repr(e)[:150]}"}), 500
 
