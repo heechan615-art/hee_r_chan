@@ -76,10 +76,19 @@ def _eps_quarterly(cik):
 
 
 def _yahoo_weekly(sym):
-    """야후 주봉 종가(분할조정) [(date, close)] + 분할 [(date, ratio)]."""
-    r = requests.get(f"https://query1.finance.yahoo.com/v8/finance/chart/{sym}",
-                     params={"range": "20y", "interval": "1wk", "events": "split"},
-                     headers=_UA, timeout=20).json()["chart"]["result"][0]
+    """야후 주봉 종가(분할조정) [(date, close)] + 분할 [(date, ratio)].
+    Render 등 클라우드 IP에서 일반 requests는 야후가 차단 → curl_cffi(크롬 위장) 우선."""
+    url = f"https://query1.finance.yahoo.com/v8/finance/chart/{sym}"
+    params = {"range": "20y", "interval": "1wk", "events": "split"}
+    j = None
+    try:
+        from curl_cffi import requests as creq
+        j = creq.get(url, params=params, impersonate="chrome", timeout=15).json()
+    except Exception:
+        j = None
+    if not j or not (j.get("chart") or {}).get("result"):
+        j = requests.get(url, params=params, headers=_UA, timeout=20).json()   # 폴백
+    r = j["chart"]["result"][0]
     ts, cl = r["timestamp"], r["indicators"]["quote"][0]["close"]
     px = [(dt.datetime.utcfromtimestamp(t).date(), c) for t, c in zip(ts, cl) if c]
     sp = (r.get("events", {}) or {}).get("splits", {}) or {}
