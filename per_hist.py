@@ -213,15 +213,28 @@ def _dart_eps(corp, year, rc, fs):
 def _kr_quarterly_eps(corp):
     """분기 EPS {분기말(date): eps(원, 발표당시 주식수 기준)}. 2015~올해.
     분기 thstrm은 회사별로 3개월 또는 누적 → 3분기/연간 비율로 자동 판별."""
+    from concurrent.futures import ThreadPoolExecutor
     cy = dt.date.today().year
     ends = lambda y: {1: dt.date(y, 3, 31), 2: dt.date(y, 6, 30), 3: dt.date(y, 9, 30), 4: dt.date(y, 12, 31)}
+    years = list(range(2015, cy + 1))
+    tasks = [(y, rc) for y in years for rc in ("11013", "11012", "11014", "11011")]
+
+    def fetch(t):
+        y, rc = t
+        e = _dart_eps(corp, y, rc, "CFS")
+        if e is None:
+            e = _dart_eps(corp, y, rc, "OFS")
+        return t, e
+
+    res = {}
+    with ThreadPoolExecutor(max_workers=8) as ex:      # 48콜 병렬 → 첫 호출 대기 단축
+        for t, e in ex.map(fetch, tasks):
+            res[t] = e
+
     qeps = {}
-    for y in range(2015, cy + 1):
-        def eps(rc):
-            e = _dart_eps(corp, y, rc, "CFS")
-            return e if e is not None else _dart_eps(corp, y, rc, "OFS")
-        c1, c2, c3 = eps("11013"), eps("11012"), eps("11014")
-        A = eps("11011")
+    for y in years:
+        c1, c2, c3 = res.get((y, "11013")), res.get((y, "11012")), res.get((y, "11014"))
+        A = res.get((y, "11011"))
         E = ends(y)
         if c1 is not None:
             qeps[E[1]] = c1                                  # Q1은 항상 단일분기
@@ -291,21 +304,4 @@ def per_history_kr(ticker):
     out = {"ticker": stock6, "series": ser, "latest": ser[-1]["per"], "asof": ser[-1]["d"],
            "source": "DART(EPS)+Yahoo(가격)", "years": round((tq[-1] - tq[0]).days / 365.25, 1)}
     _KRCACHE[stock6] = (now, out)
-    return out
-
-
-def kr_debug(ticker):
-    """임시 진단: 프로덕션에서 한국 PER이 왜 비는지(키/corp/ DART응답) 확인용."""
-    stock6 = re.sub(r"\D", "", str(ticker))[:6]
-    out = {"has_key": bool(_dart_key()), "stock6": stock6}
-    if not out["has_key"]:
-        return out
-    try:
-        corp = _corp_code(stock6)
-        out["corp"] = corp
-        out["corp_map_size"] = len(_CORP)
-        if corp:
-            out["eps_2024_annual"] = _dart_eps(corp, 2024, "11011", "CFS")
-    except Exception as e:
-        out["err"] = repr(e)[:150]
     return out
