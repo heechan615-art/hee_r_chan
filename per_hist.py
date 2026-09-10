@@ -292,3 +292,20 @@ def per_history_kr(ticker):
            "source": "DART(EPS)+Yahoo(가격)", "years": round((tq[-1] - tq[0]).days / 365.25, 1)}
     _KRCACHE[stock6] = (now, out)
     return out
+
+
+def kr_debug(ticker):
+    """임시 진단: 프로덕션에서 한국 PER이 왜 비는지(키/corp/ DART응답) 확인용."""
+    stock6 = re.sub(r"\D", "", str(ticker))[:6]
+    out = {"has_key": bool(_dart_key()), "stock6": stock6}
+    if not out["has_key"]:
+        return out
+    try:
+        corp = _corp_code(stock6)
+        out["corp"] = corp
+        out["corp_map_size"] = len(_CORP)
+        if corp:
+            out["eps_2024_annual"] = _dart_eps(corp, 2024, "11011", "CFS")
+    except Exception as e:
+        out["err"] = repr(e)[:150]
+    return out

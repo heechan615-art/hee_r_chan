@@ -267,6 +267,12 @@ def api_per_history():
     ticker = (request.args.get("ticker") or "").strip()
     if not ticker:
         return jsonify({"error": "종목 코드를 입력하세요."}), 400
+    if request.args.get("debug"):                 # 임시 진단(원인 파악용)
+        try:
+            import per_hist
+            return jsonify(per_hist.kr_debug(ticker))
+        except Exception as e:
+            return jsonify({"debug_err": repr(e)[:150]}), 200
     ck = "perhist:" + ticker.lower()
     out = _cache_get(ck, 6 * 3600)
     if out is None:
