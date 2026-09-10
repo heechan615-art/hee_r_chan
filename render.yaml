@@ -18,6 +18,8 @@ services:
         sync: false
       - key: FINNHUB_API_KEY
         sync: false
+      - key: DART_API_KEY          # 한국 개별주 장기 과거 PER (DART Open API)
+        sync: false
       # --- 회원제 ---
       - key: ADMIN_USER          # 이 아이디로 가입하면 자동 승인 + 관리자 권한
         value: heechan615
