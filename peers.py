@@ -3,7 +3,7 @@
 ====================================
 - 자동 피어: 주요 섹터별 비교군을 미리 정의(PEER_GROUPS). 종목이 속한 그룹 자동 판별.
 - 수동 피어: 사용자가 추가한 종목도 지표 조회.
-- 지표: 선행 PER, PBR, ROE, 영업이익률, 시가총액.
+- 지표: 선행 PER, PBR, ROE, 영업이익률, 시가총액, PSR·EV/매출·매출성장률(적자 기업 비교용).
   국내 배수(PER/PBR)는 야후가 안 줘서 네이버로 보강, 나머지는 yfinance.
 """
 import re
@@ -26,6 +26,8 @@ PEER_GROUPS = {
     "철강·소재": ["005490", "004020", "NUE", "X"],
     "화학": ["051910", "011170", "DOW", "LYB"],
     "통신": ["017670", "030200", "T", "VZ"],
+    "우주항공": ["012450", "047810", "099320", "189300", "RKLB", "ASTS", "LUNR", "PL", "RDW"],
+    "피지컬 AI·로봇": ["277810", "454910", "108490", "ISRG", "TER", "SYM", "SERV"],
 }
 
 _PM_CACHE = {}   # {ticker: (ts, metrics)}
@@ -47,7 +49,7 @@ def market_row(market):
         info = yfsess.ticker(tk).info
         row = {"ticker": "_MKT", "name": name,
                "fwd_per": info.get("trailingPE"), "pbr": info.get("priceToBook"),
-               "roe": None, "opmargin": None, "mktcap": None,
+               "roe": None, "opmargin": None, "mktcap": None, "psr": None, "ev_s": None, "rev_g": None,
                "cur": "KRW" if market == "KR" else "USD", "is_market": True}
         _MKT_CACHE[market] = (now, row)
         return row
@@ -88,6 +90,9 @@ def peer_metrics(ticker):
             "roe": roe * 100 if roe is not None else None,
             "opmargin": om * 100 if om is not None else None,
             "mktcap": info.get("marketCap"),
+            "psr": info.get("priceToSalesTrailing12Months"),
+            "ev_s": info.get("enterpriseToRevenue"),
+            "rev_g": info.get("revenueGrowth") * 100 if info.get("revenueGrowth") is not None else None,
             "cur": "KRW" if kr else info.get("currency", "USD"),
         }
         if kr:   # 국내 PER/PBR은 네이버로 보강 (야후가 국내 배수를 잘 안 줌)

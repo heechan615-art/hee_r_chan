@@ -306,6 +306,52 @@
   .decomp .swing i{font-style:normal;font-weight:600;font-variant-numeric:tabular-nums}
   /* 2열 배치 (PER/PBR 양옆) */
   .row2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+  /* 밸류AI 총평 (기본정보 카드 하단) */
+  .vd{margin-top:18px;padding-top:16px;border-top:1px solid var(--line)}
+  .vd-top{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+  .vd-score{width:74px;height:74px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;flex:none;color:#fff}
+  .vd-score b{font-size:25px;line-height:1;font-weight:800} .vd-score span{font-size:10px;opacity:.9;margin-top:2px}
+  .vd-head{flex:1;min-width:200px}
+  .vd-ttl{font-size:11.5px;color:var(--muted);font-weight:700;letter-spacing:.04em}
+  .vd-verdict{font-size:19px;font-weight:800;margin:1px 0 3px}
+  .vd-line{font-size:13px;line-height:1.55;color:var(--text)}
+  .vd-axes{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:14px 0 10px}
+  .vd-ax{background:var(--panel);border-radius:9px;padding:8px 10px}
+  .vd-ax .k{font-size:11px;color:var(--muted)} .vd-ax .v{font-size:13.5px;font-weight:700;margin:1px 0 5px}
+  .vd-bar{height:6px;border-radius:3px;background:var(--line);position:relative;overflow:hidden}
+  .vd-bar i{position:absolute;left:0;top:0;bottom:0;border-radius:3px}
+  .vd-rows{display:flex;flex-direction:column;gap:2px}
+  .vd-row{display:grid;grid-template-columns:96px 74px 1fr;gap:8px;align-items:center;font-size:12px;padding:5px 0;border-bottom:1px dashed var(--line-2)}
+  .vd-row .n{color:var(--muted);font-weight:600}
+  .vd-chip{font-size:11px;font-weight:700;border-radius:999px;padding:2px 8px;text-align:center;white-space:nowrap}
+  .vd-row .w{color:var(--text);line-height:1.45}
+  .vd-pos2{background:#dff3e7;color:#167443} .vd-pos1{background:#eef8f1;color:#1f9d57}
+  .vd-neu{background:var(--panel);color:var(--muted)} .vd-neg1{background:#fdf0e6;color:#b4610f} .vd-neg2{background:#fde6e6;color:#c4231f}
+  .vd-na{background:transparent;color:var(--muted);border:1px dashed var(--line)}
+  .vd-foot{font-size:10.5px;color:var(--muted);margin-top:8px;line-height:1.5}
+  @media(max-width:520px){.vd-row{grid-template-columns:78px 66px 1fr}.vd-axes{grid-template-columns:1fr 1fr 1fr;gap:5px}}
+  /* PEG · 매출 기반 밸류 */
+  .pg-big{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin:4px 0 8px}
+  .pg-big b{font-size:30px;font-weight:800;letter-spacing:-.02em}
+  .pg-good{color:var(--good)} .pg-mid{color:var(--warn)} .pg-bad{color:var(--up)}
+  .pg-chips{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 10px}
+  .pg-chip{border:1px solid var(--line);background:var(--card);color:var(--muted);border-radius:999px;padding:4px 10px;font-size:12px;cursor:pointer;font:inherit;font-size:12px}
+  .pg-chip.on{background:var(--ink);border-color:var(--ink);color:#fff}
+  .pg-chip:hover{border-color:var(--accent)}
+  .pg-in{width:64px;padding:3px 6px;border:1px solid var(--line);border-radius:6px;font:inherit;font-size:12px}
+  .pg-gauge{position:relative;height:10px;border-radius:5px;margin:16px 0 22px;
+    background:linear-gradient(90deg,var(--good) 0 33.3%,var(--warn) 33.3% 66.6%,var(--up) 66.6% 100%);opacity:.85}
+  .pg-gauge i{position:absolute;top:-5px;width:4px;height:20px;background:var(--ink);border-radius:2px;transform:translateX(-2px)}
+  .pg-gauge span{position:absolute;top:14px;font-size:10.5px;color:var(--muted);transform:translateX(-50%)}
+  .pg-note{font-size:12.5px;line-height:1.7;color:var(--text);background:var(--panel);border-radius:9px;padding:10px 12px;margin-top:8px}
+  .pg-note.warn{background:#fff6e5;color:#7a5410}
+  .pg-tbl{width:100%;border-collapse:collapse;font-size:12.5px;margin:4px 0 10px}
+  .pg-tbl th,.pg-tbl td{padding:6px 6px;border-bottom:1px solid var(--line-2);text-align:right;font-variant-numeric:tabular-nums}
+  .pg-tbl th{color:var(--muted);font-weight:600;font-size:11.5px} .pg-tbl td:first-child,.pg-tbl th:first-child{text-align:left;color:var(--muted)}
+  .pg-tbl tr.hl td{font-weight:700;color:var(--ink)}
+  .pg-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:6px 0 4px}
+  @media(max-width:520px){.pg-kpis{grid-template-columns:repeat(2,1fr)}}
+  .pg-kpi{background:var(--panel);border-radius:9px;padding:8px 10px} .pg-kpi .k{font-size:11px;color:var(--muted)} .pg-kpi .v{font-size:15px;font-weight:700}
   .row2 .card{margin-bottom:0}
   @media(max-width:720px){.row2{grid-template-columns:1fr}}
   .tgt-sec{font-size:12px;color:var(--muted);margin:14px 0 10px;font-weight:600;
@@ -661,31 +707,6 @@
   #tab-snp .ov-verdict p{margin:0;font-size:13px;color:var(--text);line-height:1.65}
   #tab-snp .ov-verdict .ov-caveat{margin-top:8px;font-size:12px;color:var(--muted)}
   #tab-snp .ov-verdict .ov-caveat b{color:var(--warn)}
-  /* ===== EPS 성장률 · 미래 EPS 추정 패널 ===== */
-  .card.epsg .epsg-svg{width:100%;height:auto;display:block;margin:2px 0 6px}
-  .epsg-note{font-size:11.5px;color:var(--muted);line-height:1.6;margin-bottom:14px}
-  .epsg-sec{font-size:13.5px;font-weight:700;color:var(--text);margin:6px 0 9px}
-  .epsg-chips{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:14px}
-  .epsg-chip{display:flex;flex-direction:column;align-items:center;gap:2px;background:#f2f4f7;
-    border:1px solid var(--line);border-radius:10px;padding:9px 4px;cursor:pointer;transition:.12s}
-  .epsg-chip .cn{font-size:11px;color:var(--muted)}
-  .epsg-chip .cv{font-size:15px;font-weight:800;font-variant-numeric:tabular-nums;color:var(--text)}
-  .epsg-chip.pos .cv{color:#37c98a}
-  .epsg-chip.neg .cv{color:#f0616d}
-  .epsg-chip:hover:not(:disabled){border-color:var(--accent)}
-  .epsg-chip.on{border-color:#f5b544;background:rgba(245,181,68,.12);box-shadow:0 0 0 1px #f5b544 inset}
-  .epsg-chip:disabled{opacity:.4;cursor:default}
-  .epsg-proj{background:#f2f4f7;border:1px solid var(--line);border-left:4px solid #f5b544;
-    border-radius:10px;padding:12px 15px;margin-bottom:8px}
-  .epsg-proj.warn{border-left-color:var(--muted);color:var(--muted);font-size:12.5px;line-height:1.6}
-  .epsg-proj .pl{font-size:12.5px;color:var(--muted);margin-bottom:4px}
-  .epsg-proj .pv{font-size:17px;font-weight:800;color:var(--text);font-variant-numeric:tabular-nums}
-  .epsg-proj .pv b{color:#f5b544;font-weight:800}
-  .epsg-proj .ps{font-size:11.5px;color:var(--muted);margin-top:5px}
-  .epsg-proj .ps b{color:var(--text)}
-  .epsg-warn{font-size:11px;color:var(--muted);opacity:.75}
-  @media(max-width:560px){.epsg-chips{grid-template-columns:repeat(5,1fr);gap:4px}
-    .epsg-chip{padding:7px 2px}.epsg-chip .cv{font-size:12.5px}.epsg-chip .cn{font-size:9.5px}}
   /* ===== 기업 심층 분석 ===== */
   .dd-sec{margin-bottom:26px}
   .dd-h{font-size:18px;font-weight:800;margin:0 0 4px;padding-left:12px;border-left:4px solid var(--accent);line-height:1.3}
@@ -2571,9 +2592,15 @@ function render(d){
   const cur = d.currency === "KRW" ? "₩" : (d.currency || "");  // 국내는 원화 기호
   RCUR = cur;
   LAST = d;
+  PEG_G = null; PEG_CUSTOM = null;   // 종목이 바뀌면 PEG 선택 초기화
+  PEER_LAST = null; PSRH = null; PSRH_DONE = false;   // 총평의 비동기 항목 초기화
   let h = "";
 
   // 헤더 + 기본 (공포탐욕지수가 있으면 옆에 나란히)
+  // 국내 12개월 선행일 때, 예전 기준(컨센서스 첫 예상 연도) 값을 참고로 작게 표시
+  const fyY = ((d.naver_annual&&d.naver_annual.years)||[]).find(y=>String(y).endsWith("E")) || "FY+1";
+  const fyNote = (d, v, dec) => (d.fwd_basis==="12M" && v!=null && isFinite(v))
+    ? `<span class="src-tag" title="표준편차 밴드와 같은 12개월 선행 기준. 괄호는 컨센서스 ${fyY} 기준 값">12개월 선행 · ${fyY} ${(+v).toFixed(dec)}배</span>` : "";
   const headerCard = `<div class="card">
     <div class="name">${esc(d.name)} <span class="muted">(${esc(d.ticker)})</span></div>
     <div class="src">데이터 출처: ${esc(d.source)}</div>
@@ -2581,13 +2608,14 @@ function render(d){
     <div class="grid">
       ${kv("EPS (TTM)", fmt(d.eps_ttm))}
       ${kv("현재 PER", fmt(d.per_ttm))}
-      ${kv(`예상 EPS (Fwd)${d.eps_src?`<span class="src-tag">출처: ${esc(d.eps_src)}</span>`:""}`, fmt(d.eps_fwd))}
-      ${kv("예상 PER", fmt(d.per_fwd))}
+      ${kv(`예상 EPS (${d.fwd_basis==="12M"?"12개월 선행":"Fwd"})${d.eps_src?`<span class="src-tag">출처: ${esc(d.eps_src)}</span>`:""}`, fmt(d.eps_fwd))}
+      ${kv(`예상 PER${fyNote(d, d.per_fwd_fy, 1)}`, fmt(d.per_fwd))}
       ${kv("BPS", fmt(d.bps))}
       ${kv("현재 PBR", fmt(d.pbr_ttm))}
-      ${kv("예상 BPS (Fwd)", fmt(d.bps_fwd))}
-      ${kv("선행 PBR", fmt(d.pbr_fwd))}
+      ${kv(`예상 BPS (${d.fwd_basis==="12M"?"12개월 선행":"Fwd"})`, fmt(d.bps_fwd))}
+      ${kv(`선행 PBR${fyNote(d, d.pbr_fwd_fy, 2)}`, fmt(d.pbr_fwd))}
     </div>
+    <div class="vd" id="verdict-box">${verdictInner(d)}</div>
   </div>`;
   h += d.fear_greed
     ? `<div class="row2">` + headerCard + fgCard(d.fear_greed) + `</div>`
@@ -2602,16 +2630,16 @@ function render(d){
   // 과거 PER 추이 (과거→현재 PER 수치) — 재무제표 아래 · 표준편차 밴드 위
   h += perTrendCard(d);
 
+  // PEG(성장 대비 PER) · 매출 기반 밸류(PSR·EV/매출) — 적자 기업은 PER 대신 매출로
+  if(d.peg_sales) h += `<div class="row2"><div class="card" id="peg-card">${pegInner(d)}</div><div class="card" id="ps-card">${psInner(d)}</div></div>`;
+  if(d.peg_sales) h += `<div class="card"><h2>과거 PSR 추이 · 표준편차 밴드 <span class="h2note">주가 × 주식수 ÷ 최근 12개월 매출 · 주간</span></h2>
+    <div id="psrh-body"><div class="muted" style="font-size:13px;padding:12px 0">과거 PSR 불러오는 중… (한국 종목은 처음에 10~30초)</div></div></div>`;
+
   // 표준편차 밴드 (평균 기준 ±1σ/±2σ/±3σ, 양옆 배치)
-  h += `<div class="row2">`
+  h += `<div class="row2" id="sigma-row">`
      + sigmaCard("PER 표준편차 밴드", d.sigma, d.sigma_fwd, "PER", 1, d.price)
      + sigmaCard("PBR 표준편차 밴드", d.pbr_sigma, d.pbr_sigma_fwd, "PBR", 2, d.price)
      + `</div>`;
-
-  // EPS 성장률 · 미래 EPS 추정 (표준편차 밴드 아래 · 적정주가 위 · 분석 후 비동기 로드)
-  h += `<div class="card epsg" id="epsg"><h2>EPS 성장률 · 미래 EPS 추정
-      <span class="h2note">분기 EPS(최근 10년) 추이 · 연복리(CAGR) 성장률</span></h2>
-    <div id="epsg-body" class="muted" style="font-size:13px">EPS 이력 불러오는 중…</div></div>`;
 
   // 목표주가 시나리오 (PER σ밴드 × 추정 EPS + 할인/금리보정 옵션)
   h += tpCard(d);
@@ -2672,182 +2700,9 @@ function render(d){
   initSigma();
   initTP();
   loadPeers(d.ticker, []);
-  loadEpsGrowth(d.ticker, d.eps_fwd);   // 예상 EPS(카드 값)를 미래 추정 앵커로 사용
-  loadPerHist(d);                       // 미국: EDGAR 장기 과거 PER, 아니면 sigma 폴백
+  loadPerHist(d); if(d.peg_sales) loadPsrHist(d);                       // 미국: EDGAR 장기 과거 PER, 아니면 sigma 폴백
 }
 
-// ---------- EPS 성장률 · 미래 EPS 추정 ----------
-let EPSG = null;               // 현재 종목 EPS 이력 데이터 (칩 클릭 재계산용)
-let EPSG_BASIS = null;         // 사용자가 선택한 추정 기준 연수(null=기본)
-let EPSG_FWD = null;           // 예상 EPS(한국=네이버/미국=야후·핀헙) — 추정 앵커
-function loadEpsGrowth(ticker, fwdEps){
-  const box = $("#epsg-body");
-  if(!box) return;
-  EPSG_FWD = (typeof fwdEps === "number" && fwdEps > 0) ? fwdEps : null;
-  fetch("/api/eps_history?ticker=" + encodeURIComponent(ticker))
-    .then(r => r.json())
-    .then(d => {
-      if(d.empty || d.error || !d.points || d.points.length < 2){
-        $("#epsg").style.display = "none";       // 데이터 없으면 카드 자체 숨김
-        return;
-      }
-      EPSG = d; EPSG_BASIS = null;
-      renderEpsGrowth();
-    })
-    .catch(() => { $("#epsg").style.display = "none"; });
-}
-
-// 통화별 EPS 숫자 포맷 (원화=정수+₩, 달러=소수2+$)
-function epsFmt(v){
-  if(v == null || isNaN(v)) return "-";
-  return EPSG && EPSG.currency === "KRW"
-    ? "₩" + Math.round(v).toLocaleString()
-    : "$" + (Math.abs(v) >= 100 ? Math.round(v).toLocaleString() : v.toFixed(2));
-}
-
-// 기본 추정 기준연수 (5>3>1년 중 계산 가능한 첫 값)
-function epsgDefaultBasis(){
-  return [5,3,1].find(n => EPSG.growth[n] != null) ?? null;
-}
-
-// 미래 EPS 추정:
-//  · 앵커 = 예상 EPS(EPSG_FWD, 카드의 '예상 EPS')  ← 없으면 현재 TTM
-//  · 앵커 연도(fwd_year, 예: 2026) 값으로 놓고, 이후 해는 선택 CAGR 복리
-//  · 반환 points[0]은 예상 실적(anchor), 이후는 성장률 추정
-function epsgProjection(){
-  const d = EPSG;
-  const basis = (EPSG_BASIS != null && d.growth[EPSG_BASIS] != null)
-    ? EPSG_BASIS : epsgDefaultBasis();
-  if(basis == null) return null;                 // 성장률 계산 불가(적자·데이터 부족)
-  const g = d.growth[basis];
-  const base = (EPSG_FWD != null && EPSG_FWD > 0) ? EPSG_FWD : d.cur;
-  if(!(base > 0)) return null;
-  const y0 = d.fwd_year || d.cur_year;
-  const anchored = (EPSG_FWD != null && EPSG_FWD > 0);
-  // 연도 Y 포인트는 x=Y+0.9(연말 실현치 위치)에 배치 → 실제선과 겹치지 않음
-  const points = [0,1,2,3].map(k => ({
-    x: (y0 + k) + 0.9, y: base * (1+g)**k,
-    label: String(y0 + k), anchor: k === 0
-  }));
-  return {source: anchored ? "fwd" : "ttm", basis, cagr: g,
-          base, baseYear: y0, points};
-}
-
-function renderEpsGrowth(){
-  const d = EPSG, box = $("#epsg-body");
-  if(!box) return;
-  const proj = epsgProjection();
-  const gOrder = [1,3,5,7,10];
-  const chips = gOrder.map(n => {
-    const g = d.growth[n];
-    const na = g == null;
-    const on = (!na && EPSG_BASIS === n) ? " on" : "";
-    const col = na ? "" : (g >= 0 ? " pos" : " neg");
-    const val = na ? "N/A" : ((g >= 0 ? "+" : "") + (g*100).toFixed(1) + "%");
-    return `<button type="button" class="epsg-chip${col}${on}" ${na?"disabled":`data-basis="${n}"`}>
-        <span class="cn">최근 ${n}년</span><span class="cv">${val}</span></button>`;
-  }).join("");
-  const projTxt = proj && proj.points && proj.points.length
-    ? proj.points.map(p => `<b>${p.label}년${p.anchor?" 예상":""}</b> ${epsFmt(p.y)}`).join(" · ")
-    : "추정 불가";
-  const fwdSrc = EPSG_FWD != null
-    ? (d.currency === "KRW" ? "네이버 컨센서스" : "야후·핀헙 예상")
-    : "현재 TTM";
-  const projSrc = !proj ? ""
-    : `<b>${proj.baseYear}년 예상 EPS</b>(${fwdSrc} ${epsFmt(proj.base)})를 기준으로, `
-      + `최근 <b>${proj.basis}년 CAGR ${proj.cagr>=0?"+":""}${(proj.cagr*100).toFixed(1)}%</b>를 복리로 적용`;
-  box.innerHTML = `
-    ${epsgChartSVG(d, proj)}
-    <div class="epsg-note">ℹ️ <b style="color:#37c98a">초록 실선</b>=실제 ${d.granularity==="quarterly"?"EPS(4분기 합·TTM)":"연간 EPS"},
-      ${d.bars&&d.bars.length?`<b style="color:#4a5568">회색 막대</b>=매분기 EPS, `:""}<b style="color:#f5b544">주황 점선</b>=미래 추정
-      (첫 점 <b style="color:#f5b544">${proj?proj.baseYear:""}년</b>=예상 실적, 이후=성장률 추정).</div>
-    <div class="epsg-sec">EPS 성장률 <span class="muted" style="font-weight:400;font-size:11.5px">(연복리 · 클릭하면 그 성장률로 미래 추정)</span></div>
-    <div class="epsg-chips">${chips}</div>
-    ${!proj
-      ? `<div class="epsg-proj warn">⚠️ 최근 실적이 적자이거나 데이터가 짧아 성장률·추정을 계산할 수 없어요.</div>`
-      : `<div class="epsg-proj"><div class="pl">📈 미래 EPS 추정</div>
-          <div class="pv">${projTxt}</div>
-          <div class="ps">${projSrc}</div></div>`}
-    <div class="epsg-warn">단순 추정치입니다. 실제 실적·컨센서스와 다를 수 있어요.</div>`;
-  box.querySelectorAll(".epsg-chip[data-basis]").forEach(b => {
-    b.onclick = () => {
-      const n = +b.dataset.basis;
-      EPSG_BASIS = (EPSG_BASIS === n) ? null : n;   // 다시 누르면 기본으로
-      renderEpsGrowth();
-    };
-  });
-}
-
-// EPS 이력 SVG — x는 연 소수. 회색 막대(분기)+초록 실선(주 라인)+주황 점선(추정)
-function epsgChartSVG(d, proj){
-  const line = d.points, bars = d.bars || [];
-  const pj = (proj && proj.points) ? proj.points : [];
-  const W=900, H=300, ml=58, mr=64, mt=14, mb=26;
-  const iw=W-ml-mr, ih=H-mt-mb;
-  const xs = line.map(p=>p.x).concat(bars.map(p=>p.x)).concat(pj.map(p=>p.x));
-  const ys = line.map(p=>p.y).concat(bars.map(p=>p.y)).concat(pj.map(p=>p.y));
-  let xmin=Math.min(...xs), xmax=Math.max(...xs);
-  let ymin=Math.min(...ys,0), ymax=Math.max(...ys);
-  const pad=(ymax-ymin)*0.08 || 1; ymin-=pad*0.4; ymax+=pad;
-  const X = x => ml + iw*(x-xmin)/((xmax-xmin)||1);
-  const Y = v => mt + ih*(1-(v-ymin)/((ymax-ymin)||1));
-  const GRN="#37c98a", AMB="#f5b544";
-  const kr = d.currency==="KRW";
-  const yl = v => kr ? (Math.abs(v)>=1000?(v/1000).toFixed(0)+"k":Math.round(v).toString())
-                     : (Math.abs(v)>=100?Math.round(v):v.toFixed(1));
-  let g="";
-  // Y축 눈금 5개 (0선은 진하게)
-  for(let k=0;k<=4;k++){
-    const v=ymin+(ymax-ymin)*k/4, y=Y(v);
-    g+=`<line x1="${ml}" y1="${y.toFixed(1)}" x2="${ml+iw}" y2="${y.toFixed(1)}" stroke="var(--line)"/>`;
-    g+=`<text x="${(ml-6).toFixed(1)}" y="${(y+3.5).toFixed(1)}" font-size="10.5" fill="var(--muted)" text-anchor="end">${yl(v)}</text>`;
-  }
-  if(ymin<0 && ymax>0){ const zy=Y(0);
-    g+=`<line x1="${ml}" y1="${zy.toFixed(1)}" x2="${ml+iw}" y2="${zy.toFixed(1)}" stroke="var(--muted)" stroke-width="1" opacity="0.5"/>`; }
-  // 분기 EPS 막대 (연한 회색)
-  if(bars.length){
-    const bw=Math.max(1.5, iw/bars.length*0.5);
-    bars.forEach(p=>{ const x=X(p.x), y0=Y(0), y1=Y(p.y);
-      g+=`<rect x="${(x-bw/2).toFixed(1)}" y="${Math.min(y0,y1).toFixed(1)}" width="${bw.toFixed(1)}" height="${Math.abs(y1-y0).toFixed(1)}" fill="#5a6577" opacity="0.35"/>`;
-    });
-  }
-  // 주 라인(초록 실선)
-  const lp = line.map(p=>`${X(p.x).toFixed(1)},${Y(p.y).toFixed(1)}`).join(" ");
-  g+=`<polyline points="${lp}" fill="none" stroke="${GRN}" stroke-width="2.2"/>`;
-  // 추정(주황 점선) — 마지막 실제점에서 이어짐. 각 예상 연도마다 점+값 라벨
-  const last=line[line.length-1];
-  if(pj.length){
-    const pp=[`${X(last.x).toFixed(1)},${Y(last.y).toFixed(1)}`]
-      .concat(pj.map(p=>`${X(p.x).toFixed(1)},${Y(p.y).toFixed(1)}`)).join(" ");
-    g+=`<polyline points="${pp}" fill="none" stroke="${AMB}" stroke-width="2.2" stroke-dasharray="5 4"/>`;
-    pj.forEach((p,idx)=>{
-      const px=X(p.x), py=Y(p.y), isLast=idx===pj.length-1;
-      // 앵커(첫 점=예상 실적)는 채운 점, 이후 CAGR 추정점은 빈 점
-      g+= p.anchor
-        ? `<circle cx="${px.toFixed(1)}" cy="${py.toFixed(1)}" r="5" fill="${AMB}" stroke="var(--bg)" stroke-width="1.5"/>`
-        : `<circle cx="${px.toFixed(1)}" cy="${py.toFixed(1)}" r="4" fill="var(--bg)" stroke="${AMB}" stroke-width="2"/>`;
-      // 오른쪽 끝점은 여백 밖으로 안 나가게 좌측 정렬, 나머지는 가운데
-      const anc=(isLast && px>W-90)?"end":"middle";
-      const dx=anc==="end"?-8:0;
-      g+=`<text x="${(px+dx).toFixed(1)}" y="${(py-9).toFixed(1)}" text-anchor="${anc}" font-size="11" font-weight="700" fill="${AMB}">${epsFmt(p.y)}</text>`;
-      if(p.anchor)
-        g+=`<text x="${px.toFixed(1)}" y="${(py+16).toFixed(1)}" text-anchor="middle" font-size="9.5" font-weight="600" fill="${AMB}" opacity="0.85">예상</text>`;
-    });
-  }
-  // 현재값 라벨
-  const cx=X(last.x), cy=Y(last.y), txt=epsFmt(last.y);
-  const bw=Math.max(46,txt.length*7.5+10);
-  g+=`<circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="4.5" fill="#fff" stroke="${GRN}" stroke-width="2.5"/>`;
-  g+=`<rect x="${(cx-bw-9).toFixed(1)}" y="${(cy-9.5).toFixed(1)}" width="${bw}" height="19" rx="5" fill="#1a2130" stroke="${GRN}" stroke-width="1.2"/>`;
-  g+=`<text x="${(cx-9-bw/2).toFixed(1)}" y="${(cy+4).toFixed(1)}" text-anchor="middle" font-size="11.5" font-weight="700" fill="#fff">${txt}</text>`;
-  // X축 연도 라벨
-  const seen={}, y0=Math.ceil(xmin), y1=Math.floor(xmax), stepY=Math.max(1,Math.round((y1-y0)/9));
-  for(let yy=y0; yy<=y1; yy+=stepY){
-    if(seen[yy]) continue; seen[yy]=1;
-    g+=`<text x="${X(yy).toFixed(1)}" y="${H-8}" text-anchor="middle" font-size="10.5" fill="var(--muted)">${yy}</text>`;
-  }
-  return `<svg class="epsg-svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(d.name||d.ticker)} EPS 추이 및 추정">${g}</svg>`;
-}
 
 // ---------- 동종업계 비교 ----------
 let PEER_EXTRA = [];
@@ -2863,6 +2718,7 @@ function loadPeers(ticker, extra){
 }
 
 function renderPeers(ticker, d){
+  PEER_LAST = d; verdictRefresh();
   const box = $("#peers-body");
   if(!box) return;
   if(d.error || !d.rows || !d.rows.length){
@@ -2874,13 +2730,19 @@ function renderPeers(ticker, d){
   const base = rows.find(r => r.is_base);
   const peers = rows.filter(r => !r.is_base);
   // 피어(자신 제외) 평균 — base 비교 기준
-  const avg = k => { const v = peers.map(r=>r[k]).filter(x=>x!=null && isFinite(x)); return v.length?v.reduce((a,b)=>a+b,0)/v.length:null; };
-  const A = {fwd_per:avg("fwd_per"), pbr:avg("pbr"), roe:avg("roe"), opmargin:avg("opmargin")};
-  const mc = r => r.mktcap ? (r.cur==="KRW" ? (r.mktcap/1e12).toFixed(0)+"조" : (r.mktcap/1e9).toFixed(0)+"B") : "-";
+  // 경쟁사 중앙값 — 적자 기업(마이너스 PER·-2000% 마진)이 섞여도 왜곡되지 않게. 배수(PER·PBR·PSR)는 양수만.
+  const POS = {fwd_per:1, pbr:1, psr:1, ev_s:1};
+  const avg = k => { const v = peers.map(r=>r[k]).filter(x=>x!=null && isFinite(x) && (!POS[k] || x>0)).sort((a,b)=>a-b);
+    if(!v.length) return null; const m = Math.floor(v.length/2); return v.length%2 ? v[m] : (v[m-1]+v[m])/2; };
+  const A = {fwd_per:avg("fwd_per"), pbr:avg("pbr"), roe:avg("roe"), opmargin:avg("opmargin"),
+             psr:avg("psr"), ev_s:avg("ev_s"), rev_g:avg("rev_g")};
+  const mc = r => !r.mktcap ? "-" : r.cur==="KRW" ? (r.mktcap>=1e12 ? (r.mktcap/1e12).toFixed(r.mktcap>=1e13?0:1)+"조" : Math.round(r.mktcap/1e8).toLocaleString()+"억")
+    : (r.mktcap>=1e9 ? (r.mktcap/1e9).toFixed(r.mktcap>=1e10?0:1)+"B" : (r.mktcap/1e6).toFixed(0)+"M");
   const num = (v,dec=1,suf="") => (v==null||!isFinite(v)) ? "-" : v.toFixed(dec)+suf;
   // 낮을수록 좋음(PER/PBR) / 높을수록 좋음(ROE/마진) — base가 유리하면 색
   const cell = (r,k,dec,suf,lowGood) => {
     const v = r[k];
+    if(POS[k] && v!=null && v<=0) return `<td class="muted">적자</td>`;
     let cls = "";
     if(r.is_base && v!=null && A[k]!=null){
       const good = lowGood ? v < A[k] : v > A[k];
@@ -2889,40 +2751,50 @@ function renderPeers(ticker, d){
     return `<td class="${cls}">${num(v,dec,suf)}</td>`;
   };
   let h = `<div class="muted" style="font-size:12px;margin-bottom:8px">${d.group?`섹터: <b>${esc(d.group)}</b> · `:""}
-    <b>${esc(base?base.name:ticker)}</b> vs 경쟁사. 색: 경쟁사 평균 대비 <b class="up-pos">유리</b>/<b class="up-neg">불리</b></div>
+    <b>${esc(base?base.name:ticker)}</b> vs 경쟁사. 색: 경쟁사 중앙값 대비 <b class="up-pos">유리</b>/<b class="up-neg">불리</b></div>
     <div style="overflow-x:auto"><table class="peert"><tr>
-      <th>종목</th><th>선행 PER</th><th>PBR</th><th>ROE</th><th>영업이익률</th><th>시총</th></tr>`;
+      <th>종목</th><th>선행 PER</th><th>PBR</th><th>ROE</th><th>영업이익률</th><th>PSR</th><th>EV/매출</th><th>매출성장률</th><th>시총</th></tr>`;
   const line = (r) => `<tr class="${r.is_base?'base':(r.is_market?'market':'')}">
     <td class="pn">${r.is_base?"★ ":(r.is_market?"📊 ":"")}${esc(r.name)}</td>
     ${cell(r,"fwd_per",1,"배",true)}${cell(r,"pbr",1,"배",true)}
     ${cell(r,"roe",0,"%",false)}${cell(r,"opmargin",0,"%",false)}
+    ${cell(r,"psr",1,"배",true)}${cell(r,"ev_s",1,"배",true)}${cell(r,"rev_g",0,"%",false)}
     <td class="muted">${mc(r)}</td></tr>`;
   if(base) h += line(base);
   if(d.market) h += line(d.market);        // 시장 벤치마크 (검색 종목 바로 아래)
   peers.forEach(r => h += line(r));
   // 평균 행
-  h += `<tr class="avg"><td>경쟁사 평균</td><td>${num(A.fwd_per,1,"배")}</td><td>${num(A.pbr,1,"배")}</td>
-    <td>${num(A.roe,0,"%")}</td><td>${num(A.opmargin,0,"%")}</td><td>-</td></tr></table></div>`;
+  h += `<tr class="avg"><td>경쟁사 중앙값</td><td>${num(A.fwd_per,1,"배")}</td><td>${num(A.pbr,1,"배")}</td>
+    <td>${num(A.roe,0,"%")}</td><td>${num(A.opmargin,0,"%")}</td>
+    <td>${num(A.psr,1,"배")}</td><td>${num(A.ev_s,1,"배")}</td><td>${num(A.rev_g,0,"%")}</td><td>-</td></tr></table></div>`;
   // 한 줄 해석
   if(base){
     const bits = [];
-    if(base.fwd_per!=null && A.fwd_per!=null) bits.push(base.fwd_per < A.fwd_per
-      ? `선행 PER(${base.fwd_per.toFixed(1)})이 경쟁사 평균(${A.fwd_per.toFixed(1)})보다 <b class="up-pos">낮아 상대적으로 저평가</b>`
-      : `선행 PER(${base.fwd_per.toFixed(1)})이 평균(${A.fwd_per.toFixed(1)})보다 <b class="up-neg">높아 프리미엄</b>`);
+    if(base.fwd_per!=null && base.fwd_per>0 && A.fwd_per!=null) bits.push(base.fwd_per < A.fwd_per
+      ? `선행 PER(${base.fwd_per.toFixed(1)})이 경쟁사 중앙값(${A.fwd_per.toFixed(1)})보다 <b class="up-pos">낮아 상대적으로 저평가</b>`
+      : `선행 PER(${base.fwd_per.toFixed(1)})이 중앙값(${A.fwd_per.toFixed(1)})보다 <b class="up-neg">높아 프리미엄</b>`);
     if(base.roe!=null && A.roe!=null) bits.push(base.roe > A.roe
-      ? `ROE(${base.roe.toFixed(0)}%)는 평균(${A.roe.toFixed(0)}%)보다 <b class="up-pos">높아 수익성 우위</b>`
-      : `ROE(${base.roe.toFixed(0)}%)는 평균(${A.roe.toFixed(0)}%)보다 <b class="up-neg">낮음</b>`);
+      ? `ROE(${base.roe.toFixed(0)}%)는 중앙값(${A.roe.toFixed(0)}%)보다 <b class="up-pos">높아 수익성 우위</b>`
+      : `ROE(${base.roe.toFixed(0)}%)는 중앙값(${A.roe.toFixed(0)}%)보다 <b class="up-neg">낮음</b>`);
     // 시장 대비 한 줄
-    if(d.market && d.market.fwd_per && base.fwd_per){
+    if(d.market && d.market.fwd_per && base.fwd_per>0){
       bits.push(base.fwd_per < d.market.fwd_per
         ? `시장평균 PER(${d.market.fwd_per.toFixed(1)})보다 <b class="up-pos">낮음</b>`
         : `시장평균 PER(${d.market.fwd_per.toFixed(1)})보다 <b class="up-neg">높음</b>`);
+    }
+    // 적자 등으로 PER이 없거나, 매출 배수 비교 — PSR은 성장률과 같이 봐야 공정
+    if(base.psr!=null && A.psr!=null){
+      const gTxt = (base.rev_g!=null && A.rev_g!=null) ? ` (매출성장률 ${base.rev_g.toFixed(0)}% vs 중앙값 ${A.rev_g.toFixed(0)}%)` : "";
+      bits.push(base.psr < A.psr
+        ? `PSR(${base.psr.toFixed(1)})이 중앙값(${A.psr.toFixed(1)})보다 <b class="up-pos">낮음</b>${gTxt}`
+        : `PSR(${base.psr.toFixed(1)})이 중앙값(${A.psr.toFixed(1)})보다 <b class="up-neg">높음</b>${gTxt}`);
     }
     if(bits.length) h += `<div class="sig-verdict" style="margin-top:10px">→ ${bits.join(" · ")}</div>`;
   }
   h += `<div class="muted" style="font-size:11px;margin-top:8px">※ 📊 시장평균은 대표 ETF(S&P500=SPY,
     코스피=EWY 근사)의 후행 PER이라 개별 종목의 선행 PER과 기준이 조금 달라요(대략 비교용).
-    PBR·시총은 국내(네이버)·해외(야후) 소스가 섞여 스케일이 다를 수 있어요.</div>`;
+    PBR·시총은 국내(네이버)·해외(야후) 소스가 섞여 스케일이 다를 수 있어요.
+    PSR·EV/매출은 야후 최근 12개월 기준 — 매출총이익률이 다른 업종끼리는 직접 비교가 어려워요.</div>`;
   h += peerAddBox();
   box.innerHTML = h;
 }
@@ -2948,8 +2820,8 @@ function initSigma(){
     b.onclick = () => {
       if(b.disabled) return;
       SIGMODE[b.dataset.sig] = b.dataset.basis;
-      // 해당 카드만 다시 그림
-      const cards = document.querySelectorAll(".row2")[1];
+      // 해당 카드만 다시 그림 (순서가 아니라 id로 찾음 — 위에 카드가 늘어도 안 깨지게)
+      const cards = document.getElementById("sigma-row");
       if(cards && LAST){
         cards.innerHTML =
           sigmaCard("PER 표준편차 밴드", LAST.sigma, LAST.sigma_fwd, "PER", 1, LAST.price)
@@ -3906,6 +3778,291 @@ let SIGMODE = {PER:"trail", PBR:"trail"};   // σ밴드 표시 기준: trail(과
 // 과거 PER 추이 — 미국은 EDGAR(장기)로 비동기 로드, 없으면 sigma(4~5년) 폴백
 let PERH = null, perRange = null, _perdrag = null, _perA = 0;
 const PERW = 720, PERHT = 260, PPADL = 48, PPADR = 16, PPADT = 16, PPADB = 30;
+// ── 밸류AI 총평: 재무·PER/PBR σ·PEG·PSR·동종업계·공탐을 규칙 기반으로 한눈에 ──
+let PEER_LAST = null, PSRH_DONE = false;
+function verdictRefresh(){ const el = document.getElementById("verdict-box"); if(el && LAST) el.innerHTML = verdictInner(LAST); }
+function zScore(z){ return z==null||!isFinite(z) ? null : z <= -1.5 ? 2 : z <= -0.5 ? 1 : z < 0.5 ? 0 : z < 1.5 ? -1 : -2; }
+function ratioScore(r){ return r==null||!isFinite(r) ? null : r < 0.7 ? 2 : r < 0.9 ? 1 : r <= 1.1 ? 0 : r <= 1.4 ? -1 : -2; }
+function pegCalc(d){
+  const G = (d.peg_sales||{}).growth || [];
+  const perT = (typeof d.per_ttm==="number" && d.per_ttm>0) ? d.per_ttm : null;
+  const perF = (typeof d.per_fwd==="number" && d.per_fwd>0) ? d.per_fwd : null;
+  if(!perT && !perF) return null;
+  let key = PEG_G;
+  if(key==null || (key!=="custom" && !G.find(x=>x.key===key))){
+    const f = ["y1","e2","y2","cagr2","e1","y0"].map(k=>G.find(x=>x.key===k)).find(Boolean);
+    key = f ? f.key : null;
+  }
+  const g = key==="custom" ? PEG_CUSTOM : (key ? G.find(x=>x.key===key).value*100 : null);
+  const per = (PEG_BASIS==="fwd" && perF) || !perT ? perF : perT;
+  if(g==null) return null;
+  return {per, g, peg: g>0 ? per/g : null};
+}
+function verdictInner(d){
+  const sig = [];   // {grp:'q'|'p'|'t', name, score(-2~2|null), chip, why, w}
+  const L = {"2":["매우 좋음","vd-pos2"],"1":["좋음","vd-pos1"],"0":["보통","vd-neu"],"-1":["부담","vd-neg1"],"-2":["매우 부담","vd-neg2"]};
+  const guide = stockGuide(d) || {};
+  const f1 = v => (+v).toFixed(1);
+  // ① 재무 건전성
+  const dg = d.diagnosis;
+  if(dg && dg.evaluatedCount){
+    const r = dg.passCount / dg.evaluatedCount;
+    const sc = r >= 0.83 ? 2 : r >= 0.66 ? 1 : r >= 0.5 ? 0 : r >= 0.33 ? -1 : -2;
+    const fails = (dg.checks||[]).filter(c=>c.status==="fail").map(c=>c.label);
+    sig.push({grp:"q", name:"재무 건전성", score:sc, chip:L[sc][0].replace("부담","약함"), w:1,
+      why:`6개 점검 중 <b>${dg.passCount}/${dg.evaluatedCount}</b> 통과${fails.length?` · 미달: ${fails.slice(0,2).join(", ")}`:""}`});
+  }
+  // ② PER 위치 (고성장주는 선행 PER 밴드)
+  const G0 = ((d.peg_sales||{}).growth||[])[0];          // 올해(첫 해) 예상 EPS 성장률
+  const fastGrow = guide.type === "고성장주" || (G0 && G0.value > 0.25);
+  const useFwd = fastGrow && d.sigma_fwd && d.sigma_fwd.std;
+  const sg = useFwd ? d.sigma_fwd : d.sigma;
+  if(guide.type === "적자·턴어라운드") sig.push({grp:"p", name:"PER 위치", score:null, chip:"해당없음", why:"적자라 PER로 볼 수 없음 → 매출 기반으로 판단", w:0});
+  else if(sg && sg.std){
+    const z = (sg.cur - sg.mean)/sg.std, sc = zScore(z);
+    sig.push({grp:"p", name:"PER 위치", score:sc, chip:L[sc][0].replace("매우 좋음","매우 쌈").replace("좋음","쌈").replace("매우 부담","매우 비쌈").replace("부담","비쌈"),
+      w: guide.trueCyclical ? 0.5 : 1,
+      why:`${useFwd?"선행":"현재"} PER ${f1(sg.cur)} · ${sg.years||""}년 평균 ${f1(sg.mean)} 대비 <b>${z>=0?"+":""}${z.toFixed(1)}σ</b>${guide.trueCyclical?" (시클리컬: PER 낮을 때가 고점일 수 있음)":""}`});
+  }
+  // ③ PBR 위치
+  const pb = d.pbr_sigma;
+  if(pb && pb.std && pb.cur > 0){
+    const z = (pb.cur - pb.mean)/pb.std, sc = zScore(z);
+    sig.push({grp:"p", name:"PBR 위치", score:sc, chip:L[sc][0].replace("매우 좋음","매우 쌈").replace("좋음","쌈").replace("매우 부담","매우 비쌈").replace("부담","비쌈"),
+      w: guide.trueCyclical || guide.type==="자산·가치주" ? 1 : 0.5,
+      why:`PBR ${f1(pb.cur)} · 평균 ${f1(pb.mean)} 대비 <b>${z>=0?"+":""}${z.toFixed(1)}σ</b>`});
+  }
+  // ④ PEG
+  const pg = pegCalc(d);
+  if(pg && pg.per < 100){
+    let sc, why;
+    if(pg.peg == null){ sc = -1; why = `EPS 성장률 ${f1(pg.g)}% (이익 감소 예상) — PER ${f1(pg.per)}배는 성장 없이 받는 값`; }
+    else { sc = pg.peg < 0.7 ? 2 : pg.peg < 1 ? 1 : pg.peg <= 2 ? 0 : pg.peg <= 3 ? -1 : -2;
+      why = `PEG <b>${pg.peg.toFixed(2)}</b> = PER ${f1(pg.per)} ÷ 성장률 ${f1(pg.g)}%${pg.g>50?" (급반등 기저효과 주의)":""}`; }
+    sig.push({grp:"p", name:"PEG", score:sc, chip:sc==null?"-":L[sc][0].replace("매우 좋음","매우 쌈").replace("좋음","쌈").replace("매우 부담","매우 비쌈").replace("부담","비쌈"), why, w: pg.g>50 ? 0.5 : 1});
+  } else if(d.peg_sales){
+    sig.push({grp:"p", name:"PEG", score:null, chip:"해당없음", why: pg ? `PER ${f1(pg.per)}배(이익 미미) — 의미 약함` : "PER 또는 성장률 자료 없음", w:0});
+  }
+  // ⑤ 매출 기반 (과거 PSR 위치)
+  const loss = guide.type === "적자·턴어라운드" || !(d.per_ttm > 0);
+  if(PSRH && PSRH.series && PSRH.series.length >= 20){
+    let ser = PSRH.series;
+    if(PSRH_SPAN){ const c = new Date(); c.setFullYear(c.getFullYear()-PSRH_SPAN); const cs = c.toISOString().slice(0,10); const t = ser.filter(p=>p.d>=cs); if(t.length>=10) ser = t; }
+    const v = ser.map(p=>p.psr), n = v.length, m = v.reduce((a,b)=>a+b,0)/n, sd = Math.sqrt(v.reduce((a,b)=>a+(b-m)**2,0)/n);
+    const z = sd ? (v[n-1]-m)/sd : 0, sc = zScore(z);
+    sig.push({grp:"p", name:"과거 PSR 위치", score:sc, chip:L[sc][0].replace("매우 좋음","매우 쌈").replace("좋음","쌈").replace("매우 부담","매우 비쌈").replace("부담","비쌈"), w: loss ? 1.5 : 0.5,
+      why:`PSR ${v[n-1].toFixed(1)}배 · 평균 ${m.toFixed(1)} 대비 <b>${z>=0?"+":""}${z.toFixed(1)}σ</b>${(d.peg_sales||{}).gross_margin!=null?` · 매출총이익률 ${(d.peg_sales.gross_margin*100).toFixed(0)}%`:""}`});
+  } else if(d.peg_sales && !PSRH_DONE){
+    sig.push({grp:"p", name:"과거 PSR 위치", score:null, chip:"불러오는 중", why:"과거 매출 자료를 받는 중…", w:0});
+  }
+  // ⑥ 동종업계 대비 (선행 PER·PSR 중앙값 비교)
+  if(PEER_LAST && PEER_LAST.rows && PEER_LAST.rows.length > 1){
+    const base = PEER_LAST.rows.find(r=>r.is_base), peers = PEER_LAST.rows.filter(r=>!r.is_base);
+    const med = k => { const a = peers.map(r=>r[k]).filter(x=>x!=null && isFinite(x) && x>0).sort((x,y)=>x-y); if(!a.length) return null; const h=Math.floor(a.length/2); return a.length%2?a[h]:(a[h-1]+a[h])/2; };
+    const parts = [], scs = [];
+    if(base && base.fwd_per > 0 && base.fwd_per < 100 && guide.type !== "적자·턴어라운드" && med("fwd_per")){ const r = base.fwd_per/med("fwd_per"); scs.push(ratioScore(r)); parts.push(`선행 PER ${f1(base.fwd_per)} vs 중앙값 ${f1(med("fwd_per"))}`); }
+    if(base && base.psr > 0 && med("psr")){ const r = base.psr/med("psr"); scs.push(ratioScore(r)); parts.push(`PSR ${f1(base.psr)} vs ${f1(med("psr"))}`); }
+    if(scs.length){ const sc = Math.round(scs.reduce((a,b)=>a+b,0)/scs.length);
+      sig.push({grp:"p", name:"경쟁사 대비", score:sc, chip:L[sc][0].replace("매우 좋음","매우 쌈").replace("좋음","쌈").replace("매우 부담","매우 비쌈").replace("부담","비쌈"), w:0.75,
+        why:`${PEER_LAST.group?esc(PEER_LAST.group)+" · ":""}${parts.join(" · ")}`}); }
+  } else if(!PEER_LAST){
+    sig.push({grp:"p", name:"경쟁사 대비", score:null, chip:"불러오는 중", why:"동종업계 지표를 받는 중…", w:0});
+  }
+  // ⑦ 시장 심리 (공포탐욕 — 역발상)
+  const fg = d.fear_greed;
+  if(fg && fg.total != null){
+    const t = fg.total, sc = t >= 80 ? -2 : t >= 65 ? -1 : t > 35 ? 0 : t > 20 ? 1 : 2;
+    sig.push({grp:"t", name:"시장 심리", score:sc, chip:["극공포","공포","중립","탐욕","극탐욕"][2-sc], w:1,
+      why:`공포탐욕 <b>${Math.round(t)}</b> — ${sc<=-1?"과열, 추격 매수 주의":sc>=1?"공포 구간, 분할 매수 검토 여지":"과열도 공포도 아님"} (역발상 관점)`});
+    sig[sig.length-1].cls = ["vd-neg2","vd-neg1","vd-neu","vd-pos1","vd-pos2"][2-sc];
+  }
+  // 축별 점수(-2~2) → 0~100
+  const ax = grp => { const a = sig.filter(x=>x.grp===grp && x.score!=null && x.w>0); if(!a.length) return null;
+    const W = a.reduce((s,x)=>s+x.w,0); return a.reduce((s,x)=>s+x.score*x.w,0)/W; };
+  const q = ax("q"), pr = ax("p"), tm = ax("t");
+  const parts = [[q,0.35],[pr,0.45],[tm,0.20]].filter(x=>x[0]!=null);
+  if(!parts.length) return "";
+  const tot = parts.reduce((s,x)=>s+x[0]*x[1],0)/parts.reduce((s,x)=>s+x[1],0);
+  const score = Math.round(50 + tot*25);
+  const V = score >= 75 ? ["매력적","#1f9d57"] : score >= 60 ? ["다소 매력적","#5bb37c"] : score > 40 ? ["중립","#8a93a3"] : score > 25 ? ["다소 부담","#e08a2e"] : ["부담","#d6403b"];
+  // 한 줄 결론 (기업 체력 × 가격)
+  let line;
+  if(q!=null && pr!=null){
+    if(q >= 1 && pr >= 0.5) line = "<b>좋은 기업을 싸게 살 수 있는 구간</b>이에요.";
+    else if(q >= 1 && pr <= -0.5) line = "<b>좋은 기업이지만 가격이 부담</b>이에요. 서두르기보다 조정 때 분할로 접근하는 편이 안전해요.";
+    else if(q >= 1) line = "<b>좋은 기업, 가격은 적정 수준</b>이에요.";
+    else if(q <= -0.5 && pr >= 0.5) line = "<b>싸 보이지만 재무가 약해요</b> — '가치 함정'인지 먼저 확인하세요.";
+    else if(q <= -0.5 && pr <= -0.5) line = "<b>재무도 약하고 가격도 비싸요</b> — 보수적으로 보는 게 좋아요.";
+    else if(pr >= 0.5) line = "<b>가격 매력은 있지만 기업 체력은 평범</b>해요.";
+    else if(pr <= -0.5) line = "<b>기업 체력은 평범한데 가격은 비싼 편</b>이에요.";
+    else line = "<b>체력·가격 모두 평범</b>한 구간이에요. 성장 스토리를 추가로 확인하세요.";
+  } else line = pr!=null ? (pr >= 0.5 ? "<b>가격 매력이 있는 편</b>이에요." : pr <= -0.5 ? "<b>가격이 부담스러운 편</b>이에요." : "<b>가격은 적정 수준</b>이에요.") : "";
+  if(tm!=null && tm <= -1) line += " 지금은 <b>단기 과열</b>이라 추격 매수는 조심하세요.";
+  else if(tm!=null && tm >= 1) line += " 시장 심리는 <b>공포 구간</b>이라 분할 매수를 검토할 만해요.";
+  if(guide.trueCyclical && pr!=null && pr >= 0.5) line += " 다만 <b>시클리컬</b>이라 이익 정점에서는 PER이 낮아 '싸 보일' 수 있어요 — 업황 사이클 위치를 꼭 확인하세요.";
+  if(guide.type) line += ` <span class="muted">(유형: ${esc(guide.type)})</span>`;
+  const axBox = (k, v, lbls) => { if(v==null) return `<div class="vd-ax"><div class="k">${k}</div><div class="v muted">-</div><div class="vd-bar"></div></div>`;
+    const p = Math.round(50+v*25), c = p>=60?"#1f9d57":p>40?"#c98a1e":"#d6403b";
+    return `<div class="vd-ax"><div class="k">${k}</div><div class="v" style="color:${c}">${lbls[p>=60?0:p>40?1:2]} · ${p}</div><div class="vd-bar"><i style="width:${p}%;background:${c}"></i></div></div>`; };
+  let h = `<div class="vd-top"><div class="vd-score" style="background:${V[1]}"><b>${score}</b><span>/ 100</span></div>
+    <div class="vd-head"><div class="vd-ttl">🧭 밸류AI 총평</div><div class="vd-verdict" style="color:${V[1]}">${V[0]}</div><div class="vd-line">${line}</div></div></div>
+    <div class="vd-axes">${axBox("기업 체력 (재무)", q, ["튼튼","보통","약함"])}${axBox("가격 매력 (밸류)", pr, ["싼 편","적정","비싼 편"])}${axBox("시장 심리 (역발상)", tm, ["공포·기회","중립","과열"])}</div>
+    <div class="vd-rows">`;
+  sig.forEach(x => { const cls = x.cls || (x.score==null ? "vd-na" : ["vd-neg2","vd-neg1","vd-neu","vd-pos1","vd-pos2"][x.score+2]);
+    h += `<div class="vd-row"><span class="n">${x.name}</span><span class="vd-chip ${cls}">${x.chip}</span><span class="w">${x.why}</span></div>`; });
+  h += `</div><div class="vd-foot">규칙 기반 자동 총평(체력 35% · 가격 45% · 심리 20%)이며 투자 권유가 아닙니다. 각 항목은 아래 카드에서 자세히 볼 수 있어요.</div>`;
+  return h;
+}
+// ── PEG · 매출 기반 밸류에이션 ──
+let PEG_G = null, PEG_BASIS = "ttm", PEG_CUSTOM = null, PS_MARGIN = 15;
+function pegSet(k, v){
+  if(k==="g"){ PEG_G = v; PEG_CUSTOM = null; }
+  if(k==="basis") PEG_BASIS = v;
+  if(k==="custom"){ PEG_CUSTOM = (v===""||isNaN(+v)) ? null : +v; if(PEG_CUSTOM!=null) PEG_G = "custom"; }
+  const el = document.getElementById("peg-card"); if(el && LAST) el.innerHTML = pegInner(LAST); verdictRefresh();
+  if(k==="custom"){ const i = document.getElementById("peg-custom"); if(i){ i.focus(); const n=i.value.length; i.setSelectionRange(n,n); } }
+}
+function psSet(v){ PS_MARGIN = (v===""||isNaN(+v)) ? null : +v;
+  const el = document.getElementById("ps-implied"); if(el && LAST) el.innerHTML = psImplied(LAST); }
+function pegInner(d){
+  const ps = d.peg_sales || {}, G = ps.growth || [];
+  const head = `<h2>PEG · 성장 대비 PER <span class="h2note">PER을 EPS 성장률(%)로 나눈 값</span></h2>`;
+  const perT = (typeof d.per_ttm==="number" && d.per_ttm>0) ? d.per_ttm : null;
+  const perF = (typeof d.per_fwd==="number" && d.per_fwd>0) ? d.per_fwd : null;
+  if(!perT && !perF) return head + `<div class="pg-note warn">적자(또는 이익이 아주 작아) <b>PER이 나오지 않아요</b> → PEG도 계산할 수 없습니다.<br>오른쪽 <b>매출 기반 밸류에이션(PSR·EV/매출)</b>으로 보세요.</div>`;
+  if(PEG_G==null || (PEG_G!=="custom" && !G.find(x=>x.key===PEG_G))){
+    const pref = ["y1","e2","y2","cagr2","e1","y0"]; const f = pref.map(k=>G.find(x=>x.key===k)).find(Boolean);
+    PEG_G = f ? f.key : (G[0] ? G[0].key : "custom");
+  }
+  const basis = (PEG_BASIS==="fwd" && perF) || !perT ? "fwd" : "ttm";
+  const per = basis==="fwd" ? perF : perT;
+  const gObj = PEG_G==="custom" ? null : G.find(x=>x.key===PEG_G);
+  const gPct = PEG_G==="custom" ? PEG_CUSTOM : (gObj ? gObj.value*100 : null);
+  const chip = (on, label, js) => `<button class="pg-chip${on?" on":""}" onclick="${js}">${label}</button>`;
+  let h = head;
+  h += `<div class="muted" style="font-size:12px">기준 PER</div><div class="pg-chips">`
+     + (perT ? chip(basis==="ttm", `현재 PER ${perT.toFixed(1)}배`, "pegSet('basis','ttm')") : "")
+     + (perF ? chip(basis==="fwd", `예상 PER ${perF.toFixed(1)}배`, "pegSet('basis','fwd')") : "") + `</div>`;
+  h += `<div class="muted" style="font-size:12px">EPS 성장률 <span style="font-size:11px">(${esc((G[0]||{}).src||"직접 입력")})</span></div><div class="pg-chips">`
+     + G.map(x => chip(PEG_G===x.key, `${esc(x.label)} ${(x.value*100>=0?"+":"")}${(x.value*100).toFixed(1)}%`, `pegSet('g','${x.key}')`)).join("")
+     + `<span class="pg-chip${PEG_G==="custom"?" on":""}" style="cursor:default">직접 <input id="peg-custom" class="pg-in" type="number" step="any" placeholder="%" value="${PEG_CUSTOM==null?"":PEG_CUSTOM}" oninput="pegSet('custom',this.value)">%</span></div>`;
+  if(gPct==null){ return h + `<div class="pg-note">성장률 추정치가 없어요. 증권사 리포트나 야후 Analysis 탭의 성장률을 <b>직접</b> 칸에 넣어 보세요.</div>`; }
+  if(gPct <= 0){
+    return h + `<div class="pg-note warn">EPS 성장률이 <b>${gPct.toFixed(1)}%</b>로 0 이하라 PEG를 계산할 수 없어요.<br>이익이 줄어드는데 PER ${per.toFixed(1)}배를 주고 있다면, PER이 낮아 보여도 <b>"싸 보이는 함정"</b>일 수 있습니다.</div>`;
+  }
+  const peg = per / gPct;
+  const cls = peg < 1 ? "pg-good" : peg <= 2 ? "pg-mid" : "pg-bad";
+  const verdict = peg < 1 ? "성장 대비 싸다" : peg <= 2 ? "성장 대비 적정 범위" : "성장 대비 비싸다";
+  const pos = Math.min(Math.max(peg/3*100, 0), 100);
+  h += `<div class="pg-big"><b class="${cls}">${peg.toFixed(2)}</b><span class="${cls}" style="font-weight:700">${verdict}</span>
+        <span class="muted" style="font-size:12px">= PER ${per.toFixed(1)} ÷ 성장률 ${gPct.toFixed(1)}</span></div>
+      <div class="pg-gauge"><i style="left:${pos}%"></i><span style="left:0%">0</span><span style="left:33.3%">1</span><span style="left:66.6%">2</span><span style="left:100%">3+</span></div>`;
+  const notes = [];
+  if(per >= 100) notes.push(`⚠️ PER이 <b>${per.toFixed(0)}배</b>예요. 이익이 아주 작아 PER·PEG 모두 의미가 약합니다 — 오른쪽 <b>매출 기반 밸류에이션</b>을 우선 보세요.`);
+  if(gPct > 50) notes.push(`⚠️ 성장률이 <b>${gPct.toFixed(0)}%</b>로 매우 높아요. 적자 탈출·실적 급반등(기저효과)이면 PEG가 <b>지나치게 낮게</b> 나옵니다. 2~3년 연평균 성장률로도 확인하세요.`);
+  if(per < 15 && gPct < 5) notes.push(`⚠️ PER ${per.toFixed(1)}배로 싸 보이지만 성장률이 ${gPct.toFixed(1)}%뿐이라 PEG는 ${peg.toFixed(1)}입니다 — <b>"싸 보이는 함정"</b> 가능성.`);
+  if(per >= 25 && peg < 1) notes.push(`PER ${per.toFixed(1)}배로 비싸 보여도 성장률이 높아 PEG는 1 미만 — 성장이 <b>예상대로 나온다면</b> 비싸지 않을 수 있어요.`);
+  if(ps.yahoo_peg) notes.push(`참고: 야후가 표시하는 PEG(5년 기대 성장 기준) ${(+ps.yahoo_peg).toFixed(2)}`);
+  const n50 = per/50, n5 = per/5;
+  if(per < 100) h += `<div class="pg-note">💡 같은 PER ${per.toFixed(1)}배라도 이익이 연 50% 느는 기업은 PEG <b>${n50.toFixed(2)}</b>, 5% 느는 기업은 <b>${n5.toFixed(1)}</b> — 전혀 다른 가격입니다.<br>
+      <span class="muted" style="font-size:11.5px">기준: 1 미만 싸다 · 1~2 적정 · 2 초과 비싸다 (피터 린치식 경험칙, 업종·금리에 따라 다름)</span></div>`;
+  if(notes.length) h += `<div class="pg-note warn">${notes.join("<br>")}</div>`;
+  return h;
+}
+function bigMoney(v, krw){
+  if(v==null || !isFinite(v)) return "-";
+  if(krw){ const jo = v/1e12; return Math.abs(jo) >= 1 ? jo.toFixed(jo>=100?0:1)+"조" : Math.round(v/1e8).toLocaleString()+"억"; }
+  const a = Math.abs(v); return a>=1e12 ? "$"+(v/1e12).toFixed(2)+"T" : a>=1e9 ? "$"+(v/1e9).toFixed(1)+"B" : "$"+(v/1e6).toFixed(0)+"M";
+}
+function psImplied(d){
+  const ps = d.peg_sales || {}, f = (ps.rev_fwd||[]), last = f[f.length-1];
+  const psr = last && last.psr ? last.psr : ps.psr; if(!psr) return "";
+  const lb = last && last.psr ? `${esc(last.label)} 예상 매출 기준 PSR ${psr.toFixed(1)}배` : `PSR ${psr.toFixed(1)}배`;
+  const m = PS_MARGIN;
+  const impl = m && m>0 ? psr/(m/100) : null;
+  const need = psr/25*100;
+  return `<div class="pg-note">🧮 <b>이 매출 배수가 정당하려면?</b> (${lb})<br>
+    성숙기 순이익률을 <input class="pg-in" type="number" step="any" value="${m==null?"":m}" oninput="psSet(this.value)">% 로 가정하면 → 그때의 PER은 <b>${impl?impl.toFixed(0)+"배":"-"}</b><br>
+    PER 25배(성장주 보통 수준)가 되려면 순이익률 <b>${need.toFixed(0)}%</b>가 필요해요${need>40?" — <b>현실적으로 매우 어려운 수준</b>(애플·엔비디아급도 25~55%)":""}.</div>`;
+}
+function psInner(d){
+  const ps = d.peg_sales || {}, krw = d.currency==="KRW", f = ps.rev_fwd || [];
+  const pct = v => v==null ? "-" : ((v>=0?"+":"")+(v*100).toFixed(1)+"%");
+  const x = v => v==null ? "-" : v.toFixed(1)+"배";
+  const loss = !(typeof d.per_ttm==="number" && d.per_ttm>0);
+  let h = `<h2>매출 기반 밸류에이션 <span class="h2note">PSR · EV/매출 — 적자·고성장 기업에 특히 유용</span></h2>`;
+  if(loss) h += `<div class="pg-note warn" style="margin:0 0 10px">이 종목은 <b>${d.per_fwd?"현재 이익이 없거나 아주 작아 PER이 의미 없어요":"적자라 PER이 나오지 않아요"}</b>. 피지컬 AI·우주항공처럼 아직 적자인 성장 기업은 <b>매출</b>로 가치를 봅니다.</div>`;
+  if(!ps.rev_ttm && !f.length) return h + `<div class="muted" style="font-size:13px">매출 자료를 받지 못했어요.</div>`;
+  const cols = [{lb:"최근 12개월", rev:ps.rev_ttm, g:ps.rev_growth_ttm, psr:ps.psr, ev:ps.ev_s}]
+    .concat(f.map(r => ({lb:(krw?r.label:r.label+"(E)"), rev:r.value, g:r.growth, psr:r.psr, ev:r.ev_s})));
+  h += `<table class="pg-tbl"><tr><th></th>${cols.map(c=>`<th>${esc(c.lb)}</th>`).join("")}</tr>
+    <tr><td>매출</td>${cols.map(c=>`<td>${bigMoney(c.rev,krw)}</td>`).join("")}</tr>
+    <tr><td>매출 성장률</td>${cols.map(c=>`<td>${pct(c.g)}</td>`).join("")}</tr>
+    <tr class="hl"><td>PSR (시총÷매출)</td>${cols.map(c=>`<td>${x(c.psr)}</td>`).join("")}</tr>
+    <tr class="hl"><td>EV/매출</td>${cols.map(c=>`<td>${x(c.ev)}</td>`).join("")}</tr></table>`;
+  const r40 = (ps.rev_growth_ttm!=null && ps.fcf_margin!=null) ? (ps.rev_growth_ttm + ps.fcf_margin)*100 : null;
+  const kp = (k,v,cls) => `<div class="pg-kpi"><div class="k">${k}</div><div class="v ${cls||""}">${v}</div></div>`;
+  h += `<div class="pg-kpis">${kp("매출총이익률", ps.gross_margin==null?"-":(ps.gross_margin*100).toFixed(1)+"%")}
+    ${kp("영업이익률", ps.op_margin==null?"-":(ps.op_margin*100).toFixed(1)+"%", ps.op_margin<0?"pg-bad":"")}
+    ${kp("FCF 마진", ps.fcf_margin==null?"-":(ps.fcf_margin*100).toFixed(1)+"%", ps.fcf_margin<0?"pg-bad":"")}
+    ${kp("Rule of 40", r40==null?"-":r40.toFixed(0)+(r40>=40?" ✅":" ⚠️"), r40==null?"":(r40>=40?"pg-good":"pg-mid"))}</div>
+    <div class="muted" style="font-size:11px;line-height:1.6;margin-bottom:6px">시가총액 ${bigMoney(ps.mcap,krw)} · EV(시총+부채−현금) ${bigMoney(ps.ev,krw)} · Rule of 40 = 매출 성장률 + FCF 마진 ≥ 40%면 성장과 현금창출이 균형</div>`;
+  if(ps.gross_margin!=null) h += `<div class="pg-note">매출총이익률 <b>${(ps.gross_margin*100).toFixed(0)}%</b> — ${ps.gross_margin>=0.6?"소프트웨어형(높은 마진)이라 높은 매출 배수를 받을 여지가 상대적으로 큽니다":ps.gross_margin>=0.35?"제조·하드웨어 중간형 — 같은 매출 배수라도 소프트웨어보다 정당화가 어렵습니다":"마진이 낮은 제조형 — 매출 배수가 높으면 부담이 큽니다"}. 같은 PSR이라도 <b>남는 돈(마진)</b>이 다르면 가치가 다릅니다.</div>`;
+  h += `<div id="ps-implied">${psImplied(d)}</div>`;
+  return h;
+}
+// ── 과거 PSR 밴드 ──
+let PSRH = null, PSRH_SPAN = 0;
+function loadPsrHist(d){
+  PSRH = null;
+  fetch("/api/psr_history?ticker=" + encodeURIComponent(d.ticker)).then(r => r.json()).then(res => {
+    const el = document.getElementById("psrh-body"); if(!el) return;
+    if(res && res.series && res.series.length >= 20){ PSRH = res; psrhRender(); }
+    else el.innerHTML = `<div class="muted" style="font-size:13px">과거 매출·주식수 자료가 부족해 PSR 추이를 만들 수 없어요(금융사·상장 1년 미만·공시 형식 차이 등).</div>`;
+    PSRH_DONE = true; verdictRefresh();
+  }).catch(() => { PSRH_DONE = true; verdictRefresh(); const el = document.getElementById("psrh-body"); if(el) el.innerHTML = `<div class="muted" style="font-size:13px">과거 PSR 불러오기 실패</div>`; });
+}
+function psrhSpan(y){ PSRH_SPAN = y; psrhRender(); verdictRefresh(); }
+function psrhRender(){
+  const el = document.getElementById("psrh-body"); if(!el || !PSRH) return;
+  let ser = PSRH.series;
+  if(PSRH_SPAN){ const cut = new Date(); cut.setFullYear(cut.getFullYear() - PSRH_SPAN); const c = cut.toISOString().slice(0,10); ser = ser.filter(p => p.d >= c); }
+  if(ser.length < 10){ ser = PSRH.series; }
+  const v = ser.map(p => p.psr), n = v.length;
+  const mean = v.reduce((a,b)=>a+b,0)/n, sd = Math.sqrt(v.reduce((a,b)=>a+(b-mean)**2,0)/n);
+  const cur = v[n-1], z = sd ? (cur-mean)/sd : 0;
+  const pctl = Math.round(v.filter(x => x <= cur).length / n * 100);
+  const srt = v.slice().sort((a,b)=>a-b), med = srt[Math.floor(n/2)];
+  const lv = [2,1,0,-1,-2].map(k => ({k, y: mean + k*sd}));
+  const W = 900, H = 300, pl = 46, pr = 70, pt = 14, pb = 26;
+  const lo = Math.max(0, Math.min(srt[0], mean-2*sd)), hi = Math.max(srt[n-1], mean+2*sd);
+  const X = i => pl + i*(W-pl-pr)/Math.max(n-1,1), Y = y => pt + (hi-y)/(hi-lo||1)*(H-pt-pb);
+  let g = `<rect x="${pl}" y="${Y(mean+sd)}" width="${W-pl-pr}" height="${Math.max(0,Y(Math.max(lo,mean-sd))-Y(mean+sd))}" fill="var(--panel)"/>`;
+  lv.forEach(l => { if(l.y < lo) return; const c = l.k>0?"var(--up)":(l.k<0?"var(--down)":"var(--ink)");
+    g += `<line x1="${pl}" x2="${W-pr}" y1="${Y(l.y)}" y2="${Y(l.y)}" stroke="${c}" stroke-width="${l.k?1:1.4}" ${l.k?'stroke-dasharray="4 4"':''} opacity=".7"/>
+          <text x="${W-pr+6}" y="${Y(l.y)+3}" style="font-size:10.5px;fill:${c}">${l.k? (l.k>0?"+":"−")+Math.abs(l.k)+"σ ":"평균 "}${l.y.toFixed(1)}</text>`; });
+  let path = ""; v.forEach((y,i) => path += (i?"L":"M")+X(i).toFixed(1)+" "+Y(y).toFixed(1)+" ");
+  g += `<path d="${path}" fill="none" stroke="var(--accent)" stroke-width="1.8"/>
+        <circle cx="${X(n-1)}" cy="${Y(cur)}" r="4" fill="var(--card)" stroke="var(--accent)" stroke-width="2"/>`;
+  const y0 = +ser[0].d.slice(0,4), y1 = +ser[n-1].d.slice(0,4), step = Math.max(1, Math.ceil((y1-y0)/8));
+  for(let yr = y0+1; yr <= y1; yr += step){ const i = ser.findIndex(p => +p.d.slice(0,4) >= yr); if(i>0) g += `<text x="${X(i)}" y="${H-8}" text-anchor="middle" style="font-size:10.5px;fill:var(--muted)">${yr}</text>`; }
+  [lo, (lo+hi)/2, hi].forEach(t => g += `<text x="${pl-6}" y="${Y(t)+3}" text-anchor="end" style="font-size:10.5px;fill:var(--muted)">${t.toFixed(1)}</text>`);
+  // hover
+  const bw = (W-pl-pr)/Math.max(n-1,1);
+  ser.forEach((p,i) => { if(i % Math.max(1,Math.floor(n/200)) === 0) g += `<rect x="${X(i)-bw*Math.max(1,Math.floor(n/200))/2}" y="${pt}" width="${bw*Math.max(1,Math.floor(n/200))}" height="${H-pt-pb}" fill="transparent"><title>${p.d}\nPSR ${p.psr.toFixed(2)}배</title></rect>`; });
+  const zone = z >= 2 ? ["역사적 고평가 구간 (+2σ 초과)","up-neg"] : z >= 1 ? ["평균 대비 고평가 (+1σ~+2σ)","up-neg"] : z > -1 ? ["평균 범위 (±1σ 이내)",""] : z > -2 ? ["평균 대비 저평가 (−1σ~−2σ)","up-pos"] : ["역사적 저평가 구간 (−2σ 미만)","up-pos"];
+  const back = (mean/cur - 1)*100;
+  const spanBtn = (y,l) => `<button class="pg-chip${PSRH_SPAN===y?" on":""}" onclick="psrhSpan(${y})">${l}</button>`;
+  el.innerHTML = `<div class="pg-chips">${spanBtn(0,`전체 ${PSRH.years}년`)}${spanBtn(5,"5년")}${spanBtn(3,"3년")}</div>
+    <svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block">${g}</svg>
+    <div class="pg-kpis" style="margin-top:10px">
+      <div class="pg-kpi"><div class="k">현재 PSR</div><div class="v">${cur.toFixed(2)}배</div></div>
+      <div class="pg-kpi"><div class="k">기간 평균 · 중앙값</div><div class="v">${mean.toFixed(1)} · ${med.toFixed(1)}배</div></div>
+      <div class="pg-kpi"><div class="k">평균 대비 위치</div><div class="v ${zone[1]}">${z>=0?"+":""}${z.toFixed(1)}σ</div></div>
+      <div class="pg-kpi"><div class="k">과거 중 백분위</div><div class="v">${pctl}%</div></div></div>
+    <div class="sig-verdict" style="margin-top:10px">→ 현재 PSR <b>${cur.toFixed(2)}배</b>는 <b class="${zone[1]}">${zone[0]}</b> · 과거 ${n}주 중 ${pctl}%가 지금보다 낮았어요 · 평균 PSR로 돌아가면 주가 <b>${back>=0?"+":""}${back.toFixed(1)}%</b> (매출 불변 가정)</div>
+    <div class="muted" style="font-size:11px;margin-top:8px;line-height:1.6">출처: ${esc(PSRH.source)} · 기준 ${esc(PSRH.asof)}. 고성장기 기업은 매출이 빠르게 커지면서 PSR이 구조적으로 내려가므로, 평균 회귀를 그대로 기대하긴 어려워요. 상장 초기·적자 기업은 기간이 짧아 밴드가 불안정합니다. 야후 표시 PSR과는 매출 집계 기준 차이로 조금 다를 수 있어요.</div>`;
+}
 function perTrendCard(d){
   return `<div class="card"><h2>과거 PER 추이 <span class="h2note">주가 ÷ TTM EPS · 마우스로 기간 지정</span></h2>
     <div id="per-body"><div class="muted" style="font-size:13px;padding:12px 0">과거 PER 불러오는 중…</div></div></div>`;

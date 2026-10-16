@@ -282,6 +282,27 @@ def api_per_history():
     return jsonify(out)
 
 
+@app.route("/api/psr_history")
+def api_psr_history():
+    """개별주 장기 과거 PSR (미국 EDGAR 매출·주식수 / 한국 DART ÷ 야후 주가). 공개·6시간 캐시."""
+    ticker = (request.args.get("ticker") or "").strip()
+    if not ticker:
+        return jsonify({"error": "종목 코드를 입력하세요."}), 400
+    ck = "psrhist:" + ticker.lower()
+    out = _cache_get(ck, 6 * 3600)
+    if out is None:
+        try:
+            import per_hist
+            out = per_hist.psr_history(ticker)
+        except Exception as e:
+            return jsonify({"error": f"PSR 이력 조회 실패: {repr(e)[:120]}"}), 500
+        if not out:
+            return jsonify({"empty": True}), 200
+        out = clean(out)
+        _cache_put(ck, out)
+    return jsonify(out)
+
+
 @app.route("/api/eps_history")
 def api_eps_history():
     """개별 종목 분기/연간 EPS 이력 + 성장률 + 미래 EPS 추정.

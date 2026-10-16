@@ -58,6 +58,29 @@ def kr_code(ticker):
 
 
 # ----------------------- 네이버 국내 EPS -----------------------
+def _naver_mobile_eps(code):
+    """네이버 모바일 증권 API → {per, eps_ttm, per_fwd, eps_fwd, pbr, bps, price}."""
+    def num(v):
+        m = re.search(r"-?[\d,]+(?:\.\d+)?", str(v or ""))
+        return float(m.group().replace(",", "")) if m else None
+    out = {}
+    try:
+        j = requests.get(f"https://m.stock.naver.com/api/stock/{code}/integration", headers=UA, timeout=10).json()
+        info = {x.get("code"): x.get("value") for x in j.get("totalInfos", [])}
+        for k, src in (("per", "per"), ("eps_ttm", "eps"), ("per_fwd", "cnsPer"), ("eps_fwd", "cnsEps"),
+                       ("pbr", "pbr"), ("bps", "bps")):
+            v = num(info.get(src))
+            if v is not None:
+                out[k] = v
+        b = requests.get(f"https://m.stock.naver.com/api/stock/{code}/basic", headers=UA, timeout=10).json()
+        pv = num(b.get("closePrice"))
+        if pv:
+            out["price"] = pv
+    except Exception as e:
+        return {"_err": repr(e)[:100]}
+    return out
+
+
 def naver_eps(ticker):
     """국내 종목 per_table에서 EPS/PER/추정EPS/추정PER 파싱."""
     code = kr_code(ticker)
@@ -68,7 +91,9 @@ def naver_eps(ticker):
         soup = BeautifulSoup(r.text, "lxml")
         t = soup.find("table", class_="per_table")
         if not t:
-            return {}
+            # 2026-10: 네이버 금융 종목 페이지가 stock.naver.com(Npay 증권)으로 바뀌어 per_table이 사라짐
+            # → 네이버 모바일 증권 API(같은 PER·EPS·추정치·PBR·BPS)로 대체
+            return _naver_mobile_eps(code)
         out = {}
         for tr in t.find_all("tr"):
             th = tr.find("th")
@@ -453,6 +478,124 @@ def growth_block(tk, nv_annual, eps_ttm, eps_fwd, eps_series):
     base = cands.get("anl", cands.get("lt", med))
     return {"cands": {k: round(v, 4) for k, v in cands.items()},
             "suggest": round(min(max(base, -0.20), 0.30), 4)}
+
+
+# ------------------- PEG(성장 대비 PER) · 매출 기반 밸류(PSR·EV/매출) -------------------
+def _safe(f):
+    """부가 지표 계산 실패가 전체 분석을 깨지 않도록."""
+    try:
+        return f()
+    except Exception:
+        return None
+
+
+def peg_sales_block(tk, info, nv_annual, ticker, price, us_fh=None):
+    """PEG용 EPS 성장률 후보 + 매출 기반 지표.
+    - 미국: 야후 Analysis 탭 Growth Estimates(올해 0y·내년 +1y), Revenue Estimate(올해·내년 매출)
+    - 국내: WISEfn 컨센서스(확정 마지막 해 → 2026E·2027E·2028E EPS·매출, 억원)
+    - PSR = 시가총액 ÷ 매출, EV/매출 = 기업가치(시총+부채−현금) ÷ 매출. 적자 기업은 PER 대신 이것으로."""
+    info = info or {}
+    us_fh = us_fh or {}
+    kr = is_korean(ticker)
+
+    def num(x):
+        try:
+            v = float(x)
+            return v if math.isfinite(v) else None
+        except (TypeError, ValueError):
+            return None
+
+    growth = []          # [{key,label,value(소수),src}]
+    rev_fwd = []         # [{label, value(통화 단위), growth}]
+    rev_ttm = num(info.get("totalRevenue"))
+    rev_growth_ttm = num(info.get("revenueGrowth"))
+
+    if kr and nv_annual and nv_annual.get("years"):
+        ys = [str(y) for y in nv_annual["years"]]
+        eps = nv_annual.get("eps") or []
+        rev = nv_annual.get("revenue") or []
+        act = [i for i, y in enumerate(ys) if not y.endswith("E")]
+        est = [i for i, y in enumerate(ys) if y.endswith("E")]
+        if act and est:
+            a = act[-1]
+            ea = num(eps[a]) if a < len(eps) else None
+            prev = ea
+            for k, i in enumerate(est[:3]):
+                e = num(eps[i]) if i < len(eps) else None
+                if e is not None and prev and prev > 0:
+                    growth.append({"key": f"e{k+1}", "label": f"{ys[i]} 예상 EPS 성장률",
+                                   "value": round(e / prev - 1, 4), "src": "WISEfn 컨센서스"})
+                if k >= 1 and e and e > 0 and ea and ea > 0:
+                    growth.append({"key": f"cagr{k+1}", "label": f"{ys[a]}→{ys[i]} 연평균({k+1}년)",
+                                   "value": round((e / ea) ** (1 / (k + 1)) - 1, 4), "src": "WISEfn 컨센서스"})
+                prev = e
+            ra = num(rev[a]) if a < len(rev) else None
+            prev_r = ra
+            for i in est[:2]:
+                r = num(rev[i]) if i < len(rev) else None
+                if r and r > 0:
+                    rev_fwd.append({"label": ys[i], "value": r * 1e8,
+                                    "growth": round(r / prev_r - 1, 4) if prev_r and prev_r > 0 else None})
+                prev_r = r
+            if not rev_ttm and ra:
+                rev_ttm = ra * 1e8
+    else:
+        try:
+            ge = tk.growth_estimates
+            col = "stockTrend" if "stockTrend" in ge.columns else ge.columns[0]
+            g0 = num(ge.loc["0y", col]) if "0y" in ge.index else None
+            g1 = num(ge.loc["+1y", col]) if "+1y" in ge.index else None
+            if g0 is not None:
+                growth.append({"key": "y0", "label": "올해 EPS 성장률(0y)", "value": round(g0, 4), "src": "야후 Analysis"})
+            if g1 is not None:
+                growth.append({"key": "y1", "label": "내년 EPS 성장률(+1y)", "value": round(g1, 4), "src": "야후 Analysis"})
+            if g0 is not None and g1 is not None and g0 > -1 and g1 > -1:
+                growth.append({"key": "y2", "label": "2년 연평균(0y·+1y)",
+                               "value": round(((1 + g0) * (1 + g1)) ** 0.5 - 1, 4), "src": "야후 Analysis"})
+            if "LTG" in ge.index and num(ge.loc["LTG", col]) is not None:
+                growth.append({"key": "ltg", "label": "장기 성장률(5년, LTG)", "value": round(num(ge.loc["LTG", col]), 4), "src": "야후 Analysis"})
+        except Exception:
+            pass
+        try:
+            re_ = tk.revenue_estimate
+            for row, lb in (("0y", "올해"), ("+1y", "내년")):
+                if row in re_.index:
+                    v = num(re_.loc[row, "avg"])
+                    if v and v > 0:
+                        g = num(re_.loc[row, "growth"]) if "growth" in re_.columns else None
+                        rev_fwd.append({"label": lb, "value": v, "growth": g})
+        except Exception:
+            pass
+        if rev_growth_ttm is None and us_fh.get("rev_growth") is not None:
+            rev_growth_ttm = us_fh["rev_growth"] / 100.0
+
+    mcap = num(info.get("marketCap")) or num(us_fh.get("mktcap"))
+    if not mcap and price and num(info.get("sharesOutstanding")):
+        mcap = price * num(info.get("sharesOutstanding"))
+    # EV = 시가총액 + 총부채 − 현금성자산 (야후 enterpriseValue는 종목마다 기준이 달라 직접 계산 우선)
+    debt, cash = num(info.get("totalDebt")), num(info.get("totalCash"))
+    ev = (mcap + debt - cash) if (mcap is not None and debt is not None and cash is not None) \
+        else num(info.get("enterpriseValue"))
+    if not rev_ttm and mcap and num(info.get("priceToSalesTrailing12Months")):
+        rev_ttm = mcap / num(info.get("priceToSalesTrailing12Months"))
+    fcf = num(info.get("freeCashflow"))
+    out = {
+        "growth": growth,
+        "yahoo_peg": num(info.get("trailingPegRatio")),
+        "mcap": mcap, "ev": ev, "rev_ttm": rev_ttm, "rev_fwd": rev_fwd,
+        "rev_growth_ttm": rev_growth_ttm,
+        "psr": (mcap / rev_ttm) if (mcap and rev_ttm) else num(us_fh.get("psr")),
+        "ev_s": (ev / rev_ttm) if (ev and rev_ttm) else None,
+        "gross_margin": num(info.get("grossMargins")),
+        "op_margin": num(info.get("operatingMargins")) if info.get("operatingMargins") is not None
+                     else (num(us_fh.get("opmargin")) / 100 if us_fh.get("opmargin") is not None else None),
+        "fcf_margin": (fcf / rev_ttm) if (fcf is not None and rev_ttm) else None,
+        "net_income": num(info.get("netIncomeToCommon")),
+    }
+    for r in out["rev_fwd"]:
+        r["psr"] = (mcap / r["value"]) if mcap else None
+        r["ev_s"] = (ev / r["value"]) if ev else None
+    return out
 
 
 # ------------------- 재무 흐름 (가치평가용 재무제표 요약) -------------------
@@ -885,6 +1028,8 @@ def _finnhub_metrics(symbol):
             "mktcap": mc * 1e6 if mc else None,
             "roe": m.get("roeTTM"),
             "opmargin": m.get("operatingMarginTTM"),
+            "psr": m.get("psTTM"),
+            "rev_growth": m.get("revenueGrowthTTMYoy"),
         }
     except Exception:
         return {}
@@ -1031,6 +1176,11 @@ def analyze_data(ticker):
                     fwd_bps_map[yy] = nv_annual["bps"][i]
     if not fwd_eps_map and fwd_eps and not hist.empty:
         fwd_eps_map[hist.index[-1] + pd.DateOffset(years=1)] = fwd_eps
+    # 미국(네이버 표 없음): 선행 BPS 앵커도 넣어야 선행 PBR 밴드가 진짜 '선행'이 됨
+    # (2026-10-16 수정 전에는 비어 있어 선행 PBR 밴드가 과거 PBR과 똑같이 나왔음)
+    if not fwd_bps_map and fwd_eps and fwd_eps > 0 and cur_bps and cur_bps > 0 and not hist.empty:
+        _payout = min(max(float(info.get("payoutRatio") or 0), 0.0), 1.0)
+        fwd_bps_map[hist.index[-1] + pd.DateOffset(years=1)] = cur_bps + fwd_eps * (1 - _payout)
 
     per_daily = ratio_daily(eps_series, hist, cur_val=ttm_eps) if not hist.empty else None
     sigma = sigma_from_ratio(per_daily)
@@ -1125,6 +1275,22 @@ def analyze_data(ticker):
         fwd_bps = pbr_targets[1]["eps"]
     fwd_pbr = price / fwd_bps if (price and fwd_bps and fwd_bps > 0) else None
 
+    # 국내: 상단 '선행' PER·PBR을 표준편차 밴드와 같은 **12개월 선행**으로 통일 (2026-10-16 사용자 결정)
+    # 이전에는 컨센서스 첫 E연도(예: 10월에도 2026E=올해 말)를 써서 밴드의 현재값과 달랐음.
+    # 12개월 선행 EPS/BPS = 밴드 마지막 날의 분모(오늘+1년 시점 보간값). 첫 E연도 값은 *_fy 로 보관.
+    fwd_per_fy, fwd_eps_fy, fwd_pbr_fy, fwd_bps_fy = fwd_per, fwd_eps, fwd_pbr, fwd_bps
+    fwd_basis = "FY+1"
+    if is_korean(ticker) and not hist.empty and price:
+        last_close = float(hist.dropna().iloc[-1])
+        if sigma_fwd and sigma_fwd.get("cur", 0) > 0:
+            fwd_eps = last_close / sigma_fwd["cur"]
+            fwd_per = price / fwd_eps
+            fwd_basis = "12M"
+        if pbr_sigma_fwd and pbr_sigma_fwd.get("cur", 0) > 0:
+            fwd_bps = last_close / pbr_sigma_fwd["cur"]
+            fwd_pbr = price / fwd_bps
+            fwd_basis = "12M"
+
     news = get_news(tk, ticker, info)   # 뉴스 센티먼트(국내)에도 재사용 → 미리 계산
     fin_data = build_financials(tk, nv_annual, kr_code=(ticker if is_korean(ticker) else None))
     fin_comment = fin_ai_comment(name, fin_data)   # 재무 안정성 AI 판단
@@ -1135,7 +1301,8 @@ def analyze_data(ticker):
         "eps_fwd": fwd_eps, "per_fwd": fwd_per,
         "pbr_ttm": cur_pbr, "bps": cur_bps,
         "beta": info.get("beta") or us_fh.get("beta"),   # CAPM 자본비용용(야후→Finnhub 폴백)
-        "bps_fwd": fwd_bps, "pbr_fwd": fwd_pbr,
+        "bps_fwd": fwd_bps, "pbr_fwd": fwd_pbr, "fwd_basis": fwd_basis,
+        "eps_fwd_fy": fwd_eps_fy, "per_fwd_fy": fwd_per_fy, "bps_fwd_fy": fwd_bps_fy, "pbr_fwd_fy": fwd_pbr_fy,
         "eps_src": ("네이버(FnGuide)" if is_korean(ticker) else (eps_fwd_src or "야후")),
         "band": band, "pbr_band": pbr_band, "targets": targets,
         "pbr_targets": pbr_targets, "sigma": sigma, "pbr_sigma": pbr_sigma,
@@ -1149,11 +1316,12 @@ def analyze_data(ticker):
         "fear_greed": _fear_greed(hist_df, info, ticker, eps_series, ttm_eps, per_daily,
                                   news_titles=[n.get("title") for n in (news or [])]),
         "target_model": {"rate": rate_info, "pbr_reg": pbr_reg,
-                         "growth": growth_block(tk, nv_annual, ttm_eps, fwd_eps, eps_series),
+                         "growth": growth_block(tk, nv_annual, ttm_eps, fwd_eps_fy, eps_series),   # 성장률은 연도별 컨센서스(FY) 기준 유지
                          "rates_both": _both_rates(),
                          "discount": _discount_data(hist, info, ticker, us_fh)},
         "hi52": hi52, "lo52": lo52,
         "decompose": decompose(eps_series, hist, price),
+        "peg_sales": _safe(lambda: peg_sales_block(tk, info, nv_annual, ticker, price, us_fh)),
         "news": news,
         "error": None,
     }

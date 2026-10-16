@@ -183,31 +183,51 @@ def _corp_code(stock6):
     return _CORP.get(stock6)
 
 
-def _dart_eps(corp, year, rc, fs):
-    """해당 연도·보고서의 기본주당이익(원). 신/구 계정ID 모두 매칭. 없으면 None."""
+_DART_VALS = {}     # (corp, year, rc, fs) -> (ts, {"eps","rev"})  PER·PSR이 같은 DART 응답을 공유
+
+
+def _dart_vals(corp, year, rc, fs):
+    """해당 연도·보고서의 기본주당이익(원)과 매출액(원). 신/구 계정ID 모두 매칭."""
+    k = (corp, year, rc, fs)
+    hit = _DART_VALS.get(k)
+    if hit and time.time() - hit[0] < _TTL:
+        return hit[1]
     try:
         d = requests.get(f"{_DART}/fnlttSinglAcntAll.json",
                          params={"crtfc_key": _dart_key(), "corp_code": corp, "bsns_year": str(year),
                                  "reprt_code": rc, "fs_div": fs}, timeout=30).json()
     except Exception:
-        return None
-    if d.get("status") != "000":
-        return None
-    for it in d.get("list", []):
-        if it.get("sj_div") not in ("IS", "CIS"):        # 손익계산서 또는 포괄손익계산서
-            continue
-        aid = it.get("account_id") or ""
-        nm = it.get("account_nm") or ""
-        # 표준 계정ID(BasicEPS) 또는 계정명('기본주당이익'). 우선주는 제외(보통주 기준).
-        is_basic = ("BasicEarningsLossPerShare" in aid) or ("기본주당이익" in nm)
-        if not is_basic or "우선주" in nm:
-            continue
-        v = (it.get("thstrm_amount") or "").replace(",", "").strip()
-        try:
-            return float(v)
-        except ValueError:
-            continue
-    return None
+        return {}
+    out = {}
+    if d.get("status") == "000":
+        def amt(it):
+            v = (it.get("thstrm_amount") or "").replace(",", "").strip()
+            try:
+                return float(v)
+            except ValueError:
+                return None
+        for it in d.get("list", []):
+            if it.get("sj_div") not in ("IS", "CIS"):        # 손익계산서 또는 포괄손익계산서
+                continue
+            aid = it.get("account_id") or ""
+            nm = (it.get("account_nm") or "").replace(" ", "")
+            # 표준 계정ID(BasicEPS) 또는 계정명('기본주당이익'). 우선주는 제외(보통주 기준).
+            if "eps" not in out and (("BasicEarningsLossPerShare" in aid) or ("기본주당이익" in nm)) and "우선주" not in nm:
+                v = amt(it)
+                if v is not None:
+                    out["eps"] = v
+            if "rev" not in out and (aid in ("ifrs-full_Revenue", "ifrs_Revenue")
+                                     or nm in ("매출액", "수익(매출액)", "매출", "영업수익", "매출및지분법손익")):
+                v = amt(it)
+                if v is not None and v > 0:
+                    out["rev"] = v
+    _DART_VALS[k] = (time.time(), out)
+    return out
+
+
+def _dart_eps(corp, year, rc, fs):
+    """해당 연도·보고서의 기본주당이익(원). 없으면 None."""
+    return _dart_vals(corp, year, rc, fs).get("eps")
 
 
 def _kr_quarterly_eps(corp):
@@ -304,4 +324,242 @@ def per_history_kr(ticker):
     out = {"ticker": stock6, "series": ser, "latest": ser[-1]["per"], "asof": ser[-1]["d"],
            "source": "DART(EPS)+Yahoo(가격)", "years": round((tq[-1] - tq[0]).days / 365.25, 1)}
     _KRCACHE[stock6] = (now, out)
+    return out
+
+
+# ─────────────────────────── 과거 PSR (주가 ÷ 주당매출) ───────────────────────────
+# PSR = 주가 × 주식수 ÷ TTM 매출. 주식수는 공시 당시 기준이라 이후 분할 계수를 곱해
+# 야후 분할조정 주가와 맞춘다(PER의 EPS 보정과 같은 원리).
+_PSR_CACHE = {}
+_REV_TAGS = ("RevenueFromContractWithCustomerExcludingAssessedTax", "Revenues", "SalesRevenueNet",
+             "RevenueFromContractWithCustomerIncludingAssessedTax", "SalesRevenueGoodsNet")
+_SHARE_TAGS = ("WeightedAverageNumberOfDilutedSharesOutstanding", "WeightedAverageNumberOfSharesOutstandingBasic")
+
+
+_FACTS = {}
+
+
+def _concept(cik, tag):
+    """SEC companyfacts(회사 전체 XBRL 1회 요청)에서 태그 행 목록. 필요한 태그만 캐시.
+    (companyconcept 개별 요청은 회사에 따라 빈 값이 오는 경우가 있어 companyfacts 사용)"""
+    hit = _FACTS.get(cik)
+    if not hit or time.time() - hit[0] > _TTL:
+        g = {}
+        try:
+            r = requests.get(f"https://data.sec.gov/api/xbrl/companyfacts/CIK{cik}.json",
+                             headers=_UA, timeout=30)
+            if r.status_code == 200:
+                allg = r.json().get("facts", {}).get("us-gaap", {})
+                for t in _REV_TAGS + _SHARE_TAGS:
+                    if t in allg:
+                        g[t] = list(allg[t]["units"].values())[0]
+        except Exception:
+            pass
+        hit = (time.time(), g)
+        _FACTS[cik] = hit
+    return hit[1].get(tag, [])
+
+
+def _quarterize(rows, flow=True):
+    """XBRL 행 → {분기말(date): 값}. 최초 제출값. flow=True면 Q4 = 연간 − (Q1~Q3),
+    False(가중평균 주식수)면 Q4가 없을 때 연간값으로 대체."""
+    q, ann = {}, {}
+    for x in rows:
+        st, e, v, f = x.get("start"), x.get("end"), x.get("val"), x.get("filed")
+        if not (st and e and v is not None):
+            continue
+        d = _days(st, e)
+        if 80 <= d <= 100:
+            if e not in q or f < q[e][1]:
+                q[e] = (v, f)
+        elif 350 <= d <= 385:
+            if e not in ann or f < ann[e][1]:
+                ann[e] = (v, f)
+
+    def near(target):
+        return next((e for e in q if abs((dt.date.fromisoformat(e) - target).days) <= 20), None)
+
+    for e, (A, _) in ann.items():
+        if e in q:
+            continue
+        if not flow:
+            q[e] = (A, "a")
+            continue
+        ed = dt.date.fromisoformat(e)
+        a = near(ed - dt.timedelta(91)); b = near(ed - dt.timedelta(182)); c = near(ed - dt.timedelta(273))
+        if a and b and c:
+            q[e] = (A - (q[a][0] + q[b][0] + q[c][0]), "d")
+    return {dt.date.fromisoformat(e): v for e, (v, _) in q.items()}
+
+
+def _ttm(q, max_span):
+    ends = sorted(q)
+    out = {}
+    for i in range(3, len(ends)):
+        seg = ends[i - 3:i + 1]
+        if (seg[-1] - seg[0]).days <= max_span:
+            out[seg[-1]] = sum(q[x] for x in seg)
+    return out
+
+
+def _psr_series(ttm_rev, shares, px, splits):
+    """주간 PSR 시계열. shares: {분기말: 주식수(공시 당시)}."""
+    tq = sorted(ttm_rev)
+    sq = sorted(shares)
+    ser = []
+    for pdate, price in px:
+        i = bisect.bisect_right(tq, pdate) - 1
+        if i < 0:
+            continue
+        qend = tq[i]
+        j = bisect.bisect_right(sq, qend + dt.timedelta(days=20)) - 1   # 그 분기(또는 직전)의 주식수
+        if j < 0 or (qend - sq[j]).days > 200:
+            continue
+        f = 1.0
+        for sd, ratio in splits:
+            if sd > sq[j]:
+                f *= ratio
+        rev = ttm_rev[qend]
+        if not rev or rev <= 0:
+            continue
+        psr = price * shares[sq[j]] * f / rev
+        if 0.02 <= psr <= 3000:
+            ser.append({"d": pdate.strftime("%Y-%m-%d"), "psr": round(psr, 3)})
+    return ser
+
+
+def psr_history(ticker):
+    """개별주 주간 과거 PSR. 반환 {ticker, series:[{d,psr}], latest, asof, source, years} 또는 None."""
+    if str(ticker).split(".")[0].isdigit():
+        return psr_history_kr(ticker)
+    sym = str(ticker).split(".")[0].upper()
+    hit = _PSR_CACHE.get(sym)
+    if hit and time.time() - hit[0] < _TTL:
+        return hit[1]
+    cik = _cik(sym)
+    if not cik:
+        return None
+    rev = {}
+    for tag in _REV_TAGS:                      # 회사마다·연도마다 매출 태그가 바뀜 → 합침(앞 태그 우선)
+        for k, v in _quarterize(_concept(cik, tag)).items():
+            if k not in rev and v and v > 0:
+                rev[k] = v
+    shares = {}
+    for tag in _SHARE_TAGS:
+        for k, v in _quarterize(_concept(cik, tag), flow=False).items():
+            if k not in shares and v and v > 0:
+                shares[k] = v
+        if len(shares) >= 8:
+            break
+    ttm = _ttm(rev, 290)
+    if len(ttm) < 4 or not shares:
+        return None
+    try:
+        px, splits = _yahoo_weekly(sym)
+    except Exception:
+        return None
+    ser = _psr_series(ttm, shares, px, splits)
+    if len(ser) < 20:
+        return None
+    tq = sorted(ttm)
+    out = {"ticker": sym, "series": ser, "latest": ser[-1]["psr"], "asof": ser[-1]["d"],
+           "source": "SEC EDGAR(매출·주식수)+Yahoo(가격)", "years": round((tq[-1] - tq[0]).days / 365.25, 1)}
+    _PSR_CACHE[sym] = (time.time(), out)
+    return out
+
+
+def _dart_shares(corp, year, rc):
+    """보통주 유통주식수(발행 − 자기주식). DART 주식총수 현황."""
+    k = ("SH", corp, year, rc)
+    hit = _DART_VALS.get(k)
+    if hit and time.time() - hit[0] < _TTL:
+        return hit[1]
+    v = None
+    try:
+        d = requests.get(f"{_DART}/stockTotqySttus.json",
+                         params={"crtfc_key": _dart_key(), "corp_code": corp, "bsns_year": str(year),
+                                 "reprt_code": rc}, timeout=30).json()
+        if d.get("status") == "000":
+            rows = d.get("list", [])
+            num = lambda x: float(str(x).replace(",", "")) if x and str(x).replace(",", "").replace(".", "").isdigit() else None
+            row = next((r for r in rows if "보통" in (r.get("se") or "")), None) or \
+                next((r for r in rows if "합계" in (r.get("se") or "")), None)
+            if row:
+                v = num(row.get("distb_stock_co")) or num(row.get("istc_totqy"))
+    except Exception:
+        v = None
+    _DART_VALS[k] = (time.time(), v)
+    return v
+
+
+def psr_history_kr(ticker):
+    """한국 개별주 주간 과거 PSR (DART 분기 매출→TTM, DART 유통주식수, 야후 주가)."""
+    if not _dart_key():
+        return None
+    stock6 = re.sub(r"\D", "", str(ticker))[:6]
+    if len(stock6) != 6:
+        return None
+    hit = _PSR_CACHE.get(stock6)
+    if hit and time.time() - hit[0] < _TTL:
+        return hit[1]
+    corp = _corp_code(stock6)
+    if not corp:
+        return None
+    from concurrent.futures import ThreadPoolExecutor
+    cy = dt.date.today().year
+    years = list(range(2015, cy + 1))
+    rcs = ("11013", "11012", "11014", "11011")
+    tasks = [(y, rc) for y in years for rc in rcs]
+
+    def fetch(t):
+        y, rc = t
+        v = _dart_vals(corp, y, rc, "CFS")
+        if v.get("rev") is None:
+            v = _dart_vals(corp, y, rc, "OFS")
+        return t, v.get("rev"), _dart_shares(corp, y, rc)
+
+    res, shr = {}, {}
+    with ThreadPoolExecutor(max_workers=8) as ex:
+        for t, r, sh in ex.map(fetch, tasks):
+            res[t], shr[t] = r, sh
+    ends = lambda y: {1: dt.date(y, 3, 31), 2: dt.date(y, 6, 30), 3: dt.date(y, 9, 30), 4: dt.date(y, 12, 31)}
+    qrev, shares = {}, {}
+    for y in years:
+        c1, c2, c3, A = (res.get((y, rc)) for rc in rcs)
+        E = ends(y)
+        for qi, rc in zip((1, 2, 3, 4), rcs):
+            if shr.get((y, rc)):
+                shares[E[qi]] = shr[(y, rc)]
+        if c1 is not None:
+            qrev[E[1]] = c1
+        cumulative = (A is not None and c3 is not None and c3 > 0.55 * A)
+        if cumulative:
+            if c1 is not None and c2 is not None: qrev[E[2]] = c2 - c1
+            if c2 is not None and c3 is not None: qrev[E[3]] = c3 - c2
+            if c3 is not None and A is not None:  qrev[E[4]] = A - c3
+        else:
+            if c2 is not None: qrev[E[2]] = c2
+            if c3 is not None: qrev[E[3]] = c3
+            if None not in (c1, c2, c3, A): qrev[E[4]] = A - (c1 + c2 + c3)
+    qrev = {k: v for k, v in qrev.items() if v and v > 0}
+    ttm = _ttm(qrev, 300)
+    if len(ttm) < 4 or not shares:
+        return None
+    px, splits = [], []
+    for yh in ([str(ticker)] if "." in str(ticker) else [stock6 + ".KS", stock6 + ".KQ"]):
+        try:
+            px, splits = _yahoo_weekly(yh)
+        except Exception:
+            px = []
+        if px:
+            break
+    if not px:
+        return None
+    ser = _psr_series(ttm, shares, px, splits)
+    if len(ser) < 20:
+        return None
+    tq = sorted(ttm)
+    out = {"ticker": stock6, "series": ser, "latest": ser[-1]["psr"], "asof": ser[-1]["d"],
+           "source": "DART(매출·주식수)+Yahoo(가격)", "years": round((tq[-1] - tq[0]).days / 365.25, 1)}
+    _PSR_CACHE[stock6] = (time.time(), out)
     return out
