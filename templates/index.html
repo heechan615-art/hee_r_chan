@@ -1008,7 +1008,9 @@
       <button class="tab-btn active" data-tab="value">📊 기업 밸류에이션</button>
       <button class="tab-btn" data-tab="findiag">🧾 기업 재무제표 분석</button>
       <button class="tab-btn" data-tab="deep">🔬 기업 심층 분석</button>
+      <button class="tab-btn" data-tab="chart">🕯️ 차트 분석</button>
       <button class="tab-btn" data-tab="related">🧭 관련주 찾기</button>
+      <button class="tab-btn" data-tab="dividend">💰 배당주 분석</button>
       <button class="tab-btn" data-tab="snp">📈 S&amp;P500 밸류에이션</button>
       <button class="tab-btn" data-tab="briefing" data-mkt="KR">🇰🇷 한국 브리핑</button>
       <button class="tab-btn" data-tab="briefing" data-mkt="US">🇺🇸 미국 브리핑</button>
@@ -1103,6 +1105,20 @@
     <div id="rel-loading" style="display:none"><div class="spin"></div>관련 기업을 찾는 중… (10~20초)</div>
     <div id="rel-error"></div>
     <div id="related-body"></div>
+  </div>
+
+  <!-- 차트 분석 탭: 별도 사이트(히르찬 차트)를 화면 안에 띄움. 높이는 그쪽이 알려 주는 값으로 맞춤 -->
+  <div id="tab-chart" style="display:none">
+    <div class="sub">이동평균선 · 볼린저밴드 · 거래량 · OBV · 볼륨델타 · 매물대 · 자동 추세선과 종합 해석 · 국내 + 미국</div>
+    <iframe id="chart-frame" title="차트 분석" loading="lazy"
+      style="width:100%;height:1400px;border:0;display:block;background:transparent"></iframe>
+  </div>
+
+  <!-- 배당주 분석 탭: 별도 사이트(배당수익률 밴드)를 화면 안에 띄움. 높이는 그쪽이 알려 주는 값으로 맞춤 -->
+  <div id="tab-dividend" style="display:none">
+    <div class="sub">배당 요약 · 배당수익률 밴드 · 재무 체크리스트를 한 화면에 · 국내 + 미국</div>
+    <iframe id="dividend-frame" title="배당주 분석" loading="lazy"
+      style="width:100%;height:900px;border:0;display:block;background:transparent"></iframe>
   </div>
 
   <!-- S&P500 밸류에이션 대시보드 탭 -->
@@ -1414,6 +1430,28 @@ document.querySelectorAll(".tab-arrow").forEach(b =>
 document.querySelectorAll(".sidebar .tab-btn").forEach(b =>
   b.addEventListener("click", () => setTimeout(centerActiveTab, 40)));
 
+// ---------- 배당주 분석(별도 사이트) iframe 높이 맞춤 ----------
+window.addEventListener("message", (e) => {
+  if(!/^(https:\/\/dividend-band\.onrender\.com|http:\/\/127\.0\.0\.1:8090)$/.test(e.origin)) return;
+  const d = e.data || {};
+  if(d.type === "dividend-band:height" && d.height > 200) $("#dividend-frame").style.height = d.height + "px";
+});
+// 차트 분석(별도 사이트 히르찬 차트) iframe 높이 맞춤
+window.addEventListener("message", (e) => {
+  if(!/^(https:\/\/hee-chart\.onrender\.com|http:\/\/127\.0\.0\.1:8100)$/.test(e.origin)) return;
+  const d = e.data || {};
+  if(d.type === "hee-chart:height" && d.height > 200) $("#chart-frame").style.height = d.height + "px";
+});
+
+// 주소 끝 #dividend(또는 #dividend=종목)로 들어오면 배당주 분석 탭을 바로 연다 — 탭 버튼 연결 뒤에 실행
+window.addEventListener("load", () => {
+  const hm = location.hash.match(/^#(dividend|chart)/);   // #dividend(=KO), #chart(=삼성전자)
+  if(hm){
+    const b = document.querySelector('.tab-btn[data-tab="' + hm[1] + '"]');
+    if(b) b.click();
+  }
+});
+
 // ---------- 탭 전환 ----------
 let BRIEF_MKT = "KR";   // 현재 브리핑 시장
 let BRIEF_DATA = null;  // 현재 표시 중인 브리핑 원본(카톡 복사용)
@@ -1426,6 +1464,21 @@ document.querySelectorAll(".tab-btn").forEach(b => b.onclick = () => {
   $("#tab-snp").style.display = t === "snp" ? "" : "none";
   $("#tab-deep").style.display = t === "deep" ? "" : "none";
   $("#tab-related").style.display = t === "related" ? "" : "none";
+  $("#tab-dividend").style.display = t === "dividend" ? "" : "none";
+  $("#tab-chart").style.display = t === "chart" ? "" : "none";
+  if(t === "chart" && !$("#chart-frame").src){   // 처음 열 때 한 번만 로드
+    const local = /^(127\.0\.0\.1|localhost)$/.test(location.hostname);
+    const m = location.hash.match(/^#chart=([^&]+)/);   // #chart=삼성전자 처럼 종목 지정 가능
+    const q = m ? decodeURIComponent(m[1]) : (($("#q") && $("#q").value) || "").trim();
+    $("#chart-frame").src = (local ? "http://127.0.0.1:8100" : "https://hee-chart.onrender.com")
+      + "/?embed=1" + (q ? "&q=" + encodeURIComponent(q) : "");
+  }
+  if(t === "dividend" && !$("#dividend-frame").src){   // 처음 열 때 한 번만 로드
+    const local = /^(127\.0\.0\.1|localhost)$/.test(location.hostname);
+    const m = location.hash.match(/^#dividend=([^&]+)/);   // #dividend=KO 처럼 종목까지 지정 가능
+    $("#dividend-frame").src = (local ? "http://127.0.0.1:8090" : "https://dividend-band.onrender.com")
+      + "/?embed=1" + (m ? "&q=" + m[1] : "");
+  }
   if(t === "snp" && !$("#tab-snp").dataset.loaded){   // 처음 열 때 한 번만 로드
     $("#tab-snp").dataset.loaded = "1";
     loadSnp();
