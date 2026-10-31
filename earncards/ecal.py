@@ -67,7 +67,9 @@ def _ko_us(syms: list[str]) -> dict:
     global _KO_US
     path = CACHE / "ko_names_us.json"
     if _KO_US is None:
-        _KO_US = json.loads(path.read_text()) if path.exists() else {}
+        # 캐시가 없으면(새 서버) config의 기본 목록에서 시작 — 무료 서버가 잠들었다 깨면 캐시가 지워져서
+        seed = ROOT / "config" / "ko_names_us.json"
+        _KO_US = json.loads(path.read_text()) if path.exists() else (json.loads(seed.read_text()) if seed.exists() else {})
     now = time.time()
     todo = [s for s in set(syms) if s and (s not in _KO_US or (not _KO_US[s][0] and now - _KO_US[s][1] > 30 * 86400))]
 
