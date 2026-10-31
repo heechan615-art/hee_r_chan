@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>{{ name }} {{ qtitle }} 어닝콜 핵심</title>
+<style>
+{{ css | safe }}
+.bubbles { flex: 1; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 26px 22px; padding-bottom: 10px; }
+.bub { position: relative; background: var(--paper); border: 3px solid var(--ink); border-radius: 22px;
+  box-shadow: 5px 5px 0 var(--ink); padding: 18px 22px 16px; display: flex; flex-direction: column; gap: 6px; overflow: visible; }
+/* 말풍선 꼬리: 왼쪽 칸은 왼쪽 아래, 오른쪽 칸은 오른쪽 아래 */
+.bub::after { content: ""; position: absolute; bottom: -16px; width: 26px; height: 26px; background: var(--paper);
+  border-right: 3px solid var(--ink); border-bottom: 3px solid var(--ink); }
+.bub:nth-child(odd)::after { left: 42px; transform: skewX(30deg) rotate(45deg); }
+.bub:nth-child(even)::after { right: 42px; transform: skewX(-30deg) rotate(45deg); }
+.bub.bad { border-color: var(--red); box-shadow: 5px 5px 0 var(--red); }
+.bub.bad::after { border-color: var(--red); }
+.top { display: flex; align-items: center; gap: 12px; }
+.badge { flex: none; width: 40px; height: 40px; border-radius: 50%; border: 3px solid var(--ink); display: grid;
+  place-items: center; font-size: 23px; font-weight: 900; color: #fff; }
+.badge.ok { background: #2B8A3E; } .badge.bad { background: var(--red); } .badge.mid { background: #ADB5BD; font-size: 30px; }
+.num { font-size: 54px; font-weight: 900; color: var(--red); letter-spacing: -2px; line-height: 1.05; margin-top: 4px; white-space: nowrap; }
+.bub.mid .num { color: var(--ink); }
+.pt-title { font-size: 26px; font-weight: 900; letter-spacing: -0.8px; line-height: 1.2; }
+.bub.bad .pt-title { color: var(--red); }
+.det { font-size: 19px; font-weight: 600; color: #3F3A34; line-height: 1.45; letter-spacing: -0.3px; }
+.q { margin-top: auto; background: #F4EEE2; border-left: 6px solid var(--ink); border-radius: 6px 10px 10px 6px; padding: 10px 12px; }
+.q .ko { font-size: 19px; font-weight: 800; line-height: 1.4; letter-spacing: -0.4px; }
+.q .en { font-size: 13.5px; font-weight: 600; color: var(--muted); margin-top: 4px; line-height: 1.35; font-style: italic; }
+.q .who { font-size: 13px; font-weight: 800; color: var(--muted); margin-top: 4px; }
+.nq { margin-top: auto; font-size: 14px; font-weight: 700; color: var(--muted); }
+.oneliner { flex: none; display: flex; align-items: center; justify-content: center; gap: 14px; }
+.oneliner .lb { font-size: 18px; font-weight: 900; background: var(--ink); color: #fff; padding: 6px 12px; border-radius: 8px; }
+.oneliner mark { font-size: 32px; font-weight: 900; letter-spacing: -1px; background: linear-gradient(transparent 50%, var(--yellow) 50%); padding: 0 6px; color: var(--ink); white-space: nowrap; }
+</style>
+</head>
+<body>
+<div class="card">
+  <header>
+    <div class="hgroup">
+      <div class="co chk" style="color: {{ color }}">{{ name }}</div>
+      <div class="ttl chk"><em>{{ qtitle }}</em> 어닝콜 핵심</div>
+    </div>
+    <div class="chips">
+      <span class="chip">{{ ticker }}</span>
+      {% if status %}<span class="chip warn">{{ status }}</span>{% endif %}
+      <span class="chip soft">{{ kind }} 기준</span>
+    </div>
+  </header>
+
+  <main class="bubbles">
+    {% for p in points %}
+    <section class="bub panel {{ p.cls }}">
+      <div class="top"><div class="badge {{ p.cls }}">{{ p.mark }}</div><div class="pt-title chk">{{ p.title }}</div></div>
+      {% if p.number %}<div class="num chk">{{ p.number }}</div>{% endif %}
+      <div class="det">{{ p.detail }}</div>
+      {% if p.quote %}
+      <div class="q">
+        <div class="ko">“{{ p.quote_ko or p.quote }}”</div>
+        {% if p.quote_ko %}<div class="en">"{{ p.quote }}"</div>{% endif %}
+        <div class="who">— {{ p.speaker }}</div>
+      </div>
+      {% else %}
+      <div class="nq">💡 경영진 발언이 아닌, 공개된 숫자로 본 해석이에요</div>
+      {% endif %}
+    </section>
+    {% endfor %}
+  </main>
+
+  {% if one_liner %}<div class="oneliner"><span class="lb">한 줄 요약</span><mark class="chk">{{ one_liner }}</mark></div>{% endif %}
+
+  <footer>
+    <div class="src chk">출처: {{ source }}</div>
+    <div class="brand">[사이클 투자 히르찬]</div>
+    <div class="disc">투자 권유가 아닌 정보 제공 목적입니다{% if translated %} · 영문 발언은 히르찬 번역, 아래 작은 글씨가 원문{% endif %}</div>
+  </footer>
+</div>
+</body>
+</html>

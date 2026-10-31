@@ -1047,6 +1047,8 @@ def analyze_data(ticker):
                          "이름 철자를 확인하세요 (상장폐지/거래정지 종목일 수도 있습니다).")
     if kr_code6:
         ticker = kr_code6  # 이후 네이버 조회 등은 6자리 코드 기준
+    else:
+        ticker = yf_ticker  # 한글로 친 미국 종목('인텔')도 이후엔 티커(INTC) 기준
     tk = yfsess.ticker(yf_ticker)
     try:
         info = tk.info

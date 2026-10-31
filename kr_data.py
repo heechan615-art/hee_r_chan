@@ -61,8 +61,20 @@ def resolve_query(q):
                  and re.fullmatch(r"\d{6}", it.get("code", ""))
                  and it.get("typeCode") in ("KOSPI", "KOSDAQ", "KONEX")]
         exact = [it for it in cands if (it.get("name") or "").upper() == q.upper()]
+        # 한글 미국 종목명('인텔'·'테슬라') → 미국 티커. 네이버 미국 코드는 'BRK B' 꼴이라 야후 'BRK-B'로
+        us = [it for it in items if it.get("nationCode") == "USA"
+              and re.fullmatch(r"[A-Z]{1,5}([ .][A-Z])?", it.get("code") or "")]
+        us_exact = [it for it in us if re.sub(r"\s*(Class [A-Z]|보통주)$", "", it.get("name") or "").upper() == q.upper()]
         # 영문 티커형 입력은 '정확 일치'일 때만 국내로 인정(NVDA 등 미국 티커 오인 방지)
-        pick = exact[0] if exact else (None if ticker_like else (cands[0] if cands else None))
+        pick = exact[0] if exact else None
+        if not pick and not ticker_like:
+            if us_exact:          # '인텔' → 인텔(INTC) (국내 '인텔리빅스'보다 우선)
+                pick = us_exact[0]
+            else:                 # 정확 일치가 없으면 네이버가 앞에 놓은 국내·미국 종목
+                pick = next((it for it in items if it in cands or it in us), None)
+        if pick and pick in us:
+            out = (re.sub(r"[ .]", "-", pick["code"]), None, None)   # 미국: 티커를 친 것과 똑같이
+            pick = None
         if pick:
             code = pick["code"]
             suf = ".KQ" if pick["typeCode"] == "KOSDAQ" else ".KS"

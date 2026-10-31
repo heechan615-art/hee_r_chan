@@ -1009,11 +1009,15 @@
       <button class="tab-btn" data-tab="findiag">🧾 기업 재무제표 분석</button>
       <button class="tab-btn" data-tab="deep">🔬 기업 심층 분석</button>
       <button class="tab-btn" data-tab="chart">🕯️ 차트 분석</button>
+      <button class="tab-btn" data-tab="cards">🗂️ 실적 카드</button>
       <button class="tab-btn" data-tab="related">🧭 관련주 찾기</button>
       <button class="tab-btn" data-tab="dividend">💰 배당주 분석</button>
       <button class="tab-btn" data-tab="snp">📈 S&amp;P500 밸류에이션</button>
       <button class="tab-btn" data-tab="briefing" data-mkt="KR">🇰🇷 한국 브리핑</button>
       <button class="tab-btn" data-tab="briefing" data-mkt="US">🇺🇸 미국 브리핑</button>
+      <button class="tab-btn" data-tab="econ">📑 경제지표 해석</button>
+      <!-- 내 계좌 비중은 항상 맨 아래(사용자 규칙: 새 탭은 이 위에 추가) -->
+      <button class="tab-btn" data-tab="pf">💼 내 계좌 비중</button>
       <button type="button" class="tab-arrow tab-arrow-r" data-step="1" aria-label="다음 탭">»</button>
     </nav>
     <div class="authbar" id="authbar"></div>
@@ -1029,7 +1033,7 @@
     <button id="btn" type="submit">분석</button>
   </form>
   <div class="hint">
-    국내는 <b>회사 이름</b>(삼성전자, 카카오게임즈 — 코스피/코스닥 자동 인식), 미국은 <b>티커</b>(NVDA, AAPL).
+    국내는 <b>회사 이름</b>(삼성전자, 카카오게임즈 — 코스피/코스닥 자동 인식), 미국은 <b>티커나 한글 이름</b>(NVDA, 인텔, 테슬라).
     <div class="chips">
       <span class="chip" data-t="삼성전자">삼성전자</span>
       <span class="chip" data-t="SK하이닉스">SK하이닉스</span>
@@ -1112,6 +1116,164 @@
     <div class="sub">이동평균선 · 볼린저밴드 · 거래량 · OBV · 볼륨델타 · 매물대 · 자동 추세선과 종합 해석 · 국내 + 미국</div>
     <iframe id="chart-frame" title="차트 분석" loading="lazy"
       style="width:100%;height:1400px;border:0;display:block;background:transparent"></iframe>
+  </div>
+
+  <!-- 경제지표 해석 탭(보기 전용): 히르찬이 맥의 ~/projects/경제지표 사이트에 발표 자료를 올리면 Claude가 해석하고,
+       export_valueai.py가 static/econ/bundle.json을 만든다. 코드: static/econ.js · econ.css -->
+  <div id="tab-econ" style="display:none">
+    <div class="sub">미국·한국·중국·유럽 경제지표 발표를 히르찬 방식으로 해석 · 추세 그래프 · 카톡 브리핑 요약</div>
+    <link rel="stylesheet" href="/static/econ.css?v=2">
+    <div id="econ-root"></div>
+  </div>
+
+  <!-- 내 계좌 비중 탭: 계좌별 안전/위험자산 비중·종목 비중 원형 그래프, 평균단가·수익률, 배당·실적·이슈 일정.
+       계좌 정보는 브라우저(localStorage)에만 저장. 코드: static/portfolio.js · portfolio.css, 서버: portfolio.py -->
+  <div id="tab-pf" style="display:none">
+    <div class="sub">계좌별 안전자산 · 위험자산 비중 · 종목 비중 · 평균단가와 수익률 · 배당 · 실적 · 이슈 일정을 한 화면에</div>
+    <link rel="stylesheet" href="/static/portfolio.css?v=15">
+    <div id="pf-root"></div>
+  </div>
+
+  <!-- 실적 카드 탭: 검색한 기업의 실적 카드(서버가 HTML을 만들고 브라우저가 그림)·해석.
+       히르찬이 미리 정리한 기업은 static/earnings/ 의 완성 PNG 4장(이슈·어닝콜 포함). 코드 원본 ~/projects/earnings-cards -->
+  <div id="tab-cards" style="display:none">
+    <style>
+      .ec-sub{color:var(--muted);font-size:14px;margin:-6px 0 14px}
+      .ec-search{display:flex;gap:8px;margin-bottom:10px}
+      .ec-search input{flex:1;min-width:0;border:1px solid var(--line);border-radius:12px;padding:12px 14px;font:inherit;font-size:15px;background:var(--card)}
+      .ec-search input:focus{outline:2px solid rgba(176,136,58,.35);border-color:var(--accent)}
+      .ec-quick{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:16px;font-size:12.5px;color:var(--muted)}
+      .ec-quick button{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:5px 11px;font:inherit;font-size:12.5px;font-weight:700;cursor:pointer;color:var(--text)}
+      .ec-quick button.pin{border-color:var(--accent);background:var(--brand-soft)}
+      .ec-banner{border-radius:14px;padding:14px 16px;margin-bottom:14px;border:1px solid #f0d58a;background:#fff8e1}
+      .ec-banner.released{border-color:#b9d4ff;background:#eef5ff}
+      .ec-banner b{display:block;font-size:16px;font-weight:900;margin-bottom:2px}
+      .ec-banner p{margin:0;font-size:13.5px;color:#4a4f58}
+      .ec-banner a{font-size:13px;font-weight:800;color:var(--down)}
+      .ec-qtabs{display:flex;gap:6px;margin-bottom:12px}
+      .ec-qtabs button{border:1px solid var(--line);background:var(--card);border-radius:10px;padding:8px 14px;font:inherit;font-size:14px;font-weight:800;cursor:pointer;color:var(--muted)}
+      .ec-qtabs button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+      .ec-qtabs button small{font-weight:600;opacity:.75;margin-left:4px}
+      .ec-head{background:var(--card);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);
+        padding:18px 20px;margin-bottom:14px;display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;align-items:flex-end}
+      .ec-co{font-size:13.5px;font-weight:800}
+      .ec-hl{font-size:24px;font-weight:900;letter-spacing:-.02em;line-height:1.3;margin:2px 0 4px}
+      .ec-ol{font-size:14.5px;color:#3d4450}
+      .ec-ol mark{background:linear-gradient(transparent 55%,#ffe58a 55%);padding:0 2px;color:inherit;font-weight:700}
+      .ec-facts{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+      .ec-facts span{font-size:12.5px;font-weight:700;background:var(--panel);border-radius:999px;padding:3px 10px}
+      .ec-tools{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+      .ec-seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--card)}
+      .ec-seg button{border:0;background:transparent;padding:8px 11px;font:inherit;font-size:13px;font-weight:700;color:var(--muted);cursor:pointer}
+      .ec-seg button.on{background:var(--ink);color:#fff}
+      .ec-seg button:disabled{opacity:.35;cursor:default}
+      .ec-btn{border:0;border-radius:10px;padding:9px 14px;font:inherit;font-size:13.5px;font-weight:800;cursor:pointer;
+        background:var(--accent);color:#fff;text-decoration:none;display:inline-flex;align-items:center;gap:6px}
+      .ec-btn.ghost{background:var(--card);color:var(--text);border:1px solid var(--line)}
+      .ec-btn:disabled{opacity:.6;cursor:wait}
+      .ec-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+      .ec-fig{margin:0;background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);overflow:hidden}
+      .ec-fig img{display:block;width:100%;height:auto;cursor:zoom-in;background:#fff6e3}
+      .ec-live{position:relative;width:100%;overflow:hidden;background:#fff6e3;cursor:zoom-in}
+      .ec-live iframe{position:absolute;left:0;top:0;border:0;transform-origin:0 0;pointer-events:none}
+      .ec-fig figcaption{display:flex;justify-content:space-between;align-items:center;padding:9px 12px;font-size:13.5px;font-weight:800}
+      .ec-fig figcaption a,.ec-fig figcaption button{font:inherit;font-size:12.5px;font-weight:700;color:var(--accent-d);text-decoration:none;border:0;background:none;cursor:pointer;padding:0}
+      .ec-cal{background:var(--card);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);padding:14px 16px;margin-bottom:18px}
+      .ec-cal-hd{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:10px}
+      .ec-cal-hd>b{font-size:17px;font-weight:900;margin-right:auto}
+      .ec-cal-nav{display:flex;align-items:center;gap:6px;font-size:13.5px;font-weight:800}
+      .ec-cal-nav button{border:1px solid var(--line);background:var(--card);color:var(--text);border-radius:8px;min-width:30px;height:30px;font:inherit;font-size:16px;font-weight:800;cursor:pointer;line-height:1}
+      .ec-cal-nav button.txt{font-size:12.5px;padding:0 9px}
+      .ec-cal-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}
+      .ec-day{border:1px solid var(--line-2);border-radius:12px;background:var(--panel);padding:9px 9px 8px;min-height:120px}
+      .ec-day.today{border-color:var(--accent);background:var(--brand-soft);box-shadow:0 0 0 2px rgba(176,136,58,.18)}
+      .ec-day h5{margin:0 0 6px;font-size:13.5px;font-weight:900;display:flex;justify-content:space-between;align-items:center}
+      .ec-day h5 small{font-size:11px;font-weight:800;color:#fff;background:var(--accent);border-radius:999px;padding:1px 7px}
+      .ec-day .mk{font-size:11px;font-weight:800;color:var(--muted);margin:6px 0 3px}
+      .ec-co-i{display:flex;justify-content:space-between;gap:6px;width:100%;border:0;background:var(--card);border-radius:7px;padding:5px 7px;margin-bottom:3px;
+        font:inherit;font-size:12.5px;font-weight:750;text-align:left;cursor:pointer;color:var(--text)}
+      .ec-co-i:hover{outline:1px solid var(--accent)}
+      .ec-co-i span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+      .ec-co-i em{flex:none;font-style:normal;font-size:11px;font-weight:700;color:var(--muted)}
+      .ec-co-i.done{opacity:.62} .ec-co-i.done span::before{content:"✓ ";color:var(--good)}
+      .ec-day .more{border:0;background:none;font:inherit;font-size:11.5px;font-weight:800;color:var(--accent-d);cursor:pointer;padding:2px 0}
+      .ec-day .none{font-size:12px;color:var(--muted)}
+      .ec-cal-note{font-size:11.5px;color:var(--muted);margin-top:9px;line-height:1.55}
+      .ec-past{grid-column:1/-1;border:1px dashed var(--line);background:var(--card);border-radius:10px;padding:8px;font:inherit;font-size:13px;font-weight:800;color:var(--muted);cursor:pointer;display:none}
+      @media(max-width:760px){.ec-cal-grid{grid-template-columns:1fr}.ec-day{min-height:0}
+        .ec-cal-grid:not(.showpast) .ec-day.past{display:none}.ec-past{display:block}}
+      .ec-make{grid-column:1/-1;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;
+        background:linear-gradient(100deg,#fff8e1,#f6efda);border:1px solid #f0d58a;border-radius:14px;padding:14px 16px}
+      .ec-make b{display:block;font-size:15.5px;font-weight:900}
+      .ec-make span{font-size:13px;color:#5a5048}
+      .ec-spin{display:inline-block;width:14px;height:14px;margin-right:8px;vertical-align:-2px;border:2.5px solid #e6dccd;border-top-color:#b8862b;border-radius:50%;animation:ecspin .8s linear infinite}
+      @keyframes ecspin{to{transform:rotate(360deg)}}
+      .ec-more{grid-column:1/-1;font-size:12.5px;color:var(--muted);background:var(--panel);border-radius:10px;padding:8px 12px}
+      .ec-int{background:var(--card);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);padding:20px 22px;margin-top:18px}
+      .ec-int h3{margin:0 0 4px;font-size:19px;font-weight:900}
+      .ec-int .hd{font-size:14.5px;color:#3d4450;margin-bottom:12px}
+      .ec-int .hd mark{background:linear-gradient(transparent 55%,#ffe58a 55%);color:inherit;font-weight:800;padding:0 2px}
+      .ec-sec{display:flex;gap:12px;padding:12px 0;border-top:1px solid var(--line-2)}
+      .ec-sec .ic{flex:none;width:34px;height:34px;border-radius:10px;display:grid;place-items:center;font-size:18px;background:var(--panel)}
+      .ec-sec.pos .ic{background:#e8f6ee} .ec-sec.neg .ic{background:#fdecec}
+      .ec-sec b{display:block;font-size:14px;font-weight:900;margin-bottom:2px}
+      .ec-sec p{margin:0;font-size:14.5px;line-height:1.65;color:#2b3038}
+      .ec-sec.pos b{color:var(--good)} .ec-sec.neg b{color:var(--up)}
+      .ec-watch{margin-top:10px;background:var(--brand-soft);border-radius:12px;padding:12px 14px}
+      .ec-watch b{font-size:14px;font-weight:900}
+      .ec-watch ul{margin:6px 0 0;padding-left:18px;font-size:14px;line-height:1.7}
+      .ec-cur{margin-top:14px;border-top:2px dashed var(--line);padding-top:14px}
+      .ec-cur h4{margin:0 0 8px;font-size:15.5px;font-weight:900}
+      .ec-pt{display:flex;gap:10px;padding:7px 0;font-size:14px;line-height:1.6}
+      .ec-pt .tg{flex:none;font-size:12px;font-weight:900;border-radius:6px;padding:1px 7px;height:fit-content;margin-top:2px}
+      .ec-pt .tg.positive{background:#e8f6ee;color:var(--good)} .ec-pt .tg.negative{background:#fdecec;color:var(--up)} .ec-pt .tg.neutral{background:var(--panel);color:var(--muted)}
+      .ec-pt .qt{display:block;color:#5a606b;font-size:13.5px;margin-top:2px}
+      .ec-note{color:var(--muted);font-size:12.5px;margin-top:14px;line-height:1.6}
+      .ec-empty{background:var(--card);border:1px dashed var(--line);border-radius:14px;padding:28px;text-align:center;color:var(--muted)}
+      .ec-lb{position:fixed;inset:0;background:rgba(8,12,20,.88);z-index:200;display:none;align-items:center;justify-content:center;padding:20px}
+      .ec-lb.on{display:flex}
+      .ec-lb img,.ec-lb .box{max-width:min(96vw,1100px);max-height:88vh;border-radius:10px;box-shadow:0 10px 40px rgba(0,0,0,.5)}
+      .ec-lb .box{position:relative;overflow:hidden;background:#fff6e3}
+      .ec-lb .box iframe{position:absolute;left:0;top:0;border:0;transform-origin:0 0}
+      .ec-lb .x,.ec-lb .nv{position:absolute;border:0;background:rgba(255,255,255,.14);color:#fff;font-size:26px;
+        width:48px;height:48px;border-radius:50%;cursor:pointer;z-index:2}
+      .ec-lb .x{top:16px;right:16px}
+      .ec-lb .nv.p{left:16px} .ec-lb .nv.n{right:16px}
+      .ec-lb .cap{position:absolute;bottom:14px;left:0;right:0;text-align:center;color:#fff;font-size:14px;font-weight:700}
+      @media(max-width:760px){.ec-grid{grid-template-columns:1fr}.ec-hl{font-size:20px}.ec-lb .nv{top:auto;bottom:50px}
+        .ec-head{flex-direction:column;align-items:stretch}.ec-head>div:first-child{flex:none}
+        .ec-qtabs button small{display:block;margin:0}}
+    </style>
+    <div class="ec-sub">기업을 검색하면 최근 분기 실적을 카드와 해석으로 한 화면에 · 카드는 한 번에 받기 · 국내 + 미국</div>
+    <div class="ec-cal" id="ec-cal">
+      <div class="ec-cal-hd">
+        <b>📅 실적 발표 달력</b>
+        <div class="ec-cal-nav">
+          <button type="button" data-w="-7" aria-label="지난주">‹</button>
+          <span id="ec-cal-range">이번 주</span>
+          <button type="button" data-w="7" aria-label="다음 주">›</button>
+          <button type="button" data-w="0" class="txt">이번 주</button>
+        </div>
+        <div class="ec-seg" id="ec-cal-mk"><button type="button" data-mk="all" class="on">전체</button><button type="button" data-mk="kr">🇰🇷 국내</button><button type="button" data-mk="us">🇺🇸 미국</button></div>
+      </div>
+      <div class="ec-cal-grid" id="ec-cal-grid"><div class="loading" style="grid-column:1/-1">일정을 불러오는 중…</div></div>
+      <div class="ec-cal-note">🇺🇸 미국은 시가총액 100억 달러 이상, 날짜·장 전/장 후는 미국 동부 기준(장 후 발표는 한국 시간 다음 날 아침) · 출처 Nasdaq
+        · 🇰🇷 국내는 DART 기업설명회(IR) 개최 공시 중 실적을 다루는 행사(예정)와 영업(잠정)실적 공시(✓ 발표됨) · 기업을 누르면 아래에서 실적을 보여 줘요</div>
+    </div>
+
+    <form class="ec-search" id="ec-form" autocomplete="off">
+      <input id="ec-q" placeholder="기업 이름 또는 코드 (예: 삼성전자, 005930, NVDA, 애플)" aria-label="기업 검색">
+      <button class="ec-btn" type="submit">실적 보기</button>
+    </form>
+    <div class="ec-quick" id="ec-quick"></div>
+    <div id="ec-body"><div class="ec-empty">기업을 검색해 주세요. 📌 표시는 히르찬이 어닝콜·이슈까지 정리한 기업이에요.</div></div>
+    <div class="ec-lb" id="ec-lb">
+      <button class="x" type="button" aria-label="닫기">×</button>
+      <button class="nv p" type="button" aria-label="이전">‹</button>
+      <img alt=""><div class="box"></div>
+      <button class="nv n" type="button" aria-label="다음">›</button>
+      <div class="cap"></div>
+    </div>
   </div>
 
   <!-- 배당주 분석 탭: 별도 사이트(배당수익률 밴드)를 화면 안에 띄움. 높이는 그쪽이 알려 주는 값으로 맞춤 -->
@@ -1444,12 +1606,306 @@ window.addEventListener("message", (e) => {
 });
 
 // 주소 끝 #dividend(또는 #dividend=종목)로 들어오면 배당주 분석 탭을 바로 연다 — 탭 버튼 연결 뒤에 실행
+// 단, 새로고침이면 주소 끝 표시(#chart=코카콜라 등)를 지우고 기본 화면(기업 밸류에이션)에서 검색 없이 시작
 window.addEventListener("load", () => {
-  const hm = location.hash.match(/^#(dividend|chart)/);   // #dividend(=KO), #chart(=삼성전자)
+  const nav = (performance.getEntriesByType && performance.getEntriesByType("navigation")[0]) || {};
+  if(nav.type === "reload"){
+    if(location.hash) history.replaceState(null, "", location.pathname + location.search);
+    return;
+  }
+  const hm = location.hash.match(/^#(dividend|chart|cards|econ|pf)/);   // #dividend(=KO), #chart(=삼성전자), #cards(=GOOGL_2026Q3)
   if(hm){
     const b = document.querySelector('.tab-btn[data-tab="' + hm[1] + '"]');
     if(b) b.click();
   }
+});
+
+// ---------- 실적 카드 탭 ----------
+// /api/earnings?q= → 최근 분기·그 전 분기 카드 HTML + 해석 (미발표면 banner)
+// 히르찬이 정리한 묶음(static/earnings/manifest.json)이 같은 분기에 있으면 완성 PNG 4장(이슈·어닝콜 포함)을 보여 줌
+const EC = {man: null, res: null, vi: 0, size: "1080x1080", lb: -1, cards: [], extra: {}, extraBusy: {}, extraErr: {}};
+const EC_LIBS = {h2i: "https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/dist/html-to-image.js",
+                 zip: "https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"};
+function ecEsc(s){ return String(s == null ? "" : s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+function ecLoadScript(src, doc){
+  doc = doc || document;
+  return new Promise((ok, no) => {
+    if(doc.querySelector('script[src="' + src + '"]')) return ok();
+    const sc = doc.createElement("script"); sc.src = src; sc.onload = ok; sc.onerror = no; doc.head.appendChild(sc);
+  });
+}
+async function ecManifest(){
+  if(EC.man) return EC.man;
+  try{ const r = await fetch("/static/earnings/manifest.json?t=" + Date.now()); EC.man = r.ok ? ((await r.json()).items || []) : []; }
+  catch(e){ EC.man = []; }
+  return EC.man;
+}
+// ---- 실적 발표 달력 ----
+const ECAL = {start: null, data: null, mk: "all", open: {}};
+async function ecCalLoad(week){
+  $("#ec-cal-grid").innerHTML = '<div class="loading" style="grid-column:1/-1"><div class="spin"></div>일정을 불러오는 중… (처음엔 5~20초)</div>';
+  try{
+    const r = await fetch("/api/earnings/calendar" + (week ? "?week=" + week : ""));
+    const d = await r.json();
+    if(!r.ok || d.error) throw new Error(d.error || r.status);
+    ECAL.data = d; ECAL.start = d.start; ECAL.open = {}; ecCalRender();
+  }catch(e){ $("#ec-cal-grid").innerHTML = `<div class="none" style="grid-column:1/-1">일정을 불러오지 못했어요 (${ecEsc(e.message)})</div>`; }
+}
+function ecCalRender(){
+  const d = ECAL.data, wd = ["월","화","수","목","금"];
+  const md = s => (+s.slice(5,7)) + "/" + (+s.slice(8,10));
+  $("#ec-cal-range").textContent = md(d.days[0].date) + " ~ " + md(d.days[4].date);
+  const item = (x, mk) => `<button type="button" class="ec-co-i${x.done ? " done" : ""}" data-q="${ecEsc(x.code)}" data-n="${ecEsc(x.name)}" title="${ecEsc(x.name + (x.en && x.en !== x.name ? " (" + x.en + ")" : "") + " · " + x.when + (x.eps_est ? " · 예상 EPS " + x.eps_est : ""))}"><span>${ecEsc(x.name)}</span><em>${ecEsc(mk === "us" ? x.when : x.when.replace("실적 설명 IR(투자자 미팅)", "IR 미팅").replace("잠정실적 공시", "발표").replace("실적발표 IR", "IR").replace("컨퍼런스콜", "콜"))}</em></button>`;
+  const block = (day, mk, list) => {
+    if(!list.length) return "";
+    const k = day.date + mk, lim = ECAL.open[k] ? 999 : 6;
+    return `<div class="mk">${mk === "kr" ? "🇰🇷 국내" : "🇺🇸 미국"} ${list.length}</div>` + list.slice(0, lim).map(x => item(x, mk)).join("")
+      + (list.length > lim ? `<button type="button" class="more" data-k="${k}">+ ${list.length - lim}곳 더</button>`
+         : list.length > 6 ? `<button type="button" class="more" data-k="${k}">접기 ▴</button>` : "");
+  };
+  const pastN = d.days.filter(x => x.date < d.today).length;
+  $("#ec-cal-grid").innerHTML = (pastN && pastN < 5 ? `<button type="button" class="ec-past">${ECAL.showPast ? "지난 날짜 접기 ▴" : `지난 날짜 ${pastN}일 보기 ▾`}</button>` : "") + d.days.map((day, i) => {
+    const kr = ECAL.mk === "us" ? [] : day.kr, us = ECAL.mk === "kr" ? [] : day.us;
+    return `<div class="ec-day${day.date === d.today ? " today" : ""}${day.date < d.today && pastN < 5 ? " past" : ""}"><h5>${md(day.date)} (${wd[i]})${day.date === d.today ? "<small>오늘</small>" : ""}</h5>
+      ${block(day, "kr", kr)}${block(day, "us", us)}${!kr.length && !us.length ? '<div class="none">일정 없음</div>' : ""}</div>`;
+  }).join("");
+  $("#ec-cal-grid").querySelectorAll(".ec-co-i").forEach(b => b.onclick = () => {
+    $("#ec-q").value = b.dataset.n; ecSearch(b.dataset.q);
+    setTimeout(() => $("#ec-form").scrollIntoView({behavior: "smooth", block: "start"}), 50);
+  });
+  $("#ec-cal-grid").querySelectorAll(".more").forEach(b => b.onclick = () => {
+    const k = b.dataset.k, di = [...$("#ec-cal-grid").querySelectorAll(".ec-day")].indexOf(b.closest(".ec-day"));
+    if(ECAL.open[k]) delete ECAL.open[k]; else ECAL.open[k] = 1;
+    ecCalRender();
+    // 접으면 그 날짜 칸이 화면 위로 사라지지 않게 칸 머리로 돌아감
+    const h = $("#ec-cal-grid").querySelectorAll(".ec-day")[di];
+    if(!ECAL.open[k] && h && h.getBoundingClientRect().top < 0) h.scrollIntoView({block: "start", behavior: "smooth"});
+  });
+  const pb = $("#ec-cal-grid").querySelector(".ec-past");
+  if(pb){ if(ECAL.showPast) $("#ec-cal-grid").classList.add("showpast");
+    pb.onclick = () => { ECAL.showPast = !ECAL.showPast; $("#ec-cal-grid").classList.toggle("showpast", ECAL.showPast); pb.textContent = ECAL.showPast ? "지난 날짜 접기 ▴" : `지난 날짜 ${pastN}일 보기 ▾`; }; }
+}
+document.querySelectorAll("#ec-cal .ec-cal-nav button").forEach(b => b.onclick = () => {
+  const step = +b.dataset.w;
+  if(!step) return ecCalLoad(null);
+  const t = new Date(ECAL.start + "T00:00:00"); t.setDate(t.getDate() + step);
+  ecCalLoad(t.getFullYear() + "-" + String(t.getMonth() + 1).padStart(2, "0") + "-" + String(t.getDate()).padStart(2, "0"));
+});
+document.querySelectorAll("#ec-cal-mk button").forEach(b => b.onclick = () => {
+  ECAL.mk = b.dataset.mk; document.querySelectorAll("#ec-cal-mk button").forEach(x => x.classList.toggle("on", x === b));
+  if(ECAL.data) ecCalRender();
+});
+
+async function openEarningsCards(){
+  if($("#ec-quick").dataset.done) return;
+  $("#ec-quick").dataset.done = "1";
+  ecCalLoad(null);
+  const man = await ecManifest();
+  const pins = [...new Map(man.map(b => [b.ticker, b])).values()];
+  const pop = [["삼성전자","005930"],["SK하이닉스","000660"],["엔비디아","NVDA"],["애플","AAPL"],["테슬라","TSLA"]];
+  $("#ec-quick").innerHTML = "바로 보기 " +
+    pins.map(b => `<button type="button" class="pin" data-q="${ecEsc(b.ticker)}">📌 ${ecEsc(b.name)}</button>`).join("") +
+    pop.filter(p => !pins.some(b => b.ticker === p[1])).map(p => `<button type="button" data-q="${p[1]}">${p[0]}</button>`).join("");
+  $("#ec-quick").querySelectorAll("button").forEach(x => x.onclick = () => { $("#ec-q").value = x.textContent.replace("📌 ", ""); ecSearch(x.dataset.q); });
+  const m = location.hash.match(/^#cards=([^&]+)/);
+  if(m){
+    const v = decodeURIComponent(m[1]);
+    const mm = v.match(/^(.+)_(\d{4}Q[1-4])$/);
+    ecSearch(mm ? mm[1] : v, mm ? mm[2] : null);
+  }
+}
+$("#ec-form").onsubmit = e => { e.preventDefault(); const q = $("#ec-q").value.trim(); if(q) ecSearch(q); };
+async function ecSearch(q, wantQ){
+  $("#ec-body").innerHTML = '<div class="loading"><div class="spin"></div>실적을 불러오는 중… (처음 보는 기업은 5~15초)</div>';
+  try{
+    const r = await fetch("/api/earnings?q=" + encodeURIComponent(q));
+    const d = await r.json();
+    if(!r.ok || d.error) throw new Error(d.error || ("오류 " + r.status));
+    EC.res = d;
+    await ecManifest();
+    EC.vi = Math.max(0, d.views.findIndex(v => v.quarter === wantQ));
+    if(!$("#ec-q").value) $("#ec-q").value = d.name;
+    ecRender();
+  }catch(e){
+    $("#ec-body").innerHTML = `<div class="ec-empty">${ecEsc(e.message)}</div>`;
+  }
+}
+function ecCurated(view){ return (EC.man || []).find(b => b.ticker === EC.res.ticker && b.quarter === view.quarter); }
+function ecRender(){
+  const d = EC.res, v = d.views[EC.vi];
+  if(!v){ $("#ec-body").innerHTML = '<div class="ec-empty">보여 줄 실적이 없어요.</div>'; return; }
+  const cur = ecCurated(v);
+  const ext = cur ? null : (EC.extra[d.ticker + "_" + v.quarter] || null);
+  // 카드 목록: 정리된 묶음이 있으면 완성 PNG(크기 선택 가능), 없으면 서버가 만든 카드 HTML (+ 방문자가 만든 이슈·어닝콜)
+  EC.cards = cur ? cur.cards.map(c => ({title: c.title, png: c.sizes, pub: cur.published}))
+                 : [...(ext ? [ext.cards[0]] : []), ...v.cards, ...(ext ? [ext.cards[1]] : [])]
+                     .map(c => ({title: c.title, html: c.html, w: c.w, h: c.h}));
+  const curd = cur ? cur.curated : (ext ? ext.curated : null);
+  const has = sz => EC.cards.some(c => c.png && c.png[sz]);
+  if(!cur || !has(EC.size)) EC.size = "1080x1080";
+  const it = v.interpretation || {};
+  const sizeName = {"1080x1080": "정사각 1080", "1080x1350": "세로 1350", "1920x1080": "강의 1920"};
+  const bn = d.banner;
+  $("#ec-body").innerHTML = `
+    ${bn ? `<div class="ec-banner ${bn.kind}"><b>${bn.kind === "pending" ? "⏳" : "📢"} ${ecEsc(bn.title)}</b><p>${ecEsc(bn.text)}
+      ${bn.link ? ` <a href="${ecEsc(bn.link)}" target="_blank" rel="noopener">${ecEsc(bn.link_text || "공시 보기")} ↗</a>` : ""}</p></div>` : ""}
+    <div class="ec-qtabs">${d.views.map((x, i) => `<button type="button" data-i="${i}" class="${i === EC.vi ? "on" : ""}">${ecEsc(x.label)}<small>${i === 0 ? (bn ? "최근 발표" : "이번 분기") : "그 전 분기"}</small></button>`).join("")}</div>
+    <div class="ec-head">
+      <div style="min-width:0;flex:1">
+        <div class="ec-co" style="color:${ecEsc(d.color)}">${ecEsc(d.name)} (${ecEsc(d.ticker)}) · ${ecEsc(v.label)}${v.status ? " · " + ecEsc(v.status) : ""}</div>
+        <div class="ec-hl">${ecEsc((cur && cur.headline) || (ext && ext.headline) || it.headline || (d.name + " " + v.label + " 실적"))}</div>
+        ${(cur || ext) && (cur || ext).one_liner ? `<div class="ec-ol">한 줄 요약 <mark>${ecEsc((cur || ext).one_liner)}</mark></div>` : ""}
+        ${cur ? `<div class="ec-facts">${(cur.facts || []).map(f => `<span>${ecEsc(f)}</span>`).join("")}</div>` : ""}
+      </div>
+      <div class="ec-tools">
+        ${cur ? `<div class="ec-seg">${Object.keys(sizeName).map(sz => `<button type="button" data-sz="${sz}" class="${sz === EC.size ? "on" : ""}" ${has(sz) ? "" : "disabled"}>${sizeName[sz]}</button>`).join("")}</div>` : ""}
+        <button type="button" class="ec-btn" id="ec-zip">📦 ${EC.cards.length}장 한 번에 받기</button>
+        <button type="button" class="ec-btn ghost" id="ec-link">🔗 링크 복사</button>
+      </div>
+    </div>
+    <div class="ec-grid">${EC.cards.map((c, i) => `
+      <figure class="ec-fig">
+        ${c.png ? `<img src="${ecPng(c)}" alt="${ecEsc(d.name + " " + c.title + " 카드")}" loading="lazy" data-i="${i}">`
+                : `<div class="ec-live" data-i="${i}" style="aspect-ratio:${c.w}/${c.h}"><iframe title="${ecEsc(c.title)}" width="${c.w}" height="${c.h}" scrolling="no"></iframe></div>`}
+        <figcaption>${i + 1}. ${ecEsc(c.title)}<button type="button" data-dl="${i}">⬇ 이 카드만</button></figcaption>
+      </figure>`).join("")}
+      ${cur || ext ? "" : (EC.extraErr[d.ticker + "_" + v.quarter]
+        ? `<div class="ec-make"><div><b>이슈 · 어닝콜 카드를 만들지 못했어요</b><span>${ecEsc(EC.extraErr[d.ticker + "_" + v.quarter])}</span></div>
+           <button type="button" class="ec-btn" id="ec-make">다시 시도</button></div>`
+        : `<div class="ec-make"><div><b><span class="ec-spin"></span>✨ 이슈 · 어닝콜 카드 만드는 중…</b>
+           <span>AI가 ${d.market === "US" ? "실적 발표 보도자료" : "공시 숫자"}를 읽고 쓰고, 숫자·인용이 원문과 맞는지 자동으로 확인해요 (10~40초). 다 되면 여기에 카드가 붙어요.</span></div></div>`)}
+      ${ext ? `<div class="ec-more">✨ 이슈·${ecEsc(ext.cards[1].title)} 카드는 ${ext.ai ? "AI가 쓰고 숫자·인용을 자동 검증" : "공시 숫자를 규칙으로 정리"}했어요${ext.ai && ext.dropped && ext.dropped.length ? ` · 검증에서 뺀 문장 ${ext.dropped.length}개` : ""}${ext.limited ? " · 오늘 AI 작성 횟수를 다 써서 숫자 규칙판으로 보여 드려요" : ""}. 히르찬이 직접 정리한 카드(📌)와는 달라요.</div>` : ""}
+    </div>
+    <div class="ec-int">
+      <h3>🧠 실적 해석 · ${ecEsc(v.label)}</h3>
+      <div class="hd">한 줄로 보면 <mark>${ecEsc(it.headline || "")}</mark></div>
+      ${(it.sections || []).map(x => `<div class="ec-sec ${x.tone}"><div class="ic">${x.icon}</div><div><b>${ecEsc(x.title)}</b><p>${ecEsc(x.text)}</p></div></div>`).join("")}
+      ${(it.watch || []).length ? `<div class="ec-watch"><b>👀 다음 분기에 볼 것</b><ul>${it.watch.map(w => `<li>${ecEsc(w)}</li>`).join("")}</ul></div>` : ""}
+      ${curd && curd.call ? `<div class="ec-cur"><h4>🎙️ 발표 핵심 (${ecEsc(curd.call_kind || "경영진 발언")} · ${cur ? "히르찬 정리" : (ext.ai ? "AI 작성 · 자동 검증" : "숫자 규칙 정리")})</h4>
+        ${curd.call.map(p => `<div class="ec-pt"><span class="tg ${p.tone}">${p.tone === "positive" ? "좋은 점" : p.tone === "negative" ? "부담" : "중립"}</span><div><b>${ecEsc(p.title)}${p.number && !String(p.title).includes(String(p.number).replace("Azure ", "")) ? " · " + ecEsc(p.number) : ""}</b> ${ecEsc(p.detail)}${p.quote_ko || p.quote ? `<span class="qt">“${ecEsc(p.quote_ko || p.quote)}” — ${ecEsc(p.speaker)}</span>` : ""}</div></div>`).join("")}</div>` : ""}
+      ${curd && curd.reasons ? `<div class="ec-cur"><h4>📈 ${ext && !ext.price_reaction ? "" : "주가 반응 · "}${ecEsc(curd.reaction_title || "")}${ext && ext.price_reaction ? " (" + ecEsc(ext.price_reaction.when) + " " + ((ext.price_reaction.after / ext.price_reaction.close - 1) * 100).toFixed(1) + "%)" : ""}</h4>
+        ${curd.reasons.map((r, i) => `<div class="ec-pt"><span class="tg neutral">${i + 1}</span><div><b>${ecEsc(r.title)}</b> ${r.lines.map(ecEsc).join(" · ")}</div></div>`).join("")}</div>` : ""}
+      <div class="ec-note">${ecEsc(it.note || "")}<br>출처: ${ecEsc((cur && cur.source) || v.source)}</div>
+    </div>`;
+  $("#ec-body").querySelectorAll(".ec-qtabs button").forEach(x => x.onclick = () => { EC.vi = +x.dataset.i; ecRender(); });
+  $("#ec-body").querySelectorAll(".ec-seg button").forEach(x => x.onclick = () => { if(!x.disabled){ EC.size = x.dataset.sz; ecRender(); } });
+  $("#ec-body").querySelectorAll(".ec-fig img, .ec-live").forEach(x => x.onclick = () => ecLb(+x.dataset.i));
+  $("#ec-body").querySelectorAll("[data-dl]").forEach(x => x.onclick = () => ecDownloadOne(+x.dataset.dl, x));
+  $("#ec-zip").onclick = () => ecZip($("#ec-zip"));
+  if($("#ec-make")) $("#ec-make").onclick = () => { delete EC.extraErr[d.ticker + "_" + v.quarter]; ecRender(); };
+  if(!cur && !ext && !EC.extraErr[d.ticker + "_" + v.quarter]) ecExtra(d.ticker, v.quarter);
+  $("#ec-link").onclick = () => {
+    const url = location.origin + location.pathname + "#cards=" + d.ticker + "_" + v.quarter;
+    (navigator.clipboard ? navigator.clipboard.writeText(url) : Promise.reject()).then(
+      () => { $("#ec-link").textContent = "✅ 복사됐어요"; setTimeout(() => $("#ec-link").textContent = "🔗 링크 복사", 1500); },
+      () => prompt("이 주소를 복사하세요", url));
+  };
+  $("#ec-body").querySelectorAll(".ec-live").forEach(box => {
+    const c = EC.cards[+box.dataset.i];
+    ecMountLive(box, c);
+  });
+  if(location.hash.startsWith("#cards")) history.replaceState(null, "", "#cards=" + d.ticker + "_" + v.quarter);
+}
+// 이슈·어닝콜 카드: 검색하면 자동으로 요청 (같은 기업·분기는 한 번만). 끝났을 때 그 분기를 보고 있으면 다시 그림
+async function ecExtra(ticker, quarter){
+  const k = ticker + "_" + quarter;
+  if(EC.extraBusy[k]) return;
+  EC.extraBusy[k] = true;
+  try{
+    const r = await fetch("/api/earnings/extra?q=" + encodeURIComponent(ticker) + "&quarter=" + quarter);
+    const x = await r.json().catch(() => ({}));
+    if(!r.ok || x.error) throw new Error(x.error || ("오류 " + r.status));
+    EC.extra[k] = x;
+  }catch(e){ EC.extraErr[k] = e.message || "잠시 뒤 다시 시도해 주세요."; }
+  finally{ delete EC.extraBusy[k]; }
+  const v = EC.res && EC.res.views[EC.vi];
+  if(EC.res && EC.res.ticker === ticker && v && v.quarter === quarter) ecRender();
+}
+function ecPng(c){ return "/static/earnings/" + (c.png[EC.size] || c.png["1080x1080"] || Object.values(c.png)[0]) + "?v=" + encodeURIComponent(c.pub || ""); }
+function ecHtml(c){ return c.html.split("__FONT_BASE__").join(location.origin + "/static/earncards/fonts"); }
+function ecMountLive(box, c){
+  const fr = box.querySelector("iframe");
+  const fit = () => { fr.style.transform = "scale(" + (box.clientWidth / c.w) + ")"; };
+  fr.srcdoc = ecHtml(c);
+  fit();
+  if(window.ResizeObserver) new ResizeObserver(fit).observe(box); else window.addEventListener("resize", fit);
+}
+// PNG에 넣을 폰트(Pretendard 5종)를 한 번만 받아 data URL로 — html-to-image가 스스로 못 담아 숫자가 명조체로 나왔음
+async function ecFontCSS(){
+  if(EC.fontCSS) return EC.fontCSS;
+  const parts = await Promise.all([["Regular",400],["SemiBold",600],["Bold",700],["ExtraBold",800],["Black",900]].map(async ([n, w]) => {
+    const b = await (await fetch("/static/earncards/fonts/Pretendard-" + n + ".woff2")).blob();
+    const url = await new Promise(ok => { const r = new FileReader(); r.onload = () => ok(r.result); r.readAsDataURL(b); });
+    return `@font-face{font-family:"Pretendard";font-weight:${w};src:url(${url}) format("woff2");}`;
+  }));
+  return (EC.fontCSS = parts.join("\n"));
+}
+// 카드 HTML → PNG (브라우저에서, 2배 해상도). 카드 iframe 안에 html-to-image를 넣어 그 문서 기준으로 찍는다
+async function ecToBlob(c){
+  if(c.png){ const r = await fetch(ecPng(c)); return await r.blob(); }
+  const fr = document.createElement("iframe");
+  fr.style.cssText = `position:fixed;left:-${c.w + 50}px;top:0;width:${c.w}px;height:${c.h}px;border:0`;
+  document.body.appendChild(fr);
+  try{
+    await new Promise(ok => { fr.onload = ok; fr.srcdoc = ecHtml(c); });
+    const doc = fr.contentDocument;
+    for(let i = 0; i < 50 && doc.body.dataset.ready !== "1"; i++) await new Promise(ok => setTimeout(ok, 100));
+    await ecLoadScript(EC_LIBS.h2i, doc);
+    const fontEmbedCSS = await ecFontCSS();
+    const opt = {pixelRatio: 2, width: c.w, height: c.h, fontEmbedCSS};
+    await fr.contentWindow.htmlToImage.toPng(doc.querySelector(".card"), opt);   // 첫 번은 폰트 읽히기용(버림)
+    const url = await fr.contentWindow.htmlToImage.toPng(doc.querySelector(".card"), opt);
+    return await (await fetch(url)).blob();
+  } finally { fr.remove(); }
+}
+function ecFileName(i){ const v = EC.res.views[EC.vi]; return `${EC.res.name}_${v.quarter}_${i + 1}_${EC.cards[i].title}.png`; }
+function ecSave(blob, name){
+  const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = name;
+  document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+}
+async function ecDownloadOne(i, btn){
+  const t = btn.textContent; btn.textContent = "만드는 중…";
+  try{ ecSave(await ecToBlob(EC.cards[i]), ecFileName(i)); btn.textContent = t; }
+  catch(e){ btn.textContent = "실패 — 다시 눌러 주세요"; console.error(e); }
+}
+async function ecZip(btn){
+  const t = btn.textContent; btn.disabled = true;
+  try{
+    await ecLoadScript(EC_LIBS.zip);
+    const z = new JSZip();
+    for(let i = 0; i < EC.cards.length; i++){
+      btn.textContent = `만드는 중… ${i + 1}/${EC.cards.length}`;
+      z.file(`${i + 1}_${EC.cards[i].title}.png`, await ecToBlob(EC.cards[i]));
+    }
+    const v = EC.res.views[EC.vi];
+    ecSave(await z.generateAsync({type: "blob"}), `${EC.res.name}_${v.quarter}_실적카드.zip`);
+  }catch(e){ alert("카드를 만들지 못했어요. 잠시 뒤 다시 눌러 주세요."); console.error(e); }
+  btn.disabled = false; btn.textContent = t;
+}
+function ecLb(i){
+  const lb = $("#ec-lb"), img = lb.querySelector("img"), box = lb.querySelector(".box");
+  if(i < 0 || i >= EC.cards.length){ lb.classList.remove("on"); box.innerHTML = ""; EC.lb = -1; return; }
+  EC.lb = i;
+  const c = EC.cards[i];
+  if(c.png){ img.style.display = ""; box.style.display = "none"; img.src = ecPng(c); }
+  else{
+    img.style.display = "none"; box.style.display = "";
+    const sc = Math.min(window.innerWidth * 0.94 / c.w, window.innerHeight * 0.86 / c.h, 1100 / c.w);
+    box.style.width = (c.w * sc) + "px"; box.style.height = (c.h * sc) + "px";
+    box.innerHTML = `<iframe width="${c.w}" height="${c.h}" scrolling="no" style="transform:scale(${sc})"></iframe>`;
+    box.querySelector("iframe").srcdoc = ecHtml(c);
+  }
+  lb.querySelector(".cap").textContent = `${i + 1} / ${EC.cards.length} · ${c.title}`;
+  lb.classList.add("on");
+}
+$("#ec-lb").onclick = e => { if(e.target.id === "ec-lb" || e.target.classList.contains("x")) ecLb(-1); };
+$("#ec-lb").querySelector(".nv.p").onclick = () => ecLb(Math.max(0, EC.lb - 1));
+$("#ec-lb").querySelector(".nv.n").onclick = () => ecLb(Math.min(EC.cards.length - 1, EC.lb + 1));
+document.addEventListener("keydown", e => {
+  if(EC.lb < 0) return;
+  if(e.key === "Escape") ecLb(-1);
+  if(e.key === "ArrowLeft") ecLb(Math.max(0, EC.lb - 1));
+  if(e.key === "ArrowRight") ecLb(Math.min(EC.cards.length - 1, EC.lb + 1));
 });
 
 // ---------- 탭 전환 ----------
@@ -1466,6 +1922,12 @@ document.querySelectorAll(".tab-btn").forEach(b => b.onclick = () => {
   $("#tab-related").style.display = t === "related" ? "" : "none";
   $("#tab-dividend").style.display = t === "dividend" ? "" : "none";
   $("#tab-chart").style.display = t === "chart" ? "" : "none";
+  $("#tab-cards").style.display = t === "cards" ? "" : "none";
+  if(t === "cards") openEarningsCards();
+  $("#tab-econ").style.display = t === "econ" ? "" : "none";
+  if(t === "econ" && window.econOpen) window.econOpen();
+  $("#tab-pf").style.display = t === "pf" ? "" : "none";
+  if(t === "pf" && window.pfOpen) window.pfOpen();
   if(t === "chart" && !$("#chart-frame").src){   // 처음 열 때 한 번만 로드
     const local = /^(127\.0\.0\.1|localhost)$/.test(location.hostname);
     const m = location.hash.match(/^#chart=([^&]+)/);   // #chart=삼성전자 처럼 종목 지정 가능
@@ -4938,5 +5400,7 @@ window.uploadFactset = uploadFactset;   // 인라인 onchange가 IIFE 밖에서 
 
 })();
 </script>
+<script src="/static/portfolio.js?v=11" defer></script>
+<script src="/static/econ.js?v=2" defer></script>
 </body>
 </html>

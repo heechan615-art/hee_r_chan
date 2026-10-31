@@ -1,0 +1,436 @@
+{
+ "updated": "2026-10-31 13:17",
+ "items": [
+  {
+   "id": "MSFT_2026Q3",
+   "ticker": "MSFT",
+   "curated": {
+    "call": [
+     {
+      "title": "클라우드 성장이 빨라졌어요",
+      "tone": "positive",
+      "number": "Azure +48%",
+      "detail": "Azure 성장률 40 → 43 → 48%, 2분기 연속 가속이에요",
+      "quote_ko": "마이크로소프트 클라우드 매출 639억 달러, 성장률이 30%로 빨라졌어요",
+      "quote": "Microsoft Cloud revenue of $63.9 billion, with growth accelerating to 30%",
+      "speaker": "에이미 후드 CFO"
+     },
+     {
+      "title": "이익이 매출보다 빨리 늘었어요",
+      "tone": "positive",
+      "number": "+21%",
+      "detail": "매출 +19%보다 영업이익이 더 빨리 늘어, 이익률 49.8%(+0.9%p)예요",
+      "quote_ko": "매출, 영업이익, 주당순이익 모두 기대를 넘었어요",
+      "quote": "Results exceeded expectations across revenue, operating income, and earnings per share",
+      "speaker": "에이미 후드 CFO"
+     },
+     {
+      "title": "윈도우·기기는 계속 나빠져요",
+      "tone": "negative",
+      "number": "−22%",
+      "detail": "+6 → +1 → −2 → −7 → −22%, 5분기째 내리막이에요. 기기·소비자 부문 전체는 −3%",
+      "quote_ko": null,
+      "quote": null,
+      "speaker": null
+     },
+     {
+      "title": "투자비 2배, 남는 현금은 줄었어요",
+      "tone": "negative",
+      "number": "394억$",
+      "detail": "분기 설비투자가 1년 전의 2.0배, 잉여현금흐름은 257억$ → 186억$(−27%)예요",
+      "quote_ko": null,
+      "quote": null,
+      "speaker": null
+     }
+    ],
+    "call_kind": "보도자료 발언",
+    "summary": [
+     "매출 +18.8%, 영업이익 +21%",
+     "Azure +48%, 2분기 연속 가속",
+     "남은 계약 6,770억$ (+73%)",
+     "윈도우·기기 −22%, 5분기째 하락",
+     "설비투자 394억$, 1년 새 2배"
+    ],
+    "reaction_title": "숫자로 본 긍정 요인 3가지",
+    "reasons": [
+     {
+      "title": "클라우드 가속",
+      "lines": [
+       "Azure 성장률 40→43→48%",
+       "마이크로소프트 클라우드 639억$, +30%"
+      ]
+     },
+     {
+      "title": "이익이 더 빨리",
+      "lines": [
+       "영업이익 +21%, 매출 +19%보다 빨라요",
+       "영업이익률 49.8% (+0.9%p)"
+      ]
+     },
+     {
+      "title": "쌓여 있는 계약",
+      "lines": [
+       "남은 상업 계약 6,770억$, 1년 새 +73%",
+       "다만 직전 분기(6,780억$)와는 비슷해요"
+      ]
+     }
+    ]
+   },
+   "name": "마이크로소프트",
+   "color": "#00A4EF",
+   "market": "US",
+   "quarter": "2026Q3",
+   "label": "FY27 1Q (7~9월)",
+   "status": null,
+   "headline": "MS 윈도우 −22%인데 주가는 왜?",
+   "subtitle": "마이크로소프트 FY27 1분기(7~9월) · Azure는 가속, 윈도우는 감속",
+   "one_liner": "클라우드는 가속, PC는 감속, 투자는 2배",
+   "facts": [
+    "매출 +18.8%",
+    "영업이익률 49.8%",
+    "잉여현금흐름 $18.6B"
+   ],
+   "source": "SEC EDGAR XBRL (FY25 4Q~FY27 1Q) · 부문 등: 마이크로소프트 FY27 1Q 실적 발표 보도자료 (SEC 8-K, 2026-10-28)",
+   "cards": [
+    {
+     "kind": "story",
+     "title": "이슈",
+     "sizes": {
+      "1080x1080": "MSFT_2026Q3/story.png",
+      "1080x1350": "MSFT_2026Q3/story_1080x1350.png",
+      "1920x1080": "MSFT_2026Q3/story_1920x1080.png"
+     }
+    },
+    {
+     "kind": "metrics",
+     "title": "핵심지표",
+     "sizes": {
+      "1080x1080": "MSFT_2026Q3/metrics.png",
+      "1080x1350": "MSFT_2026Q3/metrics_1080x1350.png",
+      "1920x1080": "MSFT_2026Q3/metrics_1920x1080.png"
+     }
+    },
+    {
+     "kind": "flow",
+     "title": "돈의 흐름",
+     "sizes": {
+      "1080x1080": "MSFT_2026Q3/flow.png",
+      "1080x1350": "MSFT_2026Q3/flow_1080x1350.png",
+      "1920x1080": "MSFT_2026Q3/flow_1920x1080.png"
+     }
+    },
+    {
+     "kind": "call",
+     "title": "어닝콜",
+     "sizes": {
+      "1080x1080": "MSFT_2026Q3/call.png",
+      "1080x1350": "MSFT_2026Q3/call_1080x1350.png",
+      "1920x1080": "MSFT_2026Q3/call_1920x1080.png"
+     }
+    }
+   ],
+   "published": "2026-10-29 18:26"
+  },
+  {
+   "id": "005930_2026Q3",
+   "ticker": "005930",
+   "curated": {
+    "call": [
+     {
+      "title": "분기 영업이익 100조 돌파",
+      "tone": "positive",
+      "number": "107.4조",
+      "detail": "전년 같은 분기보다 +783%, 4분기 연속 최대 실적이에요",
+      "quote_ko": null,
+      "quote": "글로벌 테크 기업 중 최초로 분기 영업이익 100조원을 돌파했다",
+      "speaker": "삼성전자 실적 발표문"
+     },
+     {
+      "title": "DS(반도체), HBM4로 역대 최대",
+      "tone": "positive",
+      "number": "106.5조",
+      "detail": "DS 매출 147.1조 중 72%가 이익으로 남았어요",
+      "quote_ko": null,
+      "quote": "HBM4 판매를 대폭 확대했으며",
+      "speaker": "삼성전자 실적 발표문"
+     },
+     {
+      "title": "DX(모바일·가전) 적자 전환",
+      "tone": "negative",
+      "number": "−8,000억",
+      "detail": "1년 전엔 3.5조 흑자였어요",
+      "quote_ko": null,
+      "quote": "부품 원가 상승 등 어려운 경영환경이 지속되고 있다",
+      "speaker": "삼성전자 실적 발표문"
+     },
+     {
+      "title": "환율 영향 약 −10조 (전분기 대비)",
+      "tone": "negative",
+      "number": "약 −10조",
+      "detail": "달러·유로 등 주요 통화 하락 영향이라고 설명했어요",
+      "quote_ko": null,
+      "quote": "약 10조원 수준의 부정적 효과가 발생했다",
+      "speaker": "삼성전자 실적 발표문"
+     }
+    ],
+    "call_kind": "실적 발표문"
+   },
+   "name": "삼성전자",
+   "color": "#1428A0",
+   "market": "KR",
+   "quarter": "2026Q3",
+   "label": "2026년 3분기",
+   "status": "잠정",
+   "headline": null,
+   "subtitle": null,
+   "one_liner": "이익은 반도체가 거의 다, 모바일·가전은 원가에 발목",
+   "facts": [
+    "매출 +127%",
+    "영업이익률 55.0%"
+   ],
+   "source": "OpenDART 정기보고서(연결) (25.2Q~26.2Q) · 삼성전자 3Q26 잠정실적 공정공시(2026-10-29)·실적 발표 보도자료",
+   "cards": [
+    {
+     "kind": "metrics",
+     "title": "핵심지표",
+     "sizes": {
+      "1080x1080": "005930_2026Q3/metrics.png",
+      "1080x1350": "005930_2026Q3/metrics_1080x1350.png",
+      "1920x1080": "005930_2026Q3/metrics_1920x1080.png"
+     }
+    },
+    {
+     "kind": "flow",
+     "title": "돈의 흐름",
+     "sizes": {
+      "1080x1080": "005930_2026Q3/flow.png",
+      "1080x1350": "005930_2026Q3/flow_1080x1350.png",
+      "1920x1080": "005930_2026Q3/flow_1920x1080.png"
+     }
+    },
+    {
+     "kind": "call",
+     "title": "어닝콜",
+     "sizes": {
+      "1080x1080": "005930_2026Q3/call.png",
+      "1080x1350": "005930_2026Q3/call_1080x1350.png",
+      "1920x1080": "005930_2026Q3/call_1920x1080.png"
+     }
+    }
+   ],
+   "published": "2026-10-29 18:26"
+  },
+  {
+   "id": "GOOGL_2026Q3",
+   "ticker": "GOOGL",
+   "curated": {
+    "call": [
+     {
+      "title": "클라우드 매출 +103%",
+      "tone": "positive",
+      "number": "+103%",
+      "detail": "부문 영업이익도 36억$ → 111억$, 3.1배로 늘었어요",
+      "quote_ko": "AI 인프라와 AI 솔루션에 대한 엄청난 수요 덕분",
+      "quote": "powered by huge demand for our AI infrastructure and AI solutions",
+      "speaker": "순다르 피차이 CEO"
+     },
+     {
+      "title": "검색 쿼리는 5년 만에 최고 증가",
+      "tone": "neutral",
+      "number": "5년 최고",
+      "detail": "그런데 검색 매출 성장률은 16.8% → 12.0%로 낮아졌어요",
+      "quote_ko": "전년 대비 검색 쿼리 증가율이 최근 5년 중 가장 높아요",
+      "quote": "our year-over-year query growth rate is the highest it’s been in the last five years",
+      "speaker": "순다르 피차이 CEO"
+     },
+     {
+      "title": "제미나이 앱 사용자 10억 명",
+      "tone": "positive",
+      "number": "10억 명",
+      "detail": "모델 API 처리량도 1년 전의 4배 이상이라고 밝혔어요",
+      "quote_ko": "제미나이 앱이 사용자 10억 명에 도달했어요",
+      "quote": "the Gemini app has reached one billion users",
+      "speaker": "순다르 피차이 CEO"
+     },
+     {
+      "title": "투자비가 현금을 앞질렀어요",
+      "tone": "negative",
+      "number": "−91억$",
+      "detail": "분기 설비투자 514억$(1년 전의 2.1배)로 잉여현금흐름이 2분기 연속 마이너스예요",
+      "quote_ko": null,
+      "quote": null,
+      "speaker": null
+     }
+    ],
+    "call_kind": "보도자료 발언",
+    "summary": [
+     "매출 +24.7%, 5분기 연속 가속",
+     "클라우드 +103%, 영업이익 3.1배",
+     "광고 성장 15.5→14.4→10.6%",
+     "EPS 2.12$ (예상 약 3.0$)",
+     "잉여현금흐름 −91억$"
+    ],
+    "reaction_title": "숫자로 본 부담 요인 3가지",
+    "reasons": [
+     {
+      "title": "순이익 감소",
+      "lines": [
+       "투자주식 평가손실 90억$ (1년 전엔 109억$ 이익)",
+       "순이익 265억$, 전년보다 −24%"
+      ]
+     },
+     {
+      "title": "투자비 급증",
+      "lines": [
+       "분기 설비투자 514억$ (1년 전의 2.1배)",
+       "잉여현금흐름 2분기 연속 마이너스"
+      ]
+     },
+     {
+      "title": "광고 성장 둔화",
+      "lines": [
+       "광고 매출 성장 15.5→14.4→10.6%",
+       "검색 +12%, 유튜브 +9%로 느려짐"
+      ]
+     }
+    ]
+   },
+   "name": "알파벳",
+   "color": "#4285F4",
+   "market": "US",
+   "quarter": "2026Q3",
+   "label": "2026년 3분기",
+   "status": "실적 발표 (10-Q 전)",
+   "headline": "구글 클라우드 2배인데 주가는 왜?",
+   "subtitle": "알파벳 2026년 3분기 실적 · 클라우드는 2배, 광고는 둔화",
+   "one_liner": "성장은 클라우드가, 부담은 투자비가",
+   "facts": [
+    "매출 +24.7%",
+    "영업이익률 31.8%",
+    "잉여현금흐름 -$9.1B"
+   ],
+   "source": "SEC EDGAR XBRL (25.2Q~26.2Q) · 알파벳 3Q26 실적 발표 보도자료 (SEC 8-K, 2026-10-28)",
+   "cards": [
+    {
+     "kind": "story",
+     "title": "이슈",
+     "sizes": {
+      "1080x1080": "GOOGL_2026Q3/story.png",
+      "1080x1350": "GOOGL_2026Q3/story_1080x1350.png",
+      "1920x1080": "GOOGL_2026Q3/story_1920x1080.png"
+     }
+    },
+    {
+     "kind": "metrics",
+     "title": "핵심지표",
+     "sizes": {
+      "1080x1080": "GOOGL_2026Q3/metrics.png",
+      "1080x1350": "GOOGL_2026Q3/metrics_1080x1350.png",
+      "1920x1080": "GOOGL_2026Q3/metrics_1920x1080.png"
+     }
+    },
+    {
+     "kind": "flow",
+     "title": "돈의 흐름",
+     "sizes": {
+      "1080x1080": "GOOGL_2026Q3/flow.png",
+      "1080x1350": "GOOGL_2026Q3/flow_1080x1350.png",
+      "1920x1080": "GOOGL_2026Q3/flow_1920x1080.png"
+     }
+    },
+    {
+     "kind": "call",
+     "title": "어닝콜",
+     "sizes": {
+      "1080x1080": "GOOGL_2026Q3/call.png",
+      "1080x1350": "GOOGL_2026Q3/call_1080x1350.png",
+      "1920x1080": "GOOGL_2026Q3/call_1920x1080.png"
+     }
+    }
+   ],
+   "published": "2026-10-29 18:26"
+  },
+  {
+   "id": "005930_2026Q2",
+   "ticker": "005930",
+   "curated": {},
+   "name": "삼성전자",
+   "color": "#1428A0",
+   "market": "KR",
+   "quarter": "2026Q2",
+   "label": "2026년 2분기",
+   "status": null,
+   "headline": null,
+   "subtitle": null,
+   "one_liner": null,
+   "facts": [
+    "매출 +130%",
+    "영업이익률 52.2%",
+    "잉여현금흐름 91.0조"
+   ],
+   "source": "OpenDART 정기보고서(연결) (25.1Q~26.2Q)",
+   "cards": [
+    {
+     "kind": "metrics",
+     "title": "핵심지표",
+     "sizes": {
+      "1080x1080": "005930_2026Q2/metrics.png",
+      "1080x1350": "005930_2026Q2/metrics_1080x1350.png",
+      "1920x1080": "005930_2026Q2/metrics_1920x1080.png"
+     }
+    },
+    {
+     "kind": "flow",
+     "title": "돈의 흐름",
+     "sizes": {
+      "1080x1080": "005930_2026Q2/flow.png",
+      "1080x1350": "005930_2026Q2/flow_1080x1350.png",
+      "1920x1080": "005930_2026Q2/flow_1920x1080.png"
+     }
+    }
+   ],
+   "published": "2026-10-29 18:26"
+  },
+  {
+   "id": "GOOGL_2026Q2",
+   "ticker": "GOOGL",
+   "curated": {},
+   "name": "알파벳",
+   "color": "#4285F4",
+   "market": "US",
+   "quarter": "2026Q2",
+   "label": "2026년 2분기",
+   "status": null,
+   "headline": null,
+   "subtitle": null,
+   "one_liner": null,
+   "facts": [
+    "매출 +24.2%",
+    "영업이익률 34.0%",
+    "잉여현금흐름 -$5.9B"
+   ],
+   "source": "SEC EDGAR XBRL (25.1Q~26.2Q)",
+   "cards": [
+    {
+     "kind": "metrics",
+     "title": "핵심지표",
+     "sizes": {
+      "1080x1080": "GOOGL_2026Q2/metrics.png",
+      "1080x1350": "GOOGL_2026Q2/metrics_1080x1350.png",
+      "1920x1080": "GOOGL_2026Q2/metrics_1920x1080.png"
+     }
+    },
+    {
+     "kind": "flow",
+     "title": "돈의 흐름",
+     "sizes": {
+      "1080x1080": "GOOGL_2026Q2/flow.png",
+      "1080x1350": "GOOGL_2026Q2/flow_1080x1350.png",
+      "1920x1080": "GOOGL_2026Q2/flow_1920x1080.png"
+     }
+    }
+   ],
+   "published": "2026-10-29 18:26"
+  }
+ ]
+}

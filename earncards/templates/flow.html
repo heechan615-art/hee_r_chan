@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>{{ name }} {{ qtitle }} 돈의 흐름</title>
+<style>
+{{ css | safe }}
+.flowmain { height: {{ main_h }}px; flex: none; padding: 14px 16px; }
+.strip { height: {{ strip_h }}px; flex: none; padding: 12px 16px; display: flex; gap: 14px; }
+.strip .body { flex: 1; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.strip .row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.strip h4 { font-size: 19px; font-weight: 900; letter-spacing: -0.5px; white-space: nowrap; }
+.strip .notes { display: flex; gap: 10px; }
+.strip mark { font-size: 16px; font-weight: 800; background: var(--yellow); padding: 4px 10px; border-radius: 6px;
+  white-space: nowrap; transform: rotate(-0.6deg); box-shadow: 2px 2px 0 rgba(0,0,0,.12); color: var(--ink); }
+.strip mark.pink { background: var(--pink); }
+.strip .mascot { width: 136px; height: 120px; object-fit: contain; align-self: flex-end; }
+.chart text.lbl { letter-spacing: -0.4px; }
+</style>
+</head>
+<body>
+<div class="card">
+  <header>
+    <div class="hgroup">
+      <div class="co chk" style="color: {{ color }}">{{ name }}</div>
+      <div class="ttl chk"><em>{{ qtitle }}</em> {{ subtitle }}</div>
+    </div>
+    <div class="chips">
+      <span class="chip">{{ ticker }}</span>
+      {% if status %}<span class="chip warn">{{ status }}</span>{% endif %}
+      <span class="chip soft">{% if mode == 'segment_profit' %}부문 이익{% else %}돈의 흐름{% endif %}</span>
+    </div>
+  </header>
+
+  <section class="panel flowmain">
+    {{ svg | safe }}
+  </section>
+
+  <section class="panel strip">
+    <div class="body">
+      <div class="row">
+        <h4 class="chk">💯 {{ strip_title }}</h4>
+        <div class="notes">{% for t, tone in notes %}<mark class="chk{% if tone == 'neg' %} pink{% endif %}">{{ t }}</mark>{% endfor %}</div>
+      </div>
+      {{ strip_svg | safe }}
+    </div>
+    {% if mascot %}<img class="mascot" src="{{ mascot }}" alt="">{% endif %}
+  </section>
+
+  <footer>
+    <div class="src chk">출처: {{ source }}</div>
+    <div class="brand">[사이클 투자 히르찬]</div>
+    <div class="disc">투자 권유가 아닌 정보 제공 목적입니다{% if footnote %} · {{ footnote }}{% endif %}</div>
+  </footer>
+</div>
+</body>
+</html>

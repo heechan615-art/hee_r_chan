@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>{{ accent }} {{ title }}</title>
+<style>
+{% include "fonts.css" %}
+:root { --cream:#FFF8EA; --paper:#FFFFFF; --ink:#1A1A1A; --muted:#6B645A; --red:#E03131; --green:#2B8A3E; --yellow:#FFE066; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { width: {{ W }}px; height: {{ H }}px; background: var(--cream); }
+body { font-family: "Pretendard", "Noto Sans KR", "Apple SD Gothic Neo", sans-serif; color: var(--ink);
+       -webkit-font-smoothing: antialiased; word-break: keep-all; }
+.card { position: relative; width: {{ W }}px; height: {{ H }}px; overflow: hidden;
+  background: radial-gradient(circle at 1px 1px, rgba(26,26,26,.05) 1px, transparent 1.5px) 0 0 / 22px 22px, var(--cream); }
+.abs { position: absolute; }
+.sticker { background: var(--paper); border: 3px solid var(--ink); border-radius: 16px; box-shadow: 6px 6px 0 var(--ink); }
+
+/* 제목 */
+.head { left: 0; right: 0; top: 34px; text-align: center; }
+.title { font-size: 60px; font-weight: 900; letter-spacing: -2px; line-height: 1.1; white-space: nowrap; }
+.title .acc { -webkit-text-stroke: 3px var(--ink); paint-order: stroke fill; text-shadow: 4px 4px 0 var(--ink); }
+.sub { margin-top: 12px; font-size: 23px; font-weight: 600; color: #57514A; letter-spacing: -0.5px; white-space: nowrap; }
+.sub .tag { display: inline-block; margin-left: 8px; font-size: 16px; font-weight: 800; color: #fff; background: var(--red);
+            border: 2px solid var(--ink); border-radius: 999px; padding: 2px 10px; vertical-align: 3px; }
+
+/* 부문 상자 */
+.ribbons { position: absolute; left: 0; top: 0; }
+.seg { display: flex; align-items: center; gap: 10px; padding: 0 14px; border: 3px solid var(--ink);
+       border-radius: 14px; box-shadow: 5px 5px 0 var(--ink); }
+.seg .ic { font-size: 26px; flex: none; }
+.seg .nm { font-size: 15px; font-weight: 800; letter-spacing: -0.4px; white-space: nowrap; }
+.seg .ys { font-size: 13px; font-weight: 600; color: #5C564F; white-space: nowrap; margin-top: 1px; }
+.seg .vl { margin-left: auto; font-size: 22px; font-weight: 900; letter-spacing: -0.8px; white-space: nowrap; }
+.seg.big { flex-direction: row; }
+.seg.big .ic { font-size: 40px; }
+.seg.big .vl { font-size: 36px; line-height: 1.05; margin-top: 2px; }
+.seg.big .nm { font-size: 18px; }
+.seg.big .txt { display: flex; flex-direction: column; }
+
+/* 매출 상자 */
+.rev { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 2px; }
+.rev .lb { font-size: 18px; font-weight: 800; }
+.rev .big { font-size: 46px; font-weight: 900; letter-spacing: -1.8px; line-height: 1.05; white-space: nowrap; }
+.rev .yoy { font-size: 19px; font-weight: 800; color: var(--green); }
+.rev hr { width: 70%; border: 0; border-top: 2px dashed #C9C2B5; margin: 8px 0 6px; }
+.rev .op { font-size: 14px; font-weight: 700; color: var(--muted); }
+.rev .opv { font-size: 26px; font-weight: 900; letter-spacing: -0.8px; }
+.rev .opm { font-size: 14px; font-weight: 600; color: var(--muted); }
+.arrow { height: 4px; background: var(--ink); }
+.arrow::after { content: ""; position: absolute; right: -2px; top: -9px; width: 16px; height: 16px;
+  border-right: 4px solid var(--ink); border-top: 4px solid var(--ink); transform: rotate(45deg); }
+
+/* 한눈에 보기 */
+.sum { padding: 22px 22px 18px; }
+.sum h3 { font-size: 25px; font-weight: 900; letter-spacing: -0.8px; margin-bottom: 14px; }
+.sum li { list-style: none; font-size: 18px; font-weight: 600; letter-spacing: -0.5px; margin: 9px 0; white-space: nowrap; }
+.sum li b { font-weight: 900; }
+.sum .stk { position: absolute; right: 16px; bottom: 16px; background: var(--yellow); border: 3px solid var(--ink);
+  font-size: 18px; font-weight: 900; padding: 8px 14px; transform: rotate(-2.5deg); box-shadow: 4px 4px 0 var(--ink); white-space: nowrap; }
+
+/* 아래 두 패널 */
+.pn { padding: 22px 24px; display: flex; flex-direction: column; }
+.pn h3 { font-size: 25px; font-weight: 900; letter-spacing: -0.8px; white-space: nowrap; }
+.pn h3 small { font-size: 15px; font-weight: 600; color: var(--muted); }
+.lg { display: flex; align-items: center; gap: 16px; margin: 14px 0 6px; }
+.lg .stk { background: var(--yellow); border: 3px solid var(--ink); font-size: 17px; font-weight: 900; padding: 6px 12px;
+  transform: rotate(-1.5deg); box-shadow: 4px 4px 0 var(--ink); white-space: nowrap; }
+.lg .key { font-size: 15px; font-weight: 700; display: flex; align-items: center; gap: 6px; }
+.lg .key i { display: inline-block; width: 20px; height: 7px; border-radius: 4px; }
+.mv { color: var(--red); }
+.when { font-size: 14px; font-weight: 600; color: var(--muted); margin: 6px 0 2px; }
+.rt { font-size: 15px; font-weight: 800; color: var(--muted); margin: 8px 0 8px; }
+.rs { flex: 1; display: flex; flex-direction: column; justify-content: space-evenly; gap: 10px; }
+.rs .r { display: flex; gap: 12px; align-items: flex-start; background: var(--paper); border: 3px solid var(--ink);
+  border-radius: 12px; box-shadow: 4px 4px 0 var(--ink); padding: 8px 14px; }
+.rs .no { flex: none; width: 34px; height: 34px; border-radius: 50%; background: var(--red); color: #fff;
+  border: 3px solid var(--ink); font-size: 18px; font-weight: 900; display: grid; place-items: center; margin-top: 2px; }
+.rs .t { font-size: 19px; font-weight: 900; letter-spacing: -0.5px; white-space: nowrap; }
+.rs .l { font-size: 14px; font-weight: 600; color: #57514A; line-height: 1.4; white-space: nowrap; }
+.mascot { position: absolute; right: 18px; bottom: 14px; width: 130px; }
+
+.foot { left: {{ pad }}px; right: {{ pad }}px; bottom: 22px; display: grid; grid-template-columns: 1fr auto; column-gap: 16px; align-items: end; }
+.foot .src { font-size: 14px; font-weight: 600; color: var(--muted); }
+.foot .brand { font-size: 21px; font-weight: 900; white-space: nowrap; }
+.foot .disc { grid-column: 1 / 3; font-size: 12px; font-weight: 600; color: #9A9184; margin-top: 4px; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="abs head">
+    <div class="title chk"><span class="acc" style="color: {{ accent_color }}">{{ accent }}</span> {{ title }}</div>
+    <div class="sub chk">{{ subtitle }}{% if status %}<span class="tag">{{ status }}</span>{% endif %}</div>
+  </div>
+
+  {{ ribbon_svg | safe }}
+
+  {% for b in boxes %}
+  <div class="abs seg panel{% if b.big %} big{% endif %}" style="left:{{ b.x }}px; top:{{ b.y }}px; width:{{ b.w }}px; height:{{ b.h }}px; background:{{ b.bg }}">
+    <span class="ic">{{ b.icon }}</span>
+    <div class="txt"><div class="nm chk">{{ b.name }}</div><div class="ys chk">{{ b.sub }}</div>
+    {% if b.big %}<div class="vl chk" style="color:{{ b.fg }}; margin-left:0">{{ b.value }}</div>{% endif %}</div>
+    {% if not b.big %}<div class="vl chk" style="color:{{ b.fg }}">{{ b.value }}</div>{% endif %}
+  </div>
+  {% endfor %}
+
+  <div class="abs sticker rev panel" style="left:{{ rev.x }}px; top:{{ rev.y }}px; width:{{ rev.w }}px; height:{{ rev.h }}px">
+    <div class="lb">매출</div>
+    <div class="big chk">{{ rev.value }}</div>
+    <div class="yoy" {% if rev.yoy.startswith('-') %}style="color: var(--red)"{% endif %}>{{ rev.yoy }} (전년 대비)</div>
+    <hr>
+    <div class="op">영업이익</div>
+    <div class="opv chk">{{ rev.op }}</div>
+    {% if rev.opm %}<div class="opm">이익률 {{ rev.opm }}</div>{% endif %}
+  </div>
+  <div class="abs arrow" style="left:{{ arrow.x0 }}px; top:{{ arrow.y }}px; width:{{ arrow.x1 - arrow.x0 }}px"></div>
+
+  <div class="abs sticker sum panel" style="left:{{ summary.x }}px; top:{{ summary.y }}px; width:{{ summary.w }}px; height:{{ summary.h }}px">
+    <h3>한눈에 보기 👀</h3>
+    <ul>{% for it in summary['items'] %}<li class="chk">{{ it.icon }} {{ it.html | safe }}</li>{% endfor %}</ul>
+    {% if summary.sticker %}<div class="stk chk">{{ summary.sticker }}</div>{% endif %}
+  </div>
+
+  <div class="abs sticker pn panel" style="left:{{ pad }}px; top:{{ top_bot }}px; width:{{ half_w }}px; height:{{ bot_h }}px">
+    <h3 class="chk">{{ trend_title }} <small>(전년 대비)</small></h3>
+    <div class="lg">
+      {% if trend_sticker %}<span class="stk">{{ trend_sticker }}</span>{% endif %}
+      {% for k in legend %}<span class="key"><i style="background:{{ k.color }}"></i>{{ k.label }}</span>{% endfor %}
+    </div>
+    {{ trend_svg | safe }}
+  </div>
+
+  <div class="abs sticker pn panel" style="left:{{ pad + half_w + 24 }}px; top:{{ top_bot }}px; width:{{ half_w }}px; height:{{ bot_h }}px">
+    <h3 class="chk">{{ reaction.title }} {% if reaction.move %}{% if reaction.move_down %}📉{% else %}📈{% endif %} <span class="mv">{{ reaction.move }}</span>{% endif %}</h3>
+    {% if reaction.when %}<div class="when chk">{{ reaction.when }} · {{ reaction.price }}</div>{% endif %}
+    {% if reaction.reasons_title %}<div class="rt">{{ reaction.reasons_title }}</div>{% endif %}
+    <div class="rs">
+      {% for r in reaction.reasons %}
+      <div class="r"><div class="no">{{ loop.index }}</div>
+        <div><div class="t chk">{{ r.title }} {{ r.emoji }}</div>{% for l in r.lines %}<div class="l chk">{{ l }}</div>{% endfor %}</div></div>
+      {% endfor %}
+    </div>
+    {% if mascot %}<img class="mascot" src="{{ mascot }}" alt="">{% endif %}
+  </div>
+
+  <div class="abs foot">
+    <div class="src chk">출처: {{ source }}</div>
+    <div class="brand">[사이클 투자 히르찬]</div>
+    <div class="disc">투자 권유가 아닌 정보 제공 목적입니다 · 해석은 공개된 숫자에 근거한 하나의 시각이에요</div>
+  </div>
+</div>
+</body>
+</html>

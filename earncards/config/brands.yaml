@@ -1,0 +1,12 @@
+# 기업 대표색 (로고 대신 기업 이름을 이 색으로 굵게 표시). 없으면 default.
+default: "#2563EB"
+GOOGL: {name: 알파벳, color: "#4285F4"}
+GOOG:  {name: 알파벳, color: "#4285F4"}
+MSFT:  {name: 마이크로소프트, color: "#00A4EF"}
+AAPL:  {name: 애플, color: "#1D1D1F"}
+NVDA:  {name: 엔비디아, color: "#76B900"}
+AMZN:  {name: 아마존, color: "#FF9900"}
+META:  {name: 메타, color: "#0866FF"}
+TSLA:  {name: 테슬라, color: "#CC0000"}
+"005930": {name: 삼성전자, color: "#1428A0"}
+"000660": {name: SK하이닉스, color: "#EA002C"}

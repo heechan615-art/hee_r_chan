@@ -15,3 +15,6 @@ __pycache__/
 *.command
 briefings/
 data/
+
+# 실적 카드 서버 캐시(SEC·DART 원본)
+earncards/cache/

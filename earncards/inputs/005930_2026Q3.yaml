@@ -1,0 +1,30 @@
+# 삼성전자 2026년 3분기 — Claude 초안 2026-10-29, 히르찬 확인 필요
+# 전사: DART 공정공시 "연결재무제표기준영업(잠정)실적" 2026-10-29 (rcpNo 20261029800087, 단위 억원)
+#   https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20261029800087
+# 부문: 삼성전자 뉴스룸 "삼성전자, 2026년 3분기 실적 발표" (2026-10-29), 전년은 "2025년 3분기 실적 발표"
+# 외부감사 검토 전 잠정치. 3분기 분기보고서가 나오면 자동 수집값으로 바뀜.
+company: 삼성전자
+ticker: "005930"
+quarter: 2026Q3
+currency: KRW
+unit: 조원
+status: 잠정
+source: "삼성전자 3Q26 잠정실적 공정공시(2026-10-29)·실적 발표 보도자료"
+
+# 부문 매출 합계(211.5조)가 전사(195.3조)보다 큰 건 부문 간 내부거래 제거 때문
+segments:
+  - {name: DS(반도체),   revenue: 147.1, prev: 33.1, op: 106.5, op_prev: 7.0}
+  - {name: DX(모바일·가전), revenue: 52.1, prev: 48.4, op: -0.8, op_prev: 3.5}
+  - {name: 디스플레이,   revenue: 8.0,   prev: 8.1,  op: 1.1,   op_prev: 1.2}
+  - {name: 하만,         revenue: 4.3,   prev: 4.0,  op: 0.6,   op_prev: 0.4}
+
+overrides:
+  revenue: 195.2532           # 1,952,532억원
+  operating_income: 107.4405  # 1,074,405억원
+  net_income: 75.2081         # 지배기업 소유주지분 순이익 752,081억원
+  # 매출원가·판관비·현금흐름·설비투자는 공정공시에 없음 → 분기보고서 나오면 자동 수집
+
+flow_mode: segment_profit
+consensus:
+  revenue:
+  operating_income:

@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>{{ name }} {{ qtitle }} 핵심지표</title>
+<style>{{ css | safe }}</style>
+</head>
+<body>
+<div class="card">
+  <header>
+    <div class="hgroup">
+      <div class="co chk" style="color: {{ color }}">{{ name }}</div>
+      <div class="ttl chk"><em>{{ qtitle }}</em> 실적 핵심지표</div>
+    </div>
+    <div class="chips">
+      <span class="chip">{{ ticker }}</span>
+      {% if status %}<span class="chip warn">{{ status }}</span>{% endif %}
+      <span class="chip soft">최근 {{ nq }}분기</span>
+    </div>
+  </header>
+
+  <main class="grid">
+    {% for p in panels %}
+    <section class="panel{% if p.hot %} hot{% endif %}">
+      <div class="ph">
+        <div class="pt chk">{{ p.icon }} {{ p.title }}<small>{{ p.sub | safe }}</small></div>
+        {% if p.callout %}<div class="callout chk{% if p.callout_dark %} dark{% endif %}">{{ p.callout }}</div>{% endif %}
+      </div>
+      {{ p.svg | safe }}
+      <div class="hl">{% if p.note %}<mark class="chk{% if p.tone == 'neg' %} pink{% endif %}">{{ p.note }}</mark>{% endif %}</div>
+    </section>
+    {% endfor %}
+  </main>
+
+  <footer>
+    <div class="src chk">출처: {{ source }}</div>
+    <div class="brand">[사이클 투자 히르찬]</div>
+    <div class="disc">투자 권유가 아닌 정보 제공 목적입니다{% if footnote %} · {{ footnote }}{% endif %}</div>
+  </footer>
+</div>
+</body>
+</html>

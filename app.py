@@ -7,6 +7,7 @@
 (5000 포트는 macOS AirPlay 수신기와 충돌하므로 8000 사용. PORT 환경변수로 변경 가능.)
 """
 import os
+import re
 import math
 import time
 import requests
@@ -28,6 +29,7 @@ if os.path.exists(_ENV_FILE):
         pass
 
 import auth
+import kr_data
 # valuate(=pandas/numpy/yfinance/bs4/curl_cffi, ~80MB)는 부팅을 가볍게 하려고 지연 로딩.
 # → 무료 512MB 인스턴스가 빠르고 가볍게 깨어나 정적 페이지를 즉시 응답(콜드 웨이크 OOM 방지).
 
@@ -548,6 +550,245 @@ def api_briefing():
         import traceback
         return jsonify({"error": f"브리핑 실패: {repr(e)[:150]}",
                         "trace": traceback.format_exc()[-800:]}), 500
+
+
+# ----------------------------- 실적 카드 -----------------------------
+# 카드는 히르찬 컴퓨터의 earnings-cards(09번)에서 만들어 static/earnings/ 로 보냄(publish.py).
+# 목록은 static/earnings/manifest.json, 여기서는 한 묶음을 zip으로 묶어 주기만 한다.
+EARN_DIR = os.path.join(app.root_path, "static", "earnings")
+
+
+EARNCARDS = os.path.join(app.root_path, "earncards")   # 카드 코드 복사본(원본 ~/projects/earnings-cards)
+
+
+@app.route("/api/earnings")
+def api_earnings():
+    """검색한 기업의 실적 카드(HTML)·해석 — 최근 분기와 그 전 분기. 미발표면 banner 로 안내.
+    PNG는 브라우저에서 만든다(서버에 크롬 엔진 없음). 30분 캐시."""
+    import sys
+    q = (request.args.get("q") or "").strip()
+    if not q:
+        return jsonify({"error": "기업 이름이나 종목 코드를 입력하세요."}), 400
+    yf_ticker, code6, _name = kr_data.resolve_query(q)
+    if not yf_ticker:  # '애플'·'엔비디아'처럼 미국 종목 한글 이름 → 네이버 자동완성의 미국 상장 종목 (히르찬 차트와 같은 방식)
+        try:
+            items = requests.get("https://ac.stock.naver.com/ac", params={"q": q, "target": "stock"},
+                                 headers={"User-Agent": "Mozilla/5.0"}, timeout=6).json().get("items", [])
+        except Exception:
+            items = []
+        us = [it for it in items if it.get("nationCode") == "USA" and it.get("code")
+              and it.get("typeCode") in ("NASDAQ", "NYSE", "AMEX", "NYSEARCA", "BATS")]
+        if us:
+            yf_ticker, code6 = us[0]["code"].replace(".", "-"), None
+    if not yf_ticker:
+        return jsonify({"error": f"'{q}' 종목을 찾지 못했어요. 이름이나 코드를 확인해 주세요."}), 404
+    code = code6 or yf_ticker.upper()
+    ck = "earn:" + code
+    out = _cache_get(ck, 1800)
+    if out is None:
+        if EARNCARDS not in sys.path:
+            sys.path.insert(0, EARNCARDS)
+        import webcards
+        from collectors import sec as ec_sec, dart as ec_dart
+        try:
+            out = clean(webcards.build(code))
+        except (ec_sec.SecError, ec_dart.DartError) as e:
+            return jsonify({"error": str(e)}), 404
+        _cache_put(ck, out)
+    return jsonify(out)
+
+
+@app.route("/api/earnings/calendar")
+def api_earnings_calendar():
+    """실적 발표 달력 한 주(월~금): 미국 나스닥 달력(시총 100억$ 이상) + 한국 DART IR 개최·잠정실적 공시. 3시간 캐시"""
+    import sys
+    import re as _re
+    w = (request.args.get("week") or "").strip()
+    if w and not _re.fullmatch(r"\d{4}-\d{2}-\d{2}", w):
+        return jsonify({"error": "잘못된 날짜예요."}), 400
+    if EARNCARDS not in sys.path:
+        sys.path.insert(0, EARNCARDS)
+    import ecal
+    from datetime import date as _d, timedelta as _td
+    t = _d.fromisoformat(w) if w else datetime.now(KST).date()
+    start = (t - _td(days=t.weekday())).isoformat()
+    ck = "ecal:" + start
+    out = _cache_get(ck, 3 * 3600)
+    if out is None:
+        out = clean(ecal.week(start))
+        out["today"] = datetime.now(KST).date().isoformat()
+        _cache_put(ck, out)
+    return jsonify(out)
+
+
+EXTRA_LIMIT = int(os.environ.get("EARN_EXTRA_LIMIT", "10"))  # 방문자 1명이 하루에 AI로 새로 만들 수 있는 횟수(넘으면 숫자 규칙판)
+
+
+@app.route("/api/earnings/extra")
+def api_earnings_extra():
+    """검색하면 자동으로 만드는 이슈·어닝콜 카드. Gemini가 원문(미국 8-K 보도자료)을 읽고 쓰고,
+    earncards/aiwrite.py가 숫자·인용·금지 표현을 검증해 통과한 문장만 씀. AI 실패 시 숫자 규칙 기본판.
+    같은 기업·분기는 24시간 캐시(누가 만들든 모두가 같이 봄). AI 새로 만들기는 1인 하루 EARN_EXTRA_LIMIT회,
+    넘으면 AI 없이 숫자 규칙판(별도 캐시)으로 보여 줌."""
+    import sys
+    import re as _re
+    q = (request.args.get("q") or "").strip()
+    quarter = (request.args.get("quarter") or "").strip().upper()
+    if not q or not _re.fullmatch(r"\d{4}Q[1-4]", quarter):
+        return jsonify({"error": "잘못된 요청이에요."}), 400
+    yf_ticker, code6, _name = kr_data.resolve_query(q)
+    if not yf_ticker:
+        try:
+            items = requests.get("https://ac.stock.naver.com/ac", params={"q": q, "target": "stock"},
+                                 headers={"User-Agent": "Mozilla/5.0"}, timeout=6).json().get("items", [])
+        except Exception:
+            items = []
+        us = [it for it in items if it.get("nationCode") == "USA" and it.get("code")]
+        if us:
+            yf_ticker, code6 = us[0]["code"].replace(".", "-"), None
+    if not yf_ticker:
+        return jsonify({"error": f"'{q}' 종목을 찾지 못했어요."}), 404
+    code = code6 or yf_ticker.upper()
+    ck = f"earnx:{code}:{quarter}"
+    out = _cache_get(ck, 86400)
+    if out is not None:
+        return jsonify(out)
+    today = datetime.now(KST).strftime("%Y-%m-%d")
+    if session.get("earnx_day") != today:
+        session["earnx_day"], session["earnx_uses"] = today, 0
+        session.permanent = True
+    use_ai = session.get("earnx_uses", 0) < EXTRA_LIMIT
+    if not use_ai:
+        out = _cache_get(ck + ":rule", 86400)
+        if out is not None:
+            return jsonify(out)
+    if EARNCARDS not in sys.path:
+        sys.path.insert(0, EARNCARDS)
+    import webcards
+    import deepdive
+    from collectors import sec as ec_sec, dart as ec_dart
+    symbol = yf_ticker if code6 is None else yf_ticker   # 국내는 005930.KS 같은 야후 표기 그대로
+    try:
+        out = clean(webcards.build_extra(code, quarter, symbol, deepdive._gemini_json if use_ai else None))
+    except (ec_sec.SecError, ec_dart.DartError, ValueError) as e:
+        return jsonify({"error": str(e)}), 404
+    if use_ai:
+        session["earnx_uses"] = session.get("earnx_uses", 0) + 1
+        _cache_put(ck if out.get("ai") else ck + ":rule", out)
+    else:
+        out["limited"] = True
+        _cache_put(ck + ":rule", out)
+    return jsonify(out)
+
+
+# ---------- 내 계좌 비중 탭 ----------
+# 계좌·매매 기록은 방문자 브라우저에만 저장. 서버는 종목 찾기·현재가·배당/실적 일정·이슈만 준다.
+PF_ISSUE_LIMIT = int(os.environ.get("PF_ISSUE_LIMIT", "30"))   # 1인 하루 AI 이슈 정리 횟수(넘으면 기사 목록만)
+
+
+@app.route("/api/pf/resolve")
+def api_pf_resolve():
+    import portfolio
+    q = (request.args.get("q") or "").strip()[:40]
+    if not q:
+        return jsonify({"error": "종목 이름이나 티커를 입력해 주세요."}), 400
+    ck = "pfres:" + q.lower()
+    out = _cache_get(ck, 3600)
+    if out is None:
+        out = portfolio.resolve(q)
+        if not out:
+            return jsonify({"error": f"'{q}' 종목을 찾지 못했어요. 이름이나 티커를 확인해 주세요."}), 404
+        _cache_put(ck, out)
+    return jsonify(out)
+
+
+@app.route("/api/pf/quotes")
+def api_pf_quotes():
+    import portfolio
+    syms = [s for s in (request.args.get("s") or "").split(",") if re.fullmatch(r"[A-Za-z0-9.\-=^]{1,15}", s)]
+    return jsonify(clean(portfolio.quotes(syms)))
+
+
+@app.route("/api/pf/fx")
+def api_pf_fx():
+    """매수일의 원/달러 환율(달러 종목 환차손익 계산용)"""
+    import portfolio
+    d = (request.args.get("d") or "").strip()
+    if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", d):
+        return jsonify({"error": "날짜 형식이 잘못됐어요."}), 400
+    v = portfolio.fx_on(d)
+    return jsonify({"date": d, "fx": v}) if v else (jsonify({"error": "그날 환율을 찾지 못했어요."}), 404)
+
+
+@app.route("/api/pf/info")
+def api_pf_info():
+    import portfolio
+    sym = (request.args.get("s") or "").strip()
+    if not re.fullmatch(r"[A-Za-z0-9.\-]{1,15}", sym):
+        return jsonify({"error": "잘못된 요청이에요."}), 400
+    ck = "pfinfo:" + sym.upper()
+    out = _cache_get(ck, 6 * 3600)
+    if out is None:
+        out = clean(portfolio.info(sym))
+        _cache_put(ck, out)
+    return jsonify(out)
+
+
+@app.route("/api/pf/issues")
+def api_pf_issues():
+    import portfolio
+    import deepdive
+    sym = (request.args.get("s") or "").strip()
+    name = (request.args.get("n") or sym).strip()[:40]
+    if not re.fullmatch(r"[A-Za-z0-9.\-]{1,15}", sym):
+        return jsonify({"error": "잘못된 요청이에요."}), 400
+    ck = "pfiss:" + sym.upper()
+    out = _cache_get(ck, 6 * 3600)
+    if out is not None:
+        return jsonify(out)
+    today = datetime.now(KST).strftime("%Y-%m-%d")
+    if session.get("pfiss_day") != today:
+        session["pfiss_day"], session["pfiss_uses"] = today, 0
+        session.permanent = True
+    use_ai = session.get("pfiss_uses", 0) < PF_ISSUE_LIMIT
+    out = clean(portfolio.issues(sym, name, deepdive._gemini_json if use_ai else None))
+    if out.get("ai"):
+        session["pfiss_uses"] = session.get("pfiss_uses", 0) + 1
+        _cache_put(ck, out)
+    elif not use_ai:
+        out["limited"] = True
+    return jsonify(out)
+
+
+@app.route("/api/earnings_cards/zip")
+def earnings_cards_zip():
+    import io
+    import json
+    import re
+    import zipfile
+    from flask import send_file
+    bid = request.args.get("id", "")
+    size = request.args.get("size", "1080x1080")
+    if not re.fullmatch(r"[A-Za-z0-9.\-]+_\d{4}Q[1-4]", bid) or not re.fullmatch(r"\d{3,4}x\d{3,4}", size):
+        return jsonify({"error": "잘못된 요청이에요."}), 400
+    try:
+        with open(os.path.join(EARN_DIR, "manifest.json"), encoding="utf-8") as f:
+            item = next(b for b in json.load(f)["items"] if b["id"] == bid)
+    except (OSError, StopIteration, ValueError, KeyError):
+        return jsonify({"error": "카드를 찾지 못했어요."}), 404
+    buf, n = io.BytesIO(), 0
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_STORED) as z:   # PNG는 이미 압축돼 있어 그대로 담음
+        for c in item["cards"]:
+            rel = c["sizes"].get(size)
+            path = os.path.join(EARN_DIR, rel) if rel else None
+            if path and os.path.isfile(path):
+                n += 1
+                z.write(path, f"{n}_{c['title']}.png")
+    if not n:
+        return jsonify({"error": "이 크기의 카드가 없어요."}), 404
+    buf.seek(0)
+    return send_file(buf, mimetype="application/zip", as_attachment=True,
+                     download_name=f"{item['name']}_{item['quarter']}_실적카드_{size}.zip")
 
 
 @app.route("/api/peers")
