@@ -13,9 +13,11 @@ import os
 import re
 import time
 import zipfile
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, wait
 from datetime import date, timedelta
 from pathlib import Path
+
+import threading
 
 import requests
 
@@ -40,6 +42,23 @@ def _ko_names() -> dict:
 
 
 _KO_US = None
+_KO_LOCK = threading.Lock()
+_PARTIAL = False   # 이번 계산에서 시간 안에 못 끝낸 것이 있으면 True(서버가 짧게만 캐시)
+
+
+def _bounded(fn, items, workers: int, limit: float) -> list:
+    """items마다 fn을 병렬로 돌리되 limit초까지만 기다림. 못 끝낸 것은 None(뒤에서 계속 돌아 파일 캐시는 채워짐).
+    처음 서버(캐시 없음)에서 공시 본문 수백 개를 받다가 요청 시간 제한을 넘던 문제 방지"""
+    global _PARTIAL
+    if not items:
+        return []
+    ex = ThreadPoolExecutor(workers)
+    futs = [ex.submit(fn, x) for x in items]
+    done, rest = wait(futs, timeout=limit)
+    ex.shutdown(wait=False)
+    if rest:
+        _PARTIAL = True
+    return [f.result() if f in done and f.exception() is None else None for f in futs]
 
 
 def _ko_us(syms: list[str]) -> dict:
@@ -64,12 +83,14 @@ def _ko_us(syms: list[str]) -> dict:
         except Exception:
             return sym, None            # 네트워크 오류는 저장하지 않음(다음에 다시)
     if todo:
-        with ThreadPoolExecutor(8) as ex:
-            for sym, nm in ex.map(one, todo):
-                if nm is not None:
-                    _KO_US[sym] = [nm, now]
-        path.write_text(json.dumps(_KO_US, ensure_ascii=False))
-    return {s: _KO_US[s][0] for s in syms if s in _KO_US and _KO_US[s][0]}
+        got = _bounded(one, todo, 8, 15)
+        with _KO_LOCK:
+            for res in got:
+                if res and res[1] is not None:
+                    _KO_US[res[0]] = [res[1], now]
+            path.write_text(json.dumps(_KO_US, ensure_ascii=False))
+    complete = all(s in _KO_US for s in set(syms) if s)
+    return {s: _KO_US[s][0] for s in syms if s in _KO_US and _KO_US[s][0]}, complete
 
 
 def _short(name: str) -> str:
@@ -113,11 +134,12 @@ def us_day(d: date) -> list[dict]:
             seen.add(k)
             uniq.append(z)
     out = uniq
-    ko = _ko_us([z["code"] for z in out if z["name"] == z["en"]])
+    ko, complete = _ko_us([z["code"] for z in out if z["name"] == z["en"]])
     for z in out:
         if z["code"] in ko:
             z["name"] = ko[z["code"]]
-    path.write_text(json.dumps(out, ensure_ascii=False))
+    if complete:                     # 한글 이름을 다 못 찾았으면 다음에 다시 만들도록 저장하지 않음
+        path.write_text(json.dumps(out, ensure_ascii=False))
     return out
 
 
@@ -134,7 +156,7 @@ def _dart_list(bgn: date, end: date, detail: str) -> list[dict]:
     def page(n):
         return requests.get("https://opendart.fss.or.kr/api/list.json",
                             params={"crtfc_key": k, "bgn_de": f"{bgn:%Y%m%d}", "end_de": f"{end:%Y%m%d}",
-                                    "pblntf_ty": "I", "page_no": n, "page_count": 100}, timeout=30).json()
+                                    "pblntf_ty": "I", "page_no": n, "page_count": 100}, timeout=15).json()
     first = page(1)
     if first.get("status") != "000":
         return []
@@ -155,7 +177,7 @@ def _ir_doc(rcept_no: str) -> dict | None:
         return json.loads(path.read_text())
     try:
         r = requests.get("https://opendart.fss.or.kr/api/document.xml",
-                         params={"crtfc_key": dart._key(), "rcept_no": rcept_no}, timeout=30)
+                         params={"crtfc_key": dart._key(), "rcept_no": rcept_no}, timeout=15)
         z = zipfile.ZipFile(io.BytesIO(r.content))
         raw = z.read(z.namelist()[0])
         for enc in ("utf-8", "euc-kr", "cp949"):
@@ -198,9 +220,12 @@ def kr_week(start: date, end: date) -> dict:
                                           "kospi": r.get("corp_cls") == "Y",
                                           "done": True, "url": f"https://dart.fss.or.kr/dsaf001/main.do?rcpNo={r['rcept_no']}"})
     # 예정: 3주 전부터 나온 IR 개최 공시 중 그 주에 열리고 '실적'을 다루는 것
-    irs = [r for r in _dart_list(start - timedelta(days=21), min(end, today), "I") if "기업설명회" in r["report_nm"]]
-    with ThreadPoolExecutor(8) as ex:
-        docs = list(ex.map(lambda r: _ir_doc(r["rcept_no"]), irs))
+    global _PARTIAL
+    try:
+        irs = [r for r in _dart_list(start - timedelta(days=21), min(end, today), "I") if "기업설명회" in r["report_nm"]]
+    except Exception:
+        irs, _PARTIAL = [], True
+    docs = _bounded(lambda r: _ir_doc(r["rcept_no"]), irs, 8, 20)
     for r, doc in zip(irs, docs):
         if not doc or not doc.get("date") or not (start.isoformat() <= doc["date"] <= end.isoformat()):
             continue
@@ -228,13 +253,15 @@ def week(start_s: str | None = None) -> dict:
     start = t - timedelta(days=t.weekday())
     end = start + timedelta(days=4)
     days = [start + timedelta(days=i) for i in range(5)]
+    global _PARTIAL
+    _PARTIAL = False
     with ThreadPoolExecutor(5) as ex:
         us = list(ex.map(us_day, days))
     try:
         kr = kr_week(start, end) if os.environ.get("DART_API_KEY") else {}
     except Exception:
-        kr = {}
+        kr, _PARTIAL = {}, True
     today = date.today().isoformat()
-    return {"start": start.isoformat(), "today": today, "us_min_cap": US_MIN_CAP,
+    return {"start": start.isoformat(), "today": today, "us_min_cap": US_MIN_CAP, "partial": _PARTIAL,
             "days": [{"date": d.isoformat(), "us": [dict(x, done=d.isoformat() < today) for x in u],
                       "kr": kr.get(d.isoformat(), [])} for d, u in zip(days, us)]}

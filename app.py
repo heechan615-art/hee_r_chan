@@ -614,9 +614,12 @@ def api_earnings_calendar():
     start = (t - _td(days=t.weekday())).isoformat()
     ck = "ecal:" + start
     out = _cache_get(ck, 3 * 3600)
+    if out is not None and out.get("partial") and time.time() - out.get("_at", 0) > 120:
+        out = None                   # 시간 안에 다 못 받은 결과는 2분만 쓰고 다시 만듦(그사이 뒤에서 캐시가 채워짐)
     if out is None:
         out = clean(ecal.week(start))
         out["today"] = datetime.now(KST).date().isoformat()
+        out["_at"] = time.time()
         _cache_put(ck, out)
     return jsonify(out)
 
