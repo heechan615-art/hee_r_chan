@@ -105,6 +105,12 @@ def index():
     return render_template("index.html")
 
 
+@app.route("/favicon.ico")
+def favicon():
+    # 브라우저가 기본 주소로 찾는 탭 아이콘 → static/favicon-32.png
+    return app.send_static_file("favicon-32.png")
+
+
 # ----------------------------- 회원 인증 -----------------------------
 def _is_member():
     """회원 여부. 인증 미설정(Supabase 없음)이면 전원 회원 취급 → 기존처럼 동작."""

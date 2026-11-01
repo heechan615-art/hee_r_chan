@@ -4,6 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>히르찬의 밸류AI</title>
+<link rel="icon" type="image/svg+xml" href="/static/favicon.svg?v=1">
+<link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32.png?v=1">
+<link rel="apple-touch-icon" href="/static/apple-touch-icon.png?v=1">
 <link rel="stylesheet" as="style" crossorigin
   href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
 <style>
@@ -789,6 +792,16 @@
   .dd-final-h{font-size:18px;font-weight:800;margin-bottom:12px}
   .dd-final-sub{font-size:12px;color:var(--muted);font-weight:600;margin-left:6px}
   .dd-final-hl{font-size:16.5px;font-weight:800;line-height:1.5;margin-bottom:12px;color:var(--accent)}
+  /* 오른쪽 아래 '맨 위로' 버튼 — 조금 내려가면 나타나 화면을 따라다님 */
+  #to-top{position:fixed;right:14px;bottom:68px;z-index:90;display:flex;align-items:center;gap:6px;
+    padding:13px 18px;border:2px solid #fff;border-radius:999px;cursor:pointer;
+    background:linear-gradient(135deg,#d6b46a,#B0883A);color:#fff;font-size:15px;font-weight:800;letter-spacing:-.01em;
+    box-shadow:0 6px 20px rgba(13,30,51,.35);opacity:0;visibility:hidden;transform:translateY(12px);transition:.2s}
+  #to-top.show{opacity:1;visibility:visible;transform:none}
+  #to-top:hover{transform:translateY(-2px);box-shadow:0 9px 24px rgba(13,30,51,.42)}
+  #to-top .ar{font-size:18px;line-height:1}
+  html.is-mobile #to-top{right:14px;bottom:62px;padding:11px 15px;font-size:14px}
+  @media print{ #to-top{display:none !important} }
   /* ===== 사이드바 레이아웃 (Seed-Up 스타일: 네이비 사이드바 + 골드 강조) ===== */
   .app-shell{display:flex;align-items:stretch;min-height:100vh}
   .sidebar{flex:none;width:252px;background:linear-gradient(180deg,#0e1c36,#15294b);
@@ -1961,6 +1974,7 @@ document.querySelectorAll(".tab-btn").forEach(b => b.onclick = () => {
         <button type="button" id="brief-gen" class="tab-gen">📰 오늘의 브리핑 생성</button>`;
     }
   }
+  window.scrollTo(0, 0);   // 탭을 누르면(같은 탭을 다시 눌러도) 맨 위에서 시작
 });
 
 // ---------- 관련주 찾기 ----------
@@ -5402,5 +5416,15 @@ window.uploadFactset = uploadFactset;   // 인라인 onchange가 IIFE 밖에서 
 </script>
 <script src="/static/portfolio.js?v=11" defer></script>
 <script src="/static/econ.js?v=2" defer></script>
+<button type="button" id="to-top" aria-label="맨 위로"><span class="ar">↑</span>맨 위로</button>
+<script>
+(function(){
+  const t = document.getElementById("to-top");
+  const upd = () => t.classList.toggle("show", window.scrollY > 500);
+  window.addEventListener("scroll", upd, {passive:true});
+  t.addEventListener("click", () => window.scrollTo({top:0, behavior:"smooth"}));
+  upd();
+})();
+</script>
 </body>
 </html>
