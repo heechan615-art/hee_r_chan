@@ -42,9 +42,22 @@
     return `<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none"><polyline points="${xy.join(" ")}" fill="none" stroke="#163a5c" stroke-width="2" vector-effect="non-scaling-stroke"/></svg>`;
   }
   function destroy(){ charts.forEach(c => c.destroy()); charts = []; }
+  // 묶음(제조업 PMI = ISM + S&P 글로벌 등)
+  const G = () => B.groups || [];
+  const groupOf = id => G().find(g => g.members.includes(id));
+  const nameOf = id => ((B.indicators.find(i => i.id === id) || G().find(g => g.id === id)) || {}).name || id;
+  const SHORT = id => /-ism-/.test(id) ? "ISM" : /-spg-/.test(id) ? "S&P 글로벌" : nameOf(id);
+  const arrow = d => d > 0 ? "▲" : d < 0 ? "▼" : "−";
+  const udc = d => d > 0 ? "ec-up" : d < 0 ? "ec-dn" : "";
+  function groupSignal(g, ms){
+    if(g.signal) return g.signal;
+    const v = ms.map(i => { const s = primary(i), l = s ? last(s) : []; return l.length ? l[0][1] : null; });
+    if(v.some(x => x == null)) return null;
+    return v.every(x => x >= 50) ? {t: "둘 다 확장", c: "mid"} : v.every(x => x < 50) ? {t: "둘 다 위축", c: "cold"} : {t: "엇갈림", c: "na"};
+  }
   function go(view, id){
     destroy();
-    if(view === "i") indicator(id); else if(view === "r") report(id); else home();
+    if(view === "i") indicator(id); else if(view === "g") group(id); else if(view === "r") report(id); else home();
     const top = document.getElementById("tab-econ"); if(top && top.getBoundingClientRect().top < 0) top.scrollIntoView();
   }
   function bindNav(){
@@ -55,7 +68,7 @@
   function home(){
     const D = B.indicators, reps = R();
     const up = D.filter(i => i.next_release && i.next_release >= today()).sort((a, b) => a.next_release < b.next_release ? -1 : 1);
-    const name = id => (D.find(i => i.id === id) || {}).name || id;
+    const name = id => (G().some(g => g.id === id) ? "🧩 " : "") + nameOf(id);
     let h = `<div class="home-top">
       <div class="panel"><h2 style="margin-top:0">📝 최근 해석 <small>${reps.length ? reps.length + "건" : ""}</small></h2>
         ${reps.length ? `<div class="rlist">${reps.slice(0, 6).map(r => `<a href="#" data-go="r:${esc(r.id)}"><div class="dt"><b>${esc((r.release || "").slice(5).replace("-", "/"))}</b>발표</div>
@@ -67,7 +80,8 @@
     </div>`;
     for(const c of ["US", "KR", "CN", "EU"]){
       const list = D.filter(i => i.country === c); if(!list.length) continue;
-      h += `<div class="cty">${CTY[c]}</div><div class="grid">${list.map(card).join("")}</div>`;
+      const cards = list.map(i => { const g = groupOf(i.id); return !g ? card(i) : g.members[0] === i.id ? groupCard(g) : ""; });
+      h += `<div class="cty">${CTY[c]}</div><div class="grid">${cards.join("")}</div>`;
     }
     root().innerHTML = h + `<p class="foot">숫자는 발표 원문 그대로이며, 계산·추정값은 따로 표시해요. 투자 권유가 아닌 공부용 해석이에요. · 업데이트 ${esc(B.updated)}</p>`;
     bindNav();
@@ -82,6 +96,18 @@
       <div class="v"><b>${fmt(v, s.unit)}</b>${d != null ? `<span class="${d > 0 ? "ec-up" : d < 0 ? "ec-dn" : ""}">${d > 0 ? "▲" : d < 0 ? "▼" : "−"} ${Math.abs(d).toFixed(1)}${s.unit === "%" ? "%p" : ""}</span>` : ""}</div>
       <div class="lb">${esc(s.label)} · ${ym(m)}</div>${spark(s)}
       ${ind.next_release ? `<div class="nx">다음 발표 ${esc(ind.next_release)}</div>` : ""}</a>`;
+  }
+
+  function groupCard(g){
+    const ms = g.members.map(id => B.indicators.find(i => i.id === id)).filter(Boolean), sg = groupSignal(g, ms);
+    const rows = ms.map(ind => { const s = primary(ind), l = s ? last(s, 2) : [];
+      if(!l.length) return `<div class="gr"><span>${esc(SHORT(ind.id))}</span><b class="na">아직 자료 없음</b></div>`;
+      const [m, v] = l[l.length - 1], d = l.length > 1 ? v - l[0][1] : null;
+      return `<div class="gr"><span>${esc(SHORT(ind.id))}</span><b>${fmt(v, s.unit)}</b>${d != null ? `<em class="${udc(d)}">${arrow(d)} ${Math.abs(d).toFixed(1)}</em>` : ""}<small>${ym(m)}</small></div>`; });
+    const nx = ms.map(i => i.next_release).filter(Boolean).sort()[0];
+    return `<a class="card gcard" href="#" data-go="g:${g.id}"><div class="h"><span class="nm">🧩 ${esc(g.name)}</span>${sg ? `<span class="sig ${sg.c}">${esc(sg.t)}</span>` : ""}</div>
+      <div class="ds">${esc(ms.map(i => SHORT(i.id)).join(" · "))} 함께 보기 · 각각의 해석 + 종합 해석</div><div class="grs">${rows.join("")}</div>
+      ${g.summary ? `<div class="gs">${esc(g.summary)}</div>` : ""}${nx ? `<div class="nx">다음 발표 ${esc(nx)}</div>` : ""}</a>`;
   }
 
   // ---------- 그래프 ----------
@@ -109,10 +135,11 @@
     const ind = B.indicators.find(i => i.id === id); if(!ind){ home(); return; }
     const S = Object.entries(ind.series || {}), main = S.filter(([, s]) => s.axis !== "mom"), mom = S.filter(([, s]) => s.axis === "mom");
     const months = [...new Set(S.flatMap(([, s]) => Object.keys(s.data)))].sort().slice(-36);
-    const reps = R().filter(r => r.indicator === id), sg = signal(ind);
-    let h = `<div class="crumb"><a href="#" data-go="h">경제지표 홈</a> › ${CTY[ind.country] || ""}</div>
+    const reps = R().filter(r => r.indicator === id), sg = signal(ind), grp = groupOf(id);
+    let h = `<div class="crumb"><a href="#" data-go="h">경제지표 홈</a> › ${CTY[ind.country] || ""}${grp ? ` › <a href="#" data-go="g:${grp.id}">🧩 ${esc(grp.name)}</a>` : ""}</div>
     <div class="ihead"><div><h1>${esc(ind.name)} ${sg ? `<span class="sig ${sg.c}" style="font-size:13px;vertical-align:4px">${esc(sg.t)}</span>` : ""}</h1>
       <div class="meta">${esc(ind.desc)}<br>발표 ${esc(ind.agency)} · ${esc(ind.freq)}마다${ind.target != null ? ` · 기준선 ${ind.target}` : ""}${ind.next_release ? ` · <b>다음 발표 ${esc(ind.next_release)}</b>` : ""}</div>
+      ${grp ? `<a class="gonote" href="#" data-go="g:${grp.id}">🧩 ${esc(grp.members.filter(x => x !== id).map(SHORT).join(" · "))}와 나란히 보기 · 종합 해석 →</a>` : ""}
       ${ind.summary ? `<div class="concl" style="margin-top:10px"><small>최근 해석 한 줄</small>${esc(ind.summary)}</div>` : ""}</div>
       <div class="kpis">${S.slice(0, 4).map(([, s]) => { const l = last(s, 2); if(!l.length) return ""; const v = l[l.length - 1][1], d = l.length > 1 ? v - l[0][1] : null;
         return `<div class="kpi"><span>${esc(s.label)} · ${ym(l[l.length - 1][0])}</span><b>${fmt(v, s.unit)}</b>${d != null ? `<em class="${d > 0 ? "ec-up" : d < 0 ? "ec-dn" : ""}">${d > 0 ? "▲" : d < 0 ? "▼" : ""}${Math.abs(d).toFixed(1)}</em>` : ""}</div>`; }).join("")}</div></div>`;
@@ -125,9 +152,10 @@
     }
     if(ind.items && Object.keys(ind.items).length){
       const im = [...new Set(Object.values(ind.items).flatMap(o => Object.keys(o)))].sort();
-      const mx = Math.max(...Object.values(ind.items).flatMap(o => Object.values(o).map(Math.abs)));
+      const ctr = ind.target === 50 ? 50 : 0;   // PMI는 50을 가운데로
+      const mx = Math.max(...Object.values(ind.items).flatMap(o => Object.values(o).map(v => Math.abs(v - ctr))));
       h += `<h2>🌡️ 세부 항목 히트맵 <small>${esc(ind.items_label || "")} · 진할수록 강해요</small></h2><div class="panel heat"><table style="min-width:${120 + im.length * 52}px"><tr><th class="l">항목</th>${im.map(m => `<th>${ym(m)}</th>`).join("")}</tr>
-        ${Object.entries(ind.items).map(([k, o]) => `<tr><th class="l">${esc(k)}</th>${im.map(m => o[m] == null ? "<td></td>" : `<td style="background:${heatColor(o[m], mx)}">${o[m]}</td>`).join("")}</tr>`).join("")}</table></div>`;
+        ${Object.entries(ind.items).map(([k, o]) => `<tr><th class="l">${esc(k)}</th>${im.map(m => o[m] == null ? "<td></td>" : `<td style="background:${heatColor(o[m] - ctr, mx)}">${o[m]}</td>`).join("")}</tr>`).join("")}</table></div>`;
     }
     if(S.length){
       const tm = months.slice(-13).reverse();
@@ -139,6 +167,37 @@
     if(S.length) charts.push(lineChart(document.getElementById("ec-c1"), months, main.map(x => x[1]), ind.target, (main[0] || mom[0])[1].unit));
     const c2 = document.getElementById("ec-c2");
     if(mom.length && c2){ const mm = months.slice(-13); charts.push(barChart(c2, mm.map(ym), mm.map(m => mom[0][1].data[m] ?? null), "%", false, mom[0][1].label)); }
+  }
+
+  // ---------- 묶음: 두 기관 나란히 + 종합 해석 + 기관별 해석 ----------
+  function group(gid){
+    const g = G().find(x => x.id === gid); if(!g){ home(); return; }
+    const ms = g.members.map(id => B.indicators.find(i => i.id === id)).filter(Boolean), sg = groupSignal(g, ms), reps = R();
+    const rl = rr => `<div class="panel rlist">${rr.map(r => `<a href="#" data-go="r:${esc(r.id)}"><div class="dt"><b>${esc((r.release || "").slice(5).replace("-", "/"))}</b>발표</div>
+      <div><div class="t">${esc(r.period || "")}</div><div class="c">${esc(r.conclusion || "")}</div></div></a>`).join("")}</div>`;
+    const box = ind => { const s = primary(ind), l = s ? last(s, 2) : [], isg = signal(ind);
+      const v = l.length ? l[l.length - 1] : null, d = l.length > 1 ? v[1] - l[0][1] : null;
+      return `<div class="panel cbox ${/-spg-/.test(ind.id) ? "spg" : ""}"><div class="h"><span class="tg">${esc(SHORT(ind.id))}</span>${isg ? `<span class="sig ${isg.c}">${esc(isg.t)}</span>` : ""}</div>
+        <div class="nm">${esc(ind.name)}</div>
+        ${v ? `<div class="v"><b>${fmt(v[1], s.unit)}</b>${d != null ? `<em class="${udc(d)}">${arrow(d)} ${Math.abs(d).toFixed(1)}</em>` : ""}<small>${esc(s.label)} · ${ym(v[0])}</small></div>` : `<div class="v"><b class="na">아직 자료 없음</b></div>`}
+        ${ind.summary ? `<p class="sm">${esc(ind.summary)}</p>` : ""}
+        <div class="ft">${ind.next_release ? `<span>다음 발표 <b>${esc(ind.next_release)}</b></span>` : "<span></span>"}<a href="#" data-go="i:${ind.id}">자세히 보기 →</a></div></div>`; };
+    const S = ms.map(i => [i, primary(i)]).filter(x => x[1]);
+    const months = [...new Set(S.flatMap(([, s]) => Object.keys(s.data)))].sort().slice(-36);
+    const cr = reps.filter(r => r.indicator === gid);
+    root().innerHTML = `<div class="crumb"><a href="#" data-go="h">경제지표 홈</a> › ${CTY[g.country] || ""}</div>
+      <div class="ihead"><div><h1>🧩 ${esc(g.name)} ${sg ? `<span class="sig ${sg.c}" style="font-size:13px;vertical-align:4px">${esc(sg.t)}</span>` : ""}</h1>
+        <div class="meta">${esc(g.desc)}</div>
+        ${g.summary ? `<div class="concl" style="margin-top:10px"><small>최근 종합 해석 한 줄</small>${esc(g.summary)}</div>` : ""}</div></div>
+      <div class="cmp">${ms.map(box).join("")}</div>
+      ${S.length ? `<div class="chartbox" style="margin-top:16px"><h3>📈 두 기관 헤드라인 PMI 추세 (50 위면 확장)</h3><div class="cv"><canvas id="ec-g1"></canvas></div></div>` : ""}
+      <h2>🧩 종합 해석 <small>${cr.length}건 · ${esc(ms.map(i => SHORT(i.id)).join(" vs "))}</small></h2>
+      ${cr.length ? rl(cr) : `<div class="empty">두 기관 해석이 같은 달로 모두 나오면 종합 해석이 여기 올라와요.</div>`}
+      <div class="cols">${ms.map(ind => { const rr = reps.filter(r => r.indicator === ind.id);
+        return `<div><h2>📝 ${esc(SHORT(ind.id))} 해석 <small>${rr.length}건</small></h2>${rr.length ? rl(rr) : `<div class="empty">아직 해석이 없어요. 발표 자료가 나오면 히르찬이 해석을 올려요.</div>`}</div>`; }).join("")}</div>
+      <p class="foot">숫자는 발표 원문 그대로이며, 계산·추정값은 따로 표시해요. 투자 권유가 아닌 공부용 해석이에요.</p>`;
+    bindNav();
+    if(S.length) charts.push(lineChart(document.getElementById("ec-g1"), months, S.map(([i, s]) => Object.assign({}, s, {label: `${SHORT(i.id)} ${s.label}`})), 50, S[0][1].unit));
   }
 
   // ---------- 해석 글 ----------
@@ -185,10 +244,12 @@
   }
   function report(id){
     const r = B.reports.find(x => x.meta.id === id); if(!r){ home(); return; }
-    const m = r.meta, ind = B.indicators.find(i => i.id === m.indicator) || {id: m.indicator, name: m.indicator, agency: ""};
+    const m = r.meta, grp = G().find(g => g.id === m.indicator), ind = B.indicators.find(i => i.id === m.indicator) || {id: m.indicator, name: nameOf(m.indicator), agency: ""};
+    const pg = grp ? null : groupOf(m.indicator);
     const {items, body} = takeNeeds(r.body);
-    root().innerHTML = `<div class="crumb"><a href="#" data-go="h">경제지표 홈</a> › <a href="#" data-go="i:${esc(m.indicator)}">${esc(ind.name)}</a></div>
-      <div class="rhead"><div class="tg">${esc(ind.name)} · ${esc(m.agency || ind.agency || "")}</div><h1>${esc(m.title || (ind.name + " " + (m.period || "")))}</h1>
+    root().innerHTML = `<div class="crumb"><a href="#" data-go="h">경제지표 홈</a> › ${grp ? `<a href="#" data-go="g:${esc(grp.id)}">🧩 ${esc(grp.name)}</a>`
+        : `${pg ? `<a href="#" data-go="g:${esc(pg.id)}">🧩 ${esc(pg.name)}</a> › ` : ""}<a href="#" data-go="i:${esc(m.indicator)}">${esc(ind.name)}</a>`}</div>
+      <div class="rhead"><div class="tg">${grp ? `🧩 종합 해석 · ${esc(grp.members.map(SHORT).join(" vs "))}` : esc(ind.name)} · ${esc(m.agency || ind.agency || "")}</div><h1>${esc(m.title || (ind.name + " " + (m.period || "")))}</h1>
         <div class="mt"><span>기준 <b>${esc(m.period || "-")}</b></span><span>발표 <b>${esc(m.release || "-")}</b></span><span>다음 발표 <b>${esc(m.next || "-")}</b></span></div></div>
       ${m.conclusion ? `<div class="concl"><small>한 줄 결론</small>${esc(m.conclusion)}</div>` : ""}
       ${needsBox(items)}
