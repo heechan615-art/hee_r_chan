@@ -55,10 +55,34 @@
     if(v.some(x => x == null)) return null;
     return v.every(x => x >= 50) ? {t: "둘 다 확장", c: "mid"} : v.every(x => x < 50) ? {t: "둘 다 위축", c: "cold"} : {t: "엇갈림", c: "na"};
   }
-  function go(view, id){
+  // 탭 안 이동 기록: '← 뒤로'는 직전 화면(보던 위치까지), '🏠 경제지표 홈'은 처음 화면
+  let cur = ["h", ""], hist = [];
+  function go(view, id, back){
+    if(!back){
+      if(view === "h") hist = [];
+      else if(cur[0] !== view || cur[1] !== id) hist.push([cur[0], cur[1], window.scrollY]);
+    }
+    cur = [view, id || ""];
     destroy();
     if(view === "i") indicator(id); else if(view === "g") group(id); else if(view === "r") report(id); else home();
-    const top = document.getElementById("tab-econ"); if(top && top.getBoundingClientRect().top < 0) top.scrollIntoView();
+    if(view !== "h") addNav();
+    if(back && back.y != null) window.scrollTo(0, back.y);
+    else {   // 탭 맨 위로 — 모바일은 위에 붙은 메뉴 막대에 가리지 않게 그 높이만큼 덜 올림
+      const top = document.getElementById("tab-econ"), sb = document.querySelector(".sidebar");
+      const cover = document.documentElement.classList.contains("is-mobile") && sb ? sb.offsetHeight : 0;
+      if(top){ const y = top.getBoundingClientRect().top + window.scrollY - cover - 8; if(window.scrollY > y) window.scrollTo(0, Math.max(0, y)); }
+    }
+  }
+  function goBack(){
+    const p = hist.pop();
+    if(p) go(p[0], p[1], {y: p[2]}); else go("h");
+  }
+  function addNav(){
+    const bar = where => `<div class="ec-nav ${where}"><button type="button" class="back" data-back="1">← 뒤로</button><button type="button" class="home" data-home="1">🏠 경제지표 홈</button></div>`;
+    root().insertAdjacentHTML("afterbegin", bar("top"));
+    root().insertAdjacentHTML("beforeend", bar("bot"));
+    root().querySelectorAll("[data-back]").forEach(b => b.onclick = goBack);
+    root().querySelectorAll("[data-home]").forEach(b => b.onclick = () => go("h"));
   }
   function bindNav(){
     root().querySelectorAll("[data-go]").forEach(a => a.onclick = e => { e.preventDefault(); const [v, ...id] = a.dataset.go.split(":"); go(v, id.join(":")); });

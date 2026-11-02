@@ -148,3 +148,14 @@
 #tab-econ .gcard .ds{min-height:0}
 #tab-econ .cbox .v b,#tab-econ .gr b{color:var(--text)}
 html.is-mobile #tab-econ .cmp,html.is-mobile #tab-econ .cols{grid-template-columns:1fr}
+
+/* 뒤로 · 경제지표 홈 버튼(홈이 아닌 화면의 위·아래) */
+#tab-econ .ec-nav{display:flex;gap:8px;flex-wrap:wrap}
+#tab-econ .ec-nav.top{margin:0 0 14px}
+#tab-econ .ec-nav.bot{margin:22px 0 4px;padding-top:16px;border-top:1px solid var(--line)}
+#tab-econ .ec-nav button{display:inline-flex;align-items:center;gap:6px;border-radius:12px;padding:11px 18px;font:inherit;font-size:15px;font-weight:900;cursor:pointer;transition:.15s}
+#tab-econ .ec-nav .back{background:#fff;color:#0e1c36;border:2px solid #0e1c36}
+#tab-econ .ec-nav .back:hover{background:#eef2f8}
+#tab-econ .ec-nav .home{background:linear-gradient(135deg,#d6b46a,#B0883A);color:#fff;border:2px solid #B0883A;box-shadow:0 3px 10px rgba(176,136,58,.3)}
+#tab-econ .ec-nav .home:hover{filter:brightness(1.05)}
+html.is-mobile #tab-econ .ec-nav button{flex:1;justify-content:center;padding:11px 10px;font-size:14.5px}
