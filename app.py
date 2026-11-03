@@ -498,6 +498,16 @@ def api_snp():
         return jsonify({"error": f"S&P500 데이터 실패: {repr(e)[:150]}"}), 500
 
 
+@app.route("/api/sector")
+def api_sector():
+    """주도 섹터·순환매 찾기 — 섹터 ETF 상대강도·RRG·경기 국면 재료, 미국은 S&P500 확산·이익 추정(뒤에서 계산)."""
+    import sector
+    try:
+        return jsonify(clean(sector.overview(request.args.get("market", "US"), force=bool(request.args.get("force")))))
+    except Exception as e:
+        return jsonify({"error": f"섹터 데이터를 받지 못했어요: {repr(e)[:150]}"}), 500
+
+
 @app.route("/api/snp/upload_factset", methods=["POST"])
 def api_snp_upload_factset():
     """FactSet Earnings Insight PDF 수동 업로드 → 컨센서스 EPS 갱신."""

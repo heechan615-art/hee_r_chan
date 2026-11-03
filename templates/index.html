@@ -1029,6 +1029,7 @@
       <button class="tab-btn" data-tab="briefing" data-mkt="KR">🇰🇷 한국 브리핑</button>
       <button class="tab-btn" data-tab="briefing" data-mkt="US">🇺🇸 미국 브리핑</button>
       <button class="tab-btn" data-tab="econ">📑 경제지표 해석</button>
+      <button class="tab-btn" data-tab="sector">🔄 주도 섹터 찾기</button>
       <!-- 내 계좌 비중은 항상 맨 아래(사용자 규칙: 새 탭은 이 위에 추가) -->
       <button class="tab-btn" data-tab="pf">💼 내 계좌 비중</button>
       <button type="button" class="tab-arrow tab-arrow-r" data-step="1" aria-label="다음 탭">»</button>
@@ -1137,6 +1138,14 @@
     <div class="sub">미국·한국·중국·유럽 경제지표 발표를 히르찬 방식으로 해석 · 추세 그래프 · 카톡 브리핑 요약</div>
     <link rel="stylesheet" href="/static/econ.css?v=4">
     <div id="econ-root"></div>
+  </div>
+
+  <!-- 주도 섹터 · 순환매 찾기 탭: /api/sector(sector.py) — 섹터 ETF 상대강도·RRG·경기 국면 재료, 미국은 S&P500 확산·이익 추정.
+       코드: static/sector.js · sector.css -->
+  <div id="tab-sector" style="display:none">
+    <div class="sub">주도 섹터와 순환매 섹터 찾기 · 경기 국면 → 상대강도(RS·RRG) → 이익 추정 → 확산·거래대금 · 공부용 참고 신호</div>
+    <link rel="stylesheet" href="/static/sector.css?v=4">
+    <div id="sector-root"></div>
   </div>
 
   <!-- 내 계좌 비중 탭: 계좌별 안전/위험자산 비중·종목 비중 원형 그래프, 평균단가·수익률, 배당·실적·이슈 일정.
@@ -1626,7 +1635,7 @@ window.addEventListener("load", () => {
     if(location.hash) history.replaceState(null, "", location.pathname + location.search);
     return;
   }
-  const hm = location.hash.match(/^#(dividend|chart|cards|econ|pf)/);   // #dividend(=KO), #chart(=삼성전자), #cards(=GOOGL_2026Q3)
+  const hm = location.hash.match(/^#(dividend|chart|cards|econ|sector|pf)/);   // #dividend(=KO), #chart(=삼성전자), #cards(=GOOGL_2026Q3)
   if(hm){
     const b = document.querySelector('.tab-btn[data-tab="' + hm[1] + '"]');
     if(b) b.click();
@@ -1939,6 +1948,8 @@ document.querySelectorAll(".tab-btn").forEach(b => b.onclick = () => {
   if(t === "cards") openEarningsCards();
   $("#tab-econ").style.display = t === "econ" ? "" : "none";
   if(t === "econ" && window.econOpen) window.econOpen();
+  $("#tab-sector").style.display = t === "sector" ? "" : "none";
+  if(t === "sector" && window.sectorOpen) window.sectorOpen();
   $("#tab-pf").style.display = t === "pf" ? "" : "none";
   if(t === "pf" && window.pfOpen) window.pfOpen();
   if(t === "chart" && !$("#chart-frame").src){   // 처음 열 때 한 번만 로드
@@ -5416,6 +5427,7 @@ window.uploadFactset = uploadFactset;   // 인라인 onchange가 IIFE 밖에서 
 </script>
 <script src="/static/portfolio.js?v=11" defer></script>
 <script src="/static/econ.js?v=4" defer></script>
+<script src="/static/sector.js?v=2" defer></script>
 <button type="button" id="to-top" aria-label="맨 위로"><span class="ar">↑</span>맨 위로</button>
 <script>
 (function(){
