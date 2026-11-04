@@ -1,6 +1,6 @@
 // 주도 섹터 찾기 탭 — /api/sector?market=US|KR (sector.py)
 // 한눈에 보기(주도·다음·순환매) → 섹터 지도(미국은 세부 업종까지, 크기=시가총액, 색=시장 대비) → 섹터 순위 → 고른 섹터·업종 설명
-// → 더 깊게 보기(경기 국면·RRG·전체 체크표·구분법)
+// → 더 깊게 보기(경기 국면·RRG·전체 체크표·구분법) / 🧩 테마 보기: /api/sector/themes (themes.py 종목 묶음)
 (function(){
   const CHART = "https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js";
   const PAL = ["#e8590c", "#1c7ed6", "#2b8a3e", "#7c3aed", "#db2777", "#B0883A", "#0e1c36", "#0891b2", "#65a30d", "#dc2626", "#9333ea",
@@ -8,7 +8,7 @@
   const QUAD = {"선도": "#2b8a3e", "약화": "#c2410c", "부진": "#b42318", "개선": "#1d4ed8"};
   const PER = [["x1w", "1주"], ["x1m", "1개월"], ["x3m", "3개월"], ["x6m", "6개월"]];
   const SCALE = {x1w: 3, x1m: 6, x3m: 12, x6m: 20};       // 이 %p면 가장 진한 색
-  const ST = {market: "US", data: {}, per: "x1m", sel: null, sub: null, zoom: null, phase: null, charts: [], poll: null};
+  const ST = {market: "US", view: "sector", askT: null, askQ: "", ans: null, asking: false, tdata: {}, th: null, data: {}, per: "x1m", sel: null, sub: null, zoom: null, phase: null, charts: [], poll: null};
   const root = () => document.getElementById("sector-root");
   const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
   const pp = (v, d = 1) => v == null ? "–" : (v > 0 ? "+" : "") + v.toFixed(d);
@@ -39,19 +39,177 @@
     return `rgb(${r},${g},${b})`;
   }
 
+  // ---------- 머리줄(시장 · 섹터/테마 · 기간) ----------
+  function headHtml(){
+    return `<div class="sc-head">
+      <div class="sc-mk">${["US", "KR"].map(m => `<button type="button" class="${m === ST.market ? "on" : ""}" data-mk="${m}">${m === "US" ? "🇺🇸 미국" : "🇰🇷 한국"}</button>`).join("")}</div>
+      <div class="sc-mk sc-view">${[["sector", "🗺️ 섹터"], ["theme", "🧩 테마"]].map(([k, t]) => `<button type="button" class="${k === ST.view ? "on" : ""}" data-view="${k}">${t}</button>`).join("")}</div>
+      <div class="sc-per"><span>기간</span>${PER.map(([k, t]) => `<button type="button" class="${k === ST.per ? "on" : ""}" data-per="${k}">${t}</button>`).join("")}</div>
+    </div>`;
+  }
+
+  // ---------- 테마 화면 ----------
+  const KIND = [["new", "🚀 새 성장 산업"], ["old", "🏭 전통 산업"]];
+  async function loadThemes(){
+    const j = await fetch(`/api/sector/themes?market=${ST.market}`).then(r => r.json());
+    if(j.error) throw new Error(j.error);
+    if(!j.data) throw new Error(j.error || "테마 계산에 실패했어요");
+    ST.tdata[ST.market] = j.data;
+    return j.data;
+  }
+  function renderTheme(){
+    const d = ST.tdata[ST.market];
+    if(!d){
+      root().innerHTML = `${headHtml()}<p class="sc-load"><i class="sc-spin"></i>테마 종목을 계산하는 중이에요(몇 초)…</p>`;
+      bind();
+      loadThemes().then(() => { if(ST.view === "theme") keep(render); })
+        .catch(e => { root().innerHTML = `${headHtml()}<div class="sc-err">테마를 불러오지 못했어요. 잠시 뒤 다시 눌러 주세요. <small>${esc(e.message || e)}</small></div>`; bind(); });
+      return;
+    }
+    const T = d.themes, by = (a, b) => (b[ST.per] ?? -99) - (a[ST.per] ?? -99);
+    if(!ST.th || !T.some(t => t.id === ST.th)) ST.th = T.slice().sort(by)[0].id;
+    const grp = k => T.filter(t => t.cls === k).sort(by);
+    const bench = ST.market === "US" ? "S&P500(SPY)" : "코스피";
+    root().innerHTML = `${headHtml()}
+    <p class="sc-q1">섹터보다 더 잘게, <b>태양광·광통신·조선 같은 테마</b>가 시장(${bench})보다 센지 약한지 봐요. 테마마다 대표 종목을 같은 비중으로 평균했어요.</p>
+    <div class="sc-sum">
+      ${tSum("👑 주도 후보", "lead", grp("lead"), "오래 강했고, 종목들이 고르게 오르는 중", t => `3개월 시장보다 ${pp(t.x3m)}%p · 6개월 ${pp(t.x6m)}%p · 종목 ${t.pct200 ?? "–"}%가 상승 추세`)}
+      ${tSum("🌱 다음 후보", "imp", grp("imp"), "아직 약하지만 최근 힘이 붙는 중(RRG 개선 구간)", t => `1개월 ${pp(t.x1m)}%p · 3개월 ${pp(t.x3m)}%p`)}
+      ${tSum("⚡ 순환매 주의", "rot", grp("rot"), "짧게 확 튀었지만 6개월로 보면 약해요. 오래 못 갈 수 있어요", t => `${(t.x1w ?? 0) >= 5 ? `1주 ${pp(t.x1w)}%p` : `1개월 ${pp(t.x1m)}%p`} 반짝 · 6개월 ${pp(t.x6m)}%p`)}
+    </div>
+    <div class="sc-two th">
+      <div class="sc-panel">
+        <div class="sc-h3">🧩 테마 지도 <small>색 = ${perName()} 시장 대비 (빨강 강함 · 파랑 약함) · 센 순서 · 👑 주도 후보 🌱 다음 후보 ⚡ 순환매 주의 · <i class="etf">ETF</i> 투자할 수 있는 ETF 있음 · 누르면 설명</small></div>
+        ${KIND.filter(([k]) => T.some(t => t.kind === k)).map(([k, nm]) => `<div class="sc-kind">${nm}</div>
+          <div class="sc-tg">${T.filter(t => t.kind === k).sort(by).map(t => `<button type="button" class="${t.id === ST.th ? "on" : ""}" data-th="${esc(t.id)}" style="background:${heat(t[ST.per])}" title="${esc(t.ko)} · ${esc(t.label)}">
+            <b>${BADGE[t.cls] || ""}${esc(t.ko)}</b><em>${pp(t[ST.per])}%p${(t.etfs || []).length ? ` <i class="etf">ETF</i>` : ""}</em></button>`).join("")}</div>`).join("")}
+        <div class="sc-legend"><span>${perName()} 시장 대비</span><i style="background:${heatAt(-1)}"></i>−${SCALE[ST.per]}%p<i style="background:${heatAt(0)}"></i>0<i style="background:${heatAt(1)}"></i>+${SCALE[ST.per]}%p</div>
+      </div>
+      <div class="sc-panel" id="sc-detail">${themeDetail(T.find(t => t.id === ST.th))}</div>
+    </div>
+    ${askHtml()}
+    <p class="sc-foot">테마와 종목은 히르찬이 직접 고른 묶음이에요(공식 분류 아님). 평균은 종목마다 같은 비중이라 작은 종목의 움직임도 크게 반영돼요. 참고용 공부 자료이며 투자 권유나 매수·매도 추천이 아니에요.
+      데이터: 야후 파이낸스 종목 가격. 계산 ${esc(d.updated)}(2시간마다 새로) · 종목 ${d.n_px}/${d.n}개 받음.</p>`;
+    bind();
+    const t = T.find(x => x.id === ST.th);
+    if(t && t.rs_line) drawRS(t);
+  }
+  const BADGE = {lead: "👑 ", imp: "🌱 ", rot: "⚡ "};
+  function tSum(title, cls, list, sub, why){
+    return `<div class="sc-sb ${cls}"><div class="t">${title}</div><div class="s">${sub}</div>
+      ${list.length ? `<ul>${list.map(t => `<li data-th="${esc(t.id)}"><b>${esc(t.ko)}</b><span>${why(t)}</span></li>`).join("")}</ul>` : `<p class="none">지금은 없어요</p>`}</div>`;
+  }
+  const TPLAIN = {
+    "주도": "1개월·3개월·6개월 모두 시장보다 강하고, 종목 대부분이 상승 추세예요",
+    "강세 유지": "길게도 짧게도 시장보다 강해요. 다만 상승 추세 종목이 아주 많지는 않아요",
+    "살아나는 중": "6개월로 보면 약했는데 최근 1개월은 시장보다 강해요. 반짝인지 시작인지 지켜볼 구간이에요",
+    "힘 빠지는 중": "6개월로 보면 강했는데 최근 1개월은 시장보다 약해요",
+    "부진": "최근 1개월도, 6개월도 시장보다 약해요",
+    "자료 부족": "가격 기록이 짧아 판단하기 어려워요",
+  };
+  function themeDetail(t){
+    if(!t) return "";
+    const st = t.stocks.slice().sort((a, b) => (b[ST.per] ?? -99) - (a[ST.per] ?? -99));
+    return `<div class="sc-h3">🔎 ${esc(t.ko)} <span class="sc-lab ${t.cls}">${esc(t.label)}</span> <small>${t.n_px}종목 · 같은 비중${(t.etfs || []).length ? ` · ETF ${t.etfs.length}개` : ""}</small></div>
+      <div class="sc-pers">${PER.map(([k, n]) => `<div><span>${n}</span><b class="${tone(t[k])}">${pp(t[k])}%p</b></div>`).join("")}</div>
+      ${(t.checks || []).length ? `<ul class="sc-why">${t.checks.filter(c => c.v != null).map(c => `<li class="${c.v ? "y" : "n"}">${c.v ? "✓" : "✗"} ${PLAIN[c.k][c.v ? 0 : 1]}</li>`).join("")}</ul>
+      <p class="sc-cap">체크 ${t.score}/${t.of} · ${t.label === "주도 후보" ? "여러 조건이 함께 받쳐 주고 있어요" : t.label === "순환매 가능성" ? "짧게 튀었지만 받쳐 주는 조건이 적어요" : "RRG 위치: " + (t.quad || "–")}</p>
+      <div class="sc-cv sm"><canvas id="sc-rs"></canvas></div>
+      <p class="sc-cap">RS선(테마 ÷ 시장, 1년 전 = 100): 오르면 시장보다 강하다는 뜻이에요. 테마 지수는 종목들을 같은 비중으로 묶어 만들었어요.</p>` : `<p class="sc-tl">${esc(TPLAIN[t.label] || "")}</p>`}
+      <div class="sc-facts"><span>${perName()} 시장보다 강한 종목 <b>${t["beat_" + ST.per]}/${t.n_px}</b></span>${t.pct200 != null ? `<span>상승 추세(200일선 위) <b>${t.pct200}%</b></span>` : ""}</div>
+      <div class="sc-tw"><table class="sc-tb sm"><thead><tr><th class="l">종목</th>${PER.map(p => `<th class="${p[0] === ST.per ? "cur" : ""}">${p[1]}</th>`).join("")}</tr></thead><tbody>
+      ${st.map(s => `<tr><td class="l"><b>${esc(ST.market === "US" ? s.sym : s.name)}</b><small>${esc(ST.market === "US" ? s.name : s.sym)}${s.a200 === true ? " · 상승 추세" : s.a200 === false ? " · 200일선 아래" : ""}</small></td>
+        ${PER.map(p => `<td class="${tone(s[p[0]])} ${p[0] === ST.per ? "cur" : ""}">${pp(s[p[0]])}</td>`).join("")}</tr>`).join("")}</tbody></table></div>
+      <div class="sc-h3" style="margin-top:14px">💼 이 테마에 투자할 수 있는 ETF</div>
+      ${(t.etfs || []).length ? `<div class="sc-tw"><table class="sc-tb sm sc-etf"><thead><tr><th class="l">ETF</th>${PER.map(p => `<th class="${p[0] === ST.per ? "cur" : ""}">${p[1]}</th>`).join("")}</tr></thead><tbody>
+        ${t.etfs.map(s => `<tr><td class="l"><b>${esc(ST.market === "US" ? s.sym : s.name)}</b><small>${esc(ST.market === "US" ? s.name : s.sym)}</small></td>
+        ${PER.map(p => `<td class="${tone(s[p[0]])} ${p[0] === ST.per ? "cur" : ""}">${pp(s[p[0]])}</td>`).join("")}</tr>`).join("")}</tbody></table></div>
+        <p class="sc-cap">ETF는 위 종목 묶음과 담은 종목·비중이 달라 성과가 다를 수 있어요. 들어 있는 종목·보수는 운용사 자료로 꼭 확인하세요.</p>`
+        : `<p class="sc-cap">이 테마만 따로 담은 ETF는 찾지 못했어요.</p>`}
+      <p class="sc-cap">수익률은 모두 ${ST.market === "US" ? "S&P500(SPY)" : "코스피"} 대비(%p)예요. 종목·ETF가 들어 있다고 매수 추천이 아니에요.</p>`;
+  }
+
+  // ---------- 💬 왜 움직였나 물어보기 ----------
+  function askTargets(){
+    const out = [], th = ST.tdata[ST.market], sd = ST.data[ST.market];
+    if(th) out.push(["🧩 테마", th.themes.map(t => [`theme:${t.id}`, t.ko])]);
+    if(sd) out.push(["🗺️ 섹터", sd.rows.filter(r => !r.error).map(r => [`sector:${r.sym}`, r.name])]);
+    return out;
+  }
+  function askCur(){
+    if(ST.askT) return ST.askT;
+    return ST.view === "theme" ? (ST.th ? `theme:${ST.th}` : "") : (ST.sel ? `sector:${ST.sel}` : "");
+  }
+  const ASK_CHIPS = ["최근 주가가 왜 좋았나요?", "최근 왜 약했나요?", "이번 움직임, 오래갈 힘일까요?", "앞으로 무엇을 보면 좋을까요?"];
+  function askHtml(){
+    const cur = askCur(), tg = askTargets();
+    const nm = (tg.flatMap(g => g[1]).find(o => o[0] === cur) || [])[1] || "";
+    return `<div class="sc-ask" id="sc-ask">
+      <div class="sc-h3 big">💬 왜 움직였는지 물어보기 <small>고른 테마·섹터의 대표 종목 최근 한 달 뉴스를 AI가 읽고 답해요 · 회원 전용</small></div>
+      <div class="sc-ask-row">
+        <select id="sc-ask-t">${tg.map(([g, os]) => `<optgroup label="${g}">${os.map(([v, n]) => `<option value="${esc(v)}" ${v === cur ? "selected" : ""}>${esc(n)}</option>`).join("")}</optgroup>`).join("")}</select>
+        <input id="sc-ask-q" type="text" maxlength="150" value="${esc(ST.askQ)}" placeholder="예: ${esc(nm || "항공기·엔진")} 주가가 최근 왜 좋았나요?">
+        <button type="button" id="sc-ask-go" ${ST.asking ? "disabled" : ""}>${ST.asking ? "답 만드는 중…" : "물어보기"}</button>
+      </div>
+      <div class="sc-ask-chips">${ASK_CHIPS.map(c => `<button type="button" data-chip="${esc(c)}">${esc(c)}</button>`).join("")}</div>
+      <div id="sc-ans">${ansHtml()}</div>
+    </div>`;
+  }
+  function ansHtml(){
+    if(ST.asking) return `<p class="sc-load"><i class="sc-spin"></i>대표 종목 뉴스를 모아 읽는 중이에요(10~30초)…</p>`;
+    const a = ST.ans; if(!a) return "";
+    if(a.error) return `<div class="sc-err">${esc(a.error)}${a.locked ? ` <a href="#" onclick="var b=document.querySelector('[data-open=login]');if(b)b.click();return false">로그인하기</a>` : ""}</div>`;
+    const TONE = {"긍정": "y", "부정": "n", "중립": ""};
+    return `<div class="sc-ans">
+      <div class="sc-ans-q">Q. ${esc(a.target)} — ${esc(a.q)}</div>
+      <p class="sc-ans-a">${esc(a.answer)}</p>
+      ${(a.reasons || []).length ? `<ol class="sc-ans-r">${a.reasons.map(r => `<li><b>${esc(r.title)}</b> <span class="sc-tone ${TONE[r.tone] ?? ""}">${esc(r.tone || "")}</span>
+        <p>${esc(r.detail)}</p>${(r.stocks || []).length ? `<small>관련: ${r.stocks.map(esc).join(" · ")}</small>` : ""}</li>`).join("")}</ol>` : ""}
+      ${a.watch ? `<p class="sc-ans-w">👀 같이 보면 좋은 점: ${esc(a.watch)}</p>` : ""}
+      <details class="sc-ans-src"><summary>근거로 읽은 뉴스 제목 ${a.n_news}개</summary>
+        ${(a.sources || []).map(s => `<div><b>${esc(s.name)}</b> <small>${esc(s.code)}</small><ul>${s.news.length ? s.news.map(n => `<li><span>${esc(n.d)}</span> ${esc(n.t)}</li>`).join("") : "<li>최근 뉴스 없음</li>"}</ul></div>`).join("")}
+      </details>
+      <p class="sc-cap">AI가 뉴스 제목과 수익률만 보고 정리한 답이라 틀리거나 빠진 이유가 있을 수 있어요. 공부용 참고이며 투자 권유가 아니에요. ${esc(a.at || "")} 기준</p>
+    </div>`;
+  }
+  async function askGo(){
+    const t = (document.getElementById("sc-ask-t") || {}).value || "", q = (document.getElementById("sc-ask-q") || {}).value.trim();
+    ST.askQ = q;
+    if(!t){ ST.ans = {error: "물어볼 테마·섹터를 골라 주세요."}; return keepAsk(); }
+    if(!q){ ST.ans = {error: "질문을 써 주세요. 아래 예시를 눌러도 돼요."}; return keepAsk(); }
+    const [kind, id] = t.split(/:(.+)/);
+    ST.asking = true; ST.ans = null; keepAsk();
+    try{
+      const r = await fetch("/api/sector/ask", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({market: ST.market, kind, id, q})});
+      ST.ans = await r.json();
+    }catch(e){ ST.ans = {error: "답을 받지 못했어요. 잠시 뒤 다시 물어봐 주세요."}; }
+    ST.asking = false; keepAsk();
+  }
+  function keepAsk(){   // 질문 칸만 다시 그림(입력값·스크롤 유지)
+    const el = document.getElementById("sc-ask"); if(!el) return;
+    el.outerHTML = askHtml(); bindAsk();
+  }
+  function bindAsk(){
+    const sel = document.getElementById("sc-ask-t"), q = document.getElementById("sc-ask-q"), go = document.getElementById("sc-ask-go");
+    if(!sel) return;
+    sel.onchange = () => { ST.askT = sel.value; };
+    q.oninput = () => { ST.askQ = q.value; };
+    q.onkeydown = e => { if(e.key === "Enter" && !e.isComposing){ e.preventDefault(); askGo(); } };
+    go.onclick = askGo;
+    document.querySelectorAll("#sc-ask [data-chip]").forEach(b => b.onclick = () => { q.value = ST.askQ = b.dataset.chip; q.focus(); });
+  }
+
   // ---------- 화면 ----------
   function render(){
     destroy();
+    if(ST.view === "theme") return renderTheme();
     const d = ST.data[ST.market]; if(!d) return;
     const rows = d.rows.filter(r => !r.error);
     if(!ST.sel || !rows.some(r => r.sym === ST.sel)) ST.sel = (rows.slice().sort((a, b) => (b.x3m ?? -99) - (a.x3m ?? -99))[0] || {}).sym;
     const subs = d.subs || null, br = d.breadth || {};
     const grp = k => rows.filter(r => r.cls === k);
     root().innerHTML = `
-    <div class="sc-head">
-      <div class="sc-mk">${["US", "KR"].map(m => `<button type="button" class="${m === ST.market ? "on" : ""}" data-mk="${m}">${m === "US" ? "🇺🇸 미국" : "🇰🇷 한국"}</button>`).join("")}</div>
-      <div class="sc-per"><span>기간</span>${PER.map(([k, t]) => `<button type="button" class="${k === ST.per ? "on" : ""}" data-per="${k}">${t}</button>`).join("")}</div>
-    </div>
+    ${headHtml()}
     <p class="sc-q1">지금 <b>시장(${esc(d.bench)})보다 센 섹터</b>는 어디고, 그 힘이 <b>오래갈 힘(주도)</b>인지 <b>잠깐 반짝(순환매)</b>인지 봐요. <span>기준 ${esc(d.last)}</span></p>
 
     <div class="sc-sum">
@@ -74,6 +232,7 @@
     <details class="sc-deep" ${ST.deep ? "open" : ""}><summary>🔍 더 깊게 보기 <small>경기 국면 · RRG(상대회전그래프) · 전체 체크표 · 주도 vs 순환매 구분법</small></summary>
       ${deepHtml(d, rows, br)}
     </details>
+    ${askHtml()}
     <p class="sc-foot">참고 신호는 정해진 규칙으로 계산한 공부용이며, 투자 권유나 매수·매도 추천이 아니에요. 데이터: 야후 파이낸스(섹터 ETF·지수·종목 가격·시가총액·애널리스트 추정), FRED, 위키백과(S&P500 구성 종목·세부 업종).
       ${ST.market === "US" ? `세부 업종 ${br.updated ? esc(br.updated) + " 계산" : ""}(6시간마다 새로).` : "한국은 업종 ETF 기준이라 세부 업종·종목 확산·이익 추정이 없어요."} 계산 ${esc(d.updated)}</p>`;
     drawMap(d, rows, subs);
@@ -269,20 +428,23 @@
 
   function bind(){
     const R = root();
-    R.querySelectorAll("[data-mk]").forEach(b => b.onclick = () => { if(b.dataset.mk !== ST.market){ ST.market = b.dataset.mk; ST.phase = null; ST.sel = null; ST.sub = null; ST.zoom = null; open(); } });
+    bindAsk();
+    R.querySelectorAll("[data-mk]").forEach(b => b.onclick = () => { if(b.dataset.mk !== ST.market){ ST.market = b.dataset.mk; ST.phase = null; ST.sel = null; ST.sub = null; ST.zoom = null; ST.th = null; ST.askT = null; ST.ans = null; if(ST.view === "theme") keep(render); else open(); } });
+    R.querySelectorAll("[data-view]").forEach(b => b.onclick = () => { if(b.dataset.view !== ST.view){ ST.view = b.dataset.view; clearTimeout(ST.poll); if(ST.view === "sector" && !ST.data[ST.market]) open(); else { keep(render); if(ST.view === "sector") pollBreadth(); } } });
+    R.querySelectorAll("[data-th]").forEach(b => b.onclick = e => { e.preventDefault(); ST.th = b.dataset.th; ST.askT = null; keep(render); toDetail(b.tagName === "LI"); });
     R.querySelectorAll("[data-per]").forEach(b => b.onclick = () => { ST.per = b.dataset.per; keep(render); });
     R.querySelectorAll("[data-ph]").forEach(b => b.onclick = () => { ST.phase = ST.phase === b.dataset.ph ? null : b.dataset.ph; keep(render); });
-    R.querySelectorAll("[data-sel]").forEach(b => b.onclick = e => { e.preventDefault(); ST.sel = b.dataset.sel; ST.sub = null; keep(render); toDetail(); });
+    R.querySelectorAll("[data-sel]").forEach(b => b.onclick = e => { e.preventDefault(); ST.sel = b.dataset.sel; ST.sub = null; ST.askT = null; keep(render); toDetail(b.tagName === "LI"); });
     R.querySelectorAll("[data-sub]").forEach(b => b.onclick = e => { e.preventDefault(); ST.sub = b.dataset.sub || null;
       if(ST.sub){ const s = (ST.data.US.subs || []).find(x => x.sub === ST.sub); const r = s && ST.data.US.rows.find(x => x.name === s.sector_ko); if(r) ST.sel = r.sym; }
       keep(render); toDetail(); });
     R.querySelectorAll("[data-zoom]").forEach(b => b.onclick = () => { const z = b.dataset.zoom || null; ST.zoom = z; if(z){ ST.sel = z; ST.sub = null; } keep(render); });
   }
   function keep(fn){ const y = window.scrollY; fn(); window.scrollTo(0, y); }
-  function toDetail(){   // 모바일은 설명이 아래에 있어 보이게 내려 줌
-    if(!mobile()) return;
+  function toDetail(force){   // 모바일은 설명이 아래에 있어 보이게 내려 줌, 위 주도·다음·순환매 칸에서 누르면 PC도 내려 줌
+    if(!mobile() && !force) return;
     const el = document.getElementById("sc-detail"), sb = document.querySelector(".sidebar");
-    if(el) window.scrollTo({top: el.getBoundingClientRect().top + window.scrollY - (sb ? sb.offsetHeight : 0) - 10, behavior: "smooth"});
+    if(el) window.scrollTo({top: el.getBoundingClientRect().top + window.scrollY - (mobile() && sb ? sb.offsetHeight : 0) - 10, behavior: "smooth"});
   }
 
   async function open(){
@@ -299,11 +461,11 @@
   function pollBreadth(){
     clearTimeout(ST.poll);
     const d = ST.data.US;
-    if(ST.market !== "US" || !d || (d.breadth || {}).state !== "running") return;
+    if(ST.market !== "US" || ST.view !== "sector" || !d || (d.breadth || {}).state !== "running") return;
     ST.poll = setTimeout(async () => {
       const tab = document.getElementById("tab-sector");
       if(!tab || tab.style.display === "none") return;
-      try{ await load(); if(ST.market === "US") keep(render); }catch(e){}
+      try{ await load(); if(ST.market === "US" && ST.view === "sector") keep(render); }catch(e){}
       pollBreadth();
     }, 15000);
   }

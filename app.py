@@ -508,6 +508,41 @@ def api_sector():
         return jsonify({"error": f"섹터 데이터를 받지 못했어요: {repr(e)[:150]}"}), 500
 
 
+@app.route("/api/sector/themes")
+def api_sector_themes():
+    """테마(태양광·광통신·조선 등 직접 고른 종목 묶음) 시장 대비 강도 — 뒤에서 계산, 계산 중이면 state=running."""
+    import sector
+    try:
+        return jsonify(clean(sector.themes_overview(request.args.get("market", "US"))))
+    except Exception as e:
+        return jsonify({"error": f"테마 데이터를 받지 못했어요: {repr(e)[:150]}"}), 500
+
+
+@app.route("/api/sector/ask", methods=["POST"])
+def api_sector_ask():
+    """💬 테마·섹터가 왜 움직였나 — 대표 종목 최근 뉴스 + 수익률을 Gemini가 정리. 회원 전용, 1시간 캐시."""
+    if not _is_member():
+        return jsonify({"error": "회원 전용 기능이에요. 로그인하면 물어볼 수 있어요.", "locked": True}), 402
+    j = request.get_json(silent=True) or {}
+    q = (j.get("q") or "").strip()
+    kind, tid, market = j.get("kind"), str(j.get("id") or ""), j.get("market", "US")
+    if not q or kind not in ("theme", "sector") or not tid:
+        return jsonify({"error": "물어볼 테마·섹터와 질문을 넣어 주세요."}), 400
+    if len(q) > 150:
+        return jsonify({"error": "질문은 150자 안으로 써 주세요."}), 400
+    ck = f"sector_ask:{market}:{kind}:{tid}:{q.lower()}"
+    out = _cache_get(ck, 3600)
+    if out is None:
+        import sector
+        try:
+            out = clean(sector.ask(market, kind, tid, q))
+        except Exception as e:
+            return jsonify({"error": f"답을 만들지 못했어요: {repr(e)[:150]}"}), 500
+        if not out.get("error"):
+            _cache_put(ck, out)
+    return jsonify(out)
+
+
 @app.route("/api/snp/upload_factset", methods=["POST"])
 def api_snp_upload_factset():
     """FactSet Earnings Insight PDF 수동 업로드 → 컨센서스 EPS 갱신."""
