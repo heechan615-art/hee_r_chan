@@ -261,7 +261,13 @@
   function needsBox(items){
     if(!items.length) return "";
     const n = items.filter(x => x.done).length;
-    const line = t => { const [a, ...b] = t.split(/\s+[—–-]\s+/); return b.length ? `<b>${esc(a)}</b> — ${esc(b.join(" — "))}` : `<b>${esc(t)}</b>`; };
+    const line = t => {
+      const L = [];                                // [이름](주소) → 자료 받는 곳 버튼
+      t = t.replace(/\s*🔗?\s*\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)\s*·?/gu, (_, n, u) => { L.push([n, u]); return " "; });
+      const [a, ...b] = t.split(/\s+[—–-]\s+/).map(s => s.replace(/^[—–-]\s*/, "").trim()).filter(Boolean);
+      const links = L.length ? `<span class="nl">${L.map(([n, u]) => `<a href="${esc(u)}" target="_blank" rel="noopener">🔗 ${esc(n)}</a>`).join("")}</span>` : "";
+      return (b.length ? `<b>${esc(a)}</b> — ${esc(b.join(" — "))}` : `<b>${esc(a || "")}</b>`) + links;
+    };
     return `<div class="needs"><div class="nh"><span>📎 더 깊게 보려면 필요한 자료 <small>${items.length}개 중 ${n}개 확인</small></span></div>
       <ol>${items.map((x, i) => `<li class="${x.done ? "done" : ""}"><span class="no">${i + 1})</span><span>${x.done ? "✅ " : ""}${line(x.text)}</span></li>`).join("")}</ol>
       <p class="nf">이 자료가 확인되면 맨 아래 '추가 자료로 본 추가 해석'이 붙어요.</p></div>`;

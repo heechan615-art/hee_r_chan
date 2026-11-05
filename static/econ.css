@@ -94,6 +94,9 @@
 #tab-econ .needs li .no{flex:none;font-weight:900;color:#163a5c;min-width:22px}
 #tab-econ .needs li.done{color:var(--muted)}
 #tab-econ .needs li.done b{color:#4a515c}
+#tab-econ .needs .nl{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+#tab-econ .needs .nl a{border:1px solid #c9d6e6;background:#f3f7fc;color:#163a5c;border-radius:8px;padding:3px 9px;font-size:13px;font-weight:800;text-decoration:none}
+#tab-econ .needs .nl a:hover{background:#e3edf8}
 #tab-econ .needs .nf{margin:8px 0 0;font-size:12.5px;color:var(--muted)}
 #tab-econ .xmd{border-color:#d9e3f0;background:#fbfdff}
 #tab-econ .xmd .xmark{height:0}
