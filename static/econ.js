@@ -285,10 +285,48 @@
       ${needsBox(items)}
       <div class="md" id="ec-main"></div>
       ${r.extra ? `<h2>🔎 추가 자료로 본 추가 해석</h2><div class="md xmd" id="ec-extra"></div>` : ""}
+      <h2>💬 이 해석에 질문하기 <small>해석 글과 최근 뉴스로 AI가 답해요 · 회원 전용</small></h2>
+      <div class="panel qa"><div id="ec-qa"></div>
+        <form id="ec-qa-f"><textarea id="ec-qa-q" rows="3" maxlength="600" placeholder="예: 운송 서비스 가격이 오른 건 유가 때문이고, 식품은 관세 때문인가요?"></textarea>
+          <div class="qa-row"><small class="muted">앞서 물어본 것을 이어서 기억해요(이 화면에 있는 동안)</small><button type="submit">질문하기</button></div></form></div>
       <p class="foot">숫자는 발표 원문 그대로이며, 계산·추정값은 따로 표시해요. 투자 권유가 아닌 공부용 해석이에요.</p>`;
     renderMd(body, document.getElementById("ec-main"));
     if(r.extra) renderMd(r.extra, document.getElementById("ec-extra"));
     bindNav();
+    bindAsk(id);
+  }
+
+  // 💬 해석 글에 질문하기: /api/econ/ask(회원 전용). 대화는 이 해석 글을 보는 동안만 기억
+  const QA = {};
+  function paintQA(id){
+    const box = document.getElementById("ec-qa"); if(!box) return;
+    box.innerHTML = (QA[id] || []).map(x => `<div class="qa-i"><div class="qa-q">🙋 ${esc(x.q)}</div>${
+      x.loading ? `<div class="qa-a wait">⏳ 해석 글을 읽고 최근 뉴스를 찾아보는 중이에요… (보통 10~20초)</div>`
+      : x.error ? `<div class="qa-a bad">${esc(x.error)}${x.locked ? ` <a href="#" data-login="1">로그인하기</a>` : ""}</div>`
+      : `<div class="md qa-a"></div>${x.sources && x.sources.length ? `<div class="qa-src"><b>참고한 뉴스</b>${x.sources.map(n =>
+          `<a href="${esc(n.url)}" target="_blank" rel="noopener">[${n.n}] ${esc(n.d)} ${esc(n.src)} · ${esc(n.t)}</a>`).join("")}</div>` : ""}<div class="qa-meta">${esc(x.at || "")} · AI 답변이라 틀릴 수 있어요. 투자 권유가 아니에요.</div>`}</div>`).join("");
+    const els = box.querySelectorAll(".md.qa-a");
+    (QA[id] || []).filter(x => !x.loading && !x.error).forEach((x, i) => { if(els[i]){ renderMd(x.answer, els[i]);
+      els[i].querySelectorAll("a[href^='http']").forEach(a => { a.target = "_blank"; a.rel = "noopener"; }); } });
+    box.querySelectorAll("[data-login]").forEach(a => a.onclick = e => { e.preventDefault(); const b = document.querySelector("[data-open=login]"); if(b) b.click(); });
+  }
+  async function askQA(id, q){
+    q = (q || "").trim(); if(!q) return;
+    const L = QA[id] = QA[id] || [];
+    if(L.some(x => x.loading)) return;
+    const history = L.filter(x => x.answer).slice(-3).map(x => ({q: x.q, a: x.answer}));
+    const it = {q, loading: true}; L.push(it); paintQA(id);
+    try{
+      const r = await fetch("/api/econ/ask", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({id, q, history})});
+      Object.assign(it, await r.json());
+    }catch(e){ it.error = "답을 받지 못했어요. 잠시 뒤 다시 물어봐 주세요."; }
+    it.loading = false; paintQA(id);
+  }
+  function bindAsk(id){
+    const f = document.getElementById("ec-qa-f"), t = document.getElementById("ec-qa-q"); if(!f) return;
+    f.onsubmit = e => { e.preventDefault(); const q = t.value; if(q.trim()){ t.value = ""; askQA(id, q); } };
+    t.onkeydown = e => { if(e.key === "Enter" && (e.ctrlKey || e.metaKey)){ e.preventDefault(); f.requestSubmit(); } };
+    paintQA(id);
   }
 
   window.econOpen = async function(){

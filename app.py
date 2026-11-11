@@ -543,6 +543,31 @@ def api_sector_ask():
     return jsonify(out)
 
 
+@app.route("/api/econ/ask", methods=["POST"])
+def api_econ_ask():
+    """💬 경제지표 해석 글에 질문 — 해석 글 + 구글 뉴스 최근 기사 제목으로 Gemini가 답. 회원 전용, 같은 질문 1시간 캐시."""
+    if not _is_member():
+        return jsonify({"error": "회원 전용 기능이에요. 로그인하면 물어볼 수 있어요.", "locked": True}), 402
+    j = request.get_json(silent=True) or {}
+    q, rid = (j.get("q") or "").strip(), str(j.get("id") or "")
+    hist = j.get("history") if isinstance(j.get("history"), list) else []
+    if not q or not rid:
+        return jsonify({"error": "질문을 넣어 주세요."}), 400
+    if len(q) > 600:
+        return jsonify({"error": "질문은 600자 안으로 써 주세요."}), 400
+    ck = f"econ_ask:{rid}:{q.lower()}" if not hist else None   # 이어지는 질문은 캐시 안 함
+    out = _cache_get(ck, 3600) if ck else None
+    if out is None:
+        import econ_ask
+        try:
+            out = clean(econ_ask.ask(rid, q, hist))
+        except Exception as e:
+            return jsonify({"error": f"답을 만들지 못했어요: {repr(e)[:150]}"}), 500
+        if ck and not out.get("error"):
+            _cache_put(ck, out)
+    return jsonify(out)
+
+
 @app.route("/api/snp/upload_factset", methods=["POST"])
 def api_snp_upload_factset():
     """FactSet Earnings Insight PDF 수동 업로드 → 컨센서스 EPS 갱신."""

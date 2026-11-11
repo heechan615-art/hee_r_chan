@@ -162,3 +162,19 @@ html.is-mobile #tab-econ .cmp,html.is-mobile #tab-econ .cols{grid-template-colum
 #tab-econ .ec-nav .home{background:linear-gradient(135deg,#d6b46a,#B0883A);color:#fff;border:2px solid #B0883A;box-shadow:0 3px 10px rgba(176,136,58,.3)}
 #tab-econ .ec-nav .home:hover{filter:brightness(1.05)}
 html.is-mobile #tab-econ .ec-nav button{flex:1;justify-content:center;padding:11px 10px;font-size:14.5px}
+/* 💬 해석 글에 질문하기 */
+#tab-econ .qa-i{border-bottom:1px solid var(--line2);padding:4px 0 14px;margin-bottom:12px}
+#tab-econ .qa-q{background:#f3f6fb;border-radius:12px;padding:10px 12px;font-weight:700;font-size:14.5px;white-space:pre-wrap}
+#tab-econ .qa-a{margin-top:10px;padding:0 4px}
+#tab-econ .qa-a.wait{color:#4a515c;font-size:14px}
+#tab-econ .qa-a.bad{color:#c92a2a;font-size:14px}
+#tab-econ .qa-src{margin-top:8px;font-size:12.5px;display:flex;flex-direction:column;gap:3px}
+#tab-econ .qa-src b{color:#4a515c}
+#tab-econ .qa-src a{color:#4a515c;text-decoration:none;overflow-wrap:anywhere}
+#tab-econ .qa-src a:hover{text-decoration:underline}
+#tab-econ .qa-meta{font-size:12px;color:var(--muted);margin-top:6px}
+#tab-econ #ec-qa-f textarea{width:100%;box-sizing:border-box;border:1px solid var(--line);border-radius:12px;padding:10px 12px;font:inherit;font-size:14.5px;resize:vertical}
+#tab-econ #ec-qa-f textarea:focus{outline:none;border-color:var(--gold)}
+#tab-econ .qa-row{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:8px;flex-wrap:wrap}
+#tab-econ .qa-row button{background:#0e1c36;color:#fff;border:0;border-radius:10px;padding:9px 18px;font-weight:700;font-size:14px;cursor:pointer}
+#tab-econ #ec-qa-f{display:block;margin:0}
