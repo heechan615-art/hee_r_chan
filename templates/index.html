@@ -333,6 +333,34 @@
   .vd-na{background:transparent;color:var(--muted);border:1px dashed var(--line)}
   .vd-foot{font-size:10.5px;color:var(--muted);margin-top:8px;line-height:1.5}
   @media(max-width:520px){.vd-row{grid-template-columns:78px 66px 1fr}.vd-axes{grid-template-columns:1fr 1fr 1fr;gap:5px}}
+  /* 🧠 AI 종합 해석 */
+  #vai-card h2{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .vai-regen{margin-left:auto}
+  .vai-one{font-size:19px;font-weight:800;line-height:1.45;margin:4px 0 8px;color:var(--ink)}
+  .vai-verd{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:10px}
+  .vai-vc{font-size:12px;border-radius:999px;padding:3px 10px;background:var(--panel);color:var(--muted)}
+  .vai-vc b{margin-left:3px} .vai-vc.g b{color:var(--good)} .vai-vc.b b{color:var(--up)} .vai-vc.w b{color:var(--warn)} .vai-vc.n b{color:var(--ink)}
+  .vai-badges{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 6px}
+  .vai-b{font:inherit;font-size:12.5px;border-radius:999px;padding:5px 11px;cursor:pointer;border:1px solid var(--line);background:var(--card);color:var(--text)}
+  .vai-b.a{background:#fdecec;border-color:#f3c3c2;color:#a3221f} .vai-b.w{background:#fff6e5;border-color:#f1dcb2;color:#7a5410}
+  .vai-b.i{background:var(--panel);color:var(--muted)} .vai-b.on{outline:2px solid var(--accent);outline-offset:1px}
+  .vai-ev{background:var(--panel);border-left:3px solid var(--accent);border-radius:8px;padding:9px 12px;font-size:12.5px;line-height:1.65;margin:4px 0 8px}
+  .vai-evn{display:flex;flex-wrap:wrap;gap:4px 14px;margin:4px 0;font-variant-numeric:tabular-nums}
+  .vai-evn i{font-style:normal;color:var(--muted)}
+  .vai-loading{font-size:12.5px;color:var(--muted);background:var(--brand-soft);border-radius:8px;padding:7px 11px;margin:8px 0}
+  .vai-2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:10px 0}
+  @media(max-width:640px){.vai-2{grid-template-columns:1fr} .vai-one{font-size:17px}}
+  .vai-box{background:var(--panel);border-radius:10px;padding:10px 12px;font-size:13px;line-height:1.65}
+  .vai-box ul{margin:4px 0 0;padding-left:18px} .vai-h{font-weight:700;font-size:12.5px}
+  .vai-box.g .vai-h{color:var(--good)} .vai-box.b .vai-h{color:var(--up)}
+  .vai-sec{font-weight:700;font-size:13.5px;margin:14px 0 6px}
+  .vai-ill{font-size:13px;line-height:1.7;margin:4px 0}
+  .vai-m td.sel{outline:2px solid var(--ink);outline-offset:-2px;border-radius:4px} .vai-m td.pr{background:repeating-linear-gradient(45deg,transparent 0 6px,rgba(176,136,58,.08) 6px 12px)}
+  .vai-m sup{font-size:9px;color:var(--muted);margin-left:2px}
+  .vai-rec,.vai-q{font-size:13px;line-height:1.7;background:var(--panel);border-radius:10px;padding:10px 12px}
+  .vai-chk{display:flex;flex-direction:column;gap:5px;font-size:13px;line-height:1.55} .vai-chk input{margin-right:4px}
+  .vai-lesson{margin-top:12px;font-size:13.5px;background:var(--brand-soft);border-radius:10px;padding:9px 12px}
+  .vai-foot{margin-top:12px;font-size:11px;color:var(--muted);line-height:1.6;border-top:1px dashed var(--line);padding-top:8px}
   /* PEG · 매출 기반 밸류 */
   .pg-big{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin:4px 0 8px}
   .pg-big b{font-size:30px;font-weight:800;letter-spacing:-.02em}
@@ -3174,6 +3202,8 @@ function render(d){
   if(d.peg_sales) h += `<div class="row2"><div class="card" id="peg-card">${pegInner(d)}</div><div class="card" id="ps-card">${psInner(d)}</div></div>`;
   if(d.peg_sales) h += `<div class="card"><h2>과거 PSR 추이 · 표준편차 밴드 <span class="h2note">주가 × 주식수 ÷ 최근 12개월 매출 · 주간</span></h2>
     <div id="psrh-body"><div class="muted" style="font-size:13px;padding:12px 0">과거 PSR 불러오는 중… (한국 종목은 처음에 10~30초)</div></div></div>`;
+  if(d.peg_sales) h += `<div class="card" id="vai-card"><h2>🧠 AI 종합 해석 <span class="h2note">위 세 카드의 숫자를 함께 읽어 모순·착시를 찾아요</span></h2>
+    <div class="muted" style="font-size:13px;padding:10px 0">진단 계산 중… (처음 보는 종목은 10~20초)</div></div>`;
 
   // 표준편차 밴드 (평균 기준 ±1σ/±2σ/±3σ, 양옆 배치)
   h += `<div class="row2" id="sigma-row">`
@@ -3240,7 +3270,7 @@ function render(d){
   initSigma();
   initTP();
   loadPeers(d.ticker, []);
-  loadPerHist(d); if(d.peg_sales) loadPsrHist(d);                       // 미국: EDGAR 장기 과거 PER, 아니면 sigma 폴백
+  loadPerHist(d); if(d.peg_sales){ loadPsrHist(d); loadValAI(d); }                       // 미국: EDGAR 장기 과거 PER, 아니면 sigma 폴백
 }
 
 
@@ -4459,11 +4489,11 @@ function pegSet(k, v){
   if(k==="g"){ PEG_G = v; PEG_CUSTOM = null; }
   if(k==="basis") PEG_BASIS = v;
   if(k==="custom"){ PEG_CUSTOM = (v===""||isNaN(+v)) ? null : +v; if(PEG_CUSTOM!=null) PEG_G = "custom"; }
-  const el = document.getElementById("peg-card"); if(el && LAST) el.innerHTML = pegInner(LAST); verdictRefresh();
+  const el = document.getElementById("peg-card"); if(el && LAST) el.innerHTML = pegInner(LAST); verdictRefresh(); vaiRender();
   if(k==="custom"){ const i = document.getElementById("peg-custom"); if(i){ i.focus(); const n=i.value.length; i.setSelectionRange(n,n); } }
 }
 function psSet(v){ PS_MARGIN = (v===""||isNaN(+v)) ? null : +v;
-  const el = document.getElementById("ps-implied"); if(el && LAST) el.innerHTML = psImplied(LAST); }
+  const el = document.getElementById("ps-implied"); if(el && LAST) el.innerHTML = psImplied(LAST); vaiRender(); }
 function pegInner(d){
   const ps = d.peg_sales || {}, G = ps.growth || [];
   const head = `<h2>PEG · 성장 대비 PER <span class="h2note">PER을 EPS 성장률(%)로 나눈 값</span></h2>`;
@@ -4525,6 +4555,23 @@ function psImplied(d){
     성숙기 순이익률을 <input class="pg-in" type="number" step="any" value="${m==null?"":m}" oninput="psSet(this.value)">% 로 가정하면 → 그때의 PER은 <b>${impl?impl.toFixed(0)+"배":"-"}</b><br>
     PER 25배(성장주 보통 수준)가 되려면 순이익률 <b>${need.toFixed(0)}%</b>가 필요해요${need>40?" — <b>현실적으로 매우 어려운 수준</b>(애플·엔비디아급도 25~55%)":""}.</div>`;
 }
+// 업종(야후 sector/industry)을 먼저 보고, 없을 때만 매출총이익률로 유형 판정 (예: 코카콜라 62%는 '소프트웨어형'이 아니라 필수소비재)
+function psMarginType(d, gm){
+  const s = (d.sector||"").toLowerCase(), i = (d.industry||"").toLowerCase();
+  if(s.includes("financial")) return "금융업은 매출총이익률 개념이 일반 기업과 달라 참고만 하세요";
+  if(i.includes("software")) return "소프트웨어형(높은 마진)이라 높은 매출 배수를 받을 여지가 상대적으로 큽니다";
+  if(s.includes("defensive")) return "필수소비재(브랜드)형 — 높은 마진은 브랜드 가격 결정력에서 나오지만 성장이 느려, 소프트웨어처럼 높은 매출 배수를 정당화하긴 어렵습니다";
+  if(s.includes("utilit")) return "유틸리티(공공요금형) — 규제로 이익이 안정적이지만 성장이 느려 매출 배수보다 이익·배당으로 봅니다";
+  if(s.includes("energy") || s.includes("basic materials")) return "원자재·에너지(경기순환)형 — 가격 사이클에 따라 마진이 크게 흔들려 매출 배수 비교가 어렵습니다";
+  if(i.includes("semiconductor")) return "반도체형 — 마진이 사이클에 따라 크게 움직여 호황기 매출 배수는 과대평가되기 쉽습니다";
+  if(i.includes("internet") || i.includes("interactive")) return "인터넷 플랫폼형 — 높은 마진과 규모의 경제로 높은 매출 배수를 받을 여지가 있습니다";
+  return gm>=0.6?"고마진형이라 높은 매출 배수를 받을 여지가 상대적으로 큽니다":gm>=0.35?"제조·하드웨어 중간형 — 같은 매출 배수라도 소프트웨어보다 정당화가 어렵습니다":"마진이 낮은 제조형 — 매출 배수가 높으면 부담이 큽니다";
+}
+function r40Applies(d){
+  const s = (d.sector||"").toLowerCase(), i = (d.industry||"").toLowerCase(), g = (d.peg_sales||{}).rev_growth_ttm;
+  if(!s && !i) return true;
+  return (s.includes("technology") || i.includes("software") || i.includes("internet")) && g!=null && g >= 0.15;
+}
 function psInner(d){
   const ps = d.peg_sales || {}, krw = d.currency==="KRW", f = ps.rev_fwd || [];
   const pct = v => v==null ? "-" : ((v>=0?"+":"")+(v*100).toFixed(1)+"%");
@@ -4546,11 +4593,106 @@ function psInner(d){
     ${kp("영업이익률", ps.op_margin==null?"-":(ps.op_margin*100).toFixed(1)+"%", ps.op_margin<0?"pg-bad":"")}
     ${kp("FCF 마진", ps.fcf_margin==null?"-":(ps.fcf_margin*100).toFixed(1)+"%", ps.fcf_margin<0?"pg-bad":"")}
     ${kp("Rule of 40", r40==null?"-":r40.toFixed(0)+(r40>=40?" ✅":" ⚠️"), r40==null?"":(r40>=40?"pg-good":"pg-mid"))}</div>
-    <div class="muted" style="font-size:11px;line-height:1.6;margin-bottom:6px">시가총액 ${bigMoney(ps.mcap,krw)} · EV(시총+부채−현금) ${bigMoney(ps.ev,krw)} · Rule of 40 = 매출 성장률 + FCF 마진 ≥ 40%면 성장과 현금창출이 균형</div>`;
-  if(ps.gross_margin!=null) h += `<div class="pg-note">매출총이익률 <b>${(ps.gross_margin*100).toFixed(0)}%</b> — ${ps.gross_margin>=0.6?"소프트웨어형(높은 마진)이라 높은 매출 배수를 받을 여지가 상대적으로 큽니다":ps.gross_margin>=0.35?"제조·하드웨어 중간형 — 같은 매출 배수라도 소프트웨어보다 정당화가 어렵습니다":"마진이 낮은 제조형 — 매출 배수가 높으면 부담이 큽니다"}. 같은 PSR이라도 <b>남는 돈(마진)</b>이 다르면 가치가 다릅니다.</div>`;
+    <div class="muted" style="font-size:11px;line-height:1.6;margin-bottom:6px">시가총액 ${bigMoney(ps.mcap,krw)} · EV(시총+부채−현금) ${bigMoney(ps.ev,krw)} · Rule of 40 = 매출 성장률 + FCF 마진 ≥ 40%면 성장과 현금창출이 균형${r40Applies(d)?"":" <b>(성장 기술기업용 기준이라 이 업종엔 참고 지표)</b>"}</div>`;
+  if(ps.gross_margin!=null) h += `<div class="pg-note">매출총이익률 <b>${(ps.gross_margin*100).toFixed(0)}%</b> — ${psMarginType(d, ps.gross_margin)}. 같은 PSR이라도 <b>남는 돈(마진)</b>이 다르면 가치가 다릅니다.</div>`;
   h += `<div id="ps-implied">${psImplied(d)}</div>`;
   return h;
 }
+// ── 🧠 AI 종합 해석: 규칙 엔진 진단(/api/val_facts, 공개) → AI 문장(/api/val_ai, 회원) ──
+let VAI = null, VAI_TXT = null, VAI_SEL = null, VAI_OPEN = null, VAI_LOADING = false;
+const VAI_ICON = {one_off_gain:"⚠️", per_inversion:"🔀", heavy_capex:"🏗️", negative_fcf:"💸", fcf_anomaly:"🧾", revenue_down_eps_up:"↘️",
+  margin_regime_change:"🔄", peg_unstable:"🎚️", peg_robust_expensive:"💰", peg_robust_cheap:"🏷️", peg_base_effect:"🚀", peg_mismatch:"🧩",
+  early_growth_inflation:"🎈", extreme_band:"📏", structural_break:"📉", data_gap:"🕳️", tax_anomaly:"🧮", panel_basis:"ℹ️", panel_basis_op:"ℹ️"};
+function vaiSel(){ return [PEG_BASIS, PEG_G, PEG_CUSTOM, PS_MARGIN].join("|"); }
+function loadValAI(d){
+  VAI = null; VAI_TXT = null; VAI_SEL = null; VAI_OPEN = null;
+  const tk = d.ticker;
+  fetch("/api/val_facts?ticker=" + encodeURIComponent(tk)).then(r => r.json()).then(res => {
+    if(!LAST || LAST.ticker !== tk) return;
+    if(res.error || !res.facts){ const el = document.getElementById("vai-card"); if(el) el.innerHTML += `<div class="muted" style="font-size:13px">${esc(res.error||"해석 자료를 만들지 못했어요.")}</div>`; return; }
+    VAI = res; vaiRender(); vaiAI(false);
+  }).catch(() => { const el = document.getElementById("vai-card"); if(el) el.querySelector(".muted").textContent = "해석 자료 불러오기 실패"; });
+}
+function vaiAI(gen){
+  if(!VAI) return; const tk = VAI.facts.ticker;
+  if(gen && VAI_TXT && VAI_TXT.text && !confirm("다시 만들면 AI 비용이 한 번 더 들어요(약 $0.05). 계속할까요?")) return;
+  VAI_LOADING = !!gen; if(gen) vaiRender();
+  fetch("/api/val_ai?ticker=" + encodeURIComponent(tk) + (gen ? "&gen=1" : "")).then(async r => ({st:r.status, j: await r.json()})).then(({st, j}) => {
+    if(!VAI || VAI.facts.ticker !== tk) return;
+    VAI_LOADING = false;
+    VAI_TXT = st===402 ? {locked:true, msg:j.error} : (j.error ? {error:j.error, admin:(VAI_TXT||{}).admin} : j);
+    VAI_SEL = vaiSel(); vaiRender();
+  }).catch(() => { VAI_LOADING = false; VAI_TXT = {error:"AI 해석 요청 실패", admin:(VAI_TXT||{}).admin}; vaiRender(); });
+}
+function vaiToggle(id){ VAI_OPEN = VAI_OPEN===id ? null : id; vaiRender(); }
+function vaiGoPer(){ const el = document.getElementById("sigma-row"); if(el) el.scrollIntoView({behavior:"smooth", block:"start"}); }
+function vaiEv(v){
+  if(v==null) return "-";
+  if(Array.isArray(v)) return v.map(esc).join(" · ");
+  if(typeof v==="object") return Object.entries(v).map(([k,x]) => `${esc(k)} ${x==null?"-":esc(typeof x==="object"?JSON.stringify(x):x)}`).join(" · ");
+  return esc(v);
+}
+function vaiRender(){
+  const el = document.getElementById("vai-card"); if(!el || !VAI || !LAST) return;
+  const f = VAI.facts, V = f.verdicts, rec = f.recommend, pg = f.peg || {};
+  // 지금 PEG 카드에서 고른 조합(즉시 반영) — 시점 짝: 현재 PER↔올해, 예상 PER↔내년
+  const perF = (typeof LAST.per_fwd==="number" && LAST.per_fwd>0), perT = (typeof LAST.per_ttm==="number" && LAST.per_ttm>0);
+  const basis = (PEG_BASIS==="fwd" && perF) || !perT ? "fwd" : "ttm";
+  const flags = f.flags.slice();
+  const thisK = ["y0","e1"], nextK = ["y1","e2"];
+  if(PEG_G && PEG_G!=="custom" && ((basis==="ttm" && !thisK.includes(PEG_G)) || (basis==="fwd" && !nextK.includes(PEG_G))))
+    flags.push({id:"peg_mismatch", level:"info", title:"PEG 시점 짝이 안 맞음",
+      evidence:{"지금 고른 조합": `${basis==="ttm"?"현재 PER":"예상 PER"} ÷ ${(pg.matrix||[]).find(m=>m.g_key===PEG_G)?.g_label||PEG_G} 성장률`},
+      hint:"현재 PER(지난 12개월 이익)은 올해 성장률과, 예상 PER(앞으로 이익)은 내년 성장률과 짝을 맞춰야 같은 시점끼리 비교돼요."});
+  const lvCls = {alert:"a", warn:"w", info:"i"};
+  let h = `<h2>🧠 AI 종합 해석 <span class="h2note">위 세 카드의 숫자를 함께 읽어 모순·착시를 찾아요</span>
+    ${VAI_TXT && VAI_TXT.admin ? `<button class="pg-chip vai-regen${VAI_TXT.text?"":" on"}" onclick="vaiAI(true)" ${VAI_LOADING?"disabled":""} title="관리자 전용 — 누를 때마다 AI 비용 발생">${VAI_LOADING?"생성 중… (10~30초)":(VAI_TXT.text?"👑 다시 생성":"👑 AI 해석 만들기")}</button>` : ""}</h2>`;
+  const T = (VAI_TXT && VAI_TXT.text) ? VAI_TXT.text : VAI.template;
+  const isAI = !!(VAI_TXT && VAI_TXT.text && !VAI_TXT.fallback);
+  h += `<div class="vai-one">${esc(T.one_line)}</div>`;
+  const vc = x => ({"싸다":"g","좋음":"g","강함":"g","가속":"g","비싸다":"b","의심":"b","약함":"b","역성장":"b","투자 중":"w","둔화":"w"})[x] || "n";
+  h += `<div class="vai-verd">${[["밸류에이션",V.valuation],["이익의 질",V.quality],["현금 창출",V.cash],["성장",V.growth]].map(([k,x]) => `<span class="vai-vc ${vc(x)}">${k} <b>${esc(x)}</b></span>`).join("")}
+    ${V.valuation_basis?`<span class="muted" style="font-size:11px">판정 근거: ${esc(V.valuation_basis)}</span>`:""}</div>`;
+  if(flags.length){
+    h += `<div class="vai-badges">${flags.map(x => `<button class="vai-b ${lvCls[x.level]}${VAI_OPEN===x.id?" on":""}" onclick="vaiToggle('${x.id}')" title="눌러서 근거 숫자 보기">${VAI_ICON[x.id]||"•"} ${esc(x.title)}</button>`).join("")}</div>`;
+    const o = flags.find(x => x.id===VAI_OPEN);
+    if(o) h += `<div class="vai-ev"><b>${VAI_ICON[o.id]||""} ${esc(o.title)}</b><div class="vai-evn">${Object.entries(o.evidence||{}).map(([k,v]) => `<span><i>${esc(k)}</i> ${vaiEv(v)}</span>`).join("")}</div><div>${esc(o.hint)}</div></div>`;
+  } else h += `<div class="muted" style="font-size:12.5px;margin:6px 0">눈에 띄는 모순·착시 신호가 없어요.</div>`;
+  const adm = !!(VAI_TXT && VAI_TXT.admin);
+  if(VAI_LOADING) h += `<div class="vai-loading">✍️ AI가 문장을 쓰는 중…${isAI?"":" 아래는 규칙 기반 기본 해석이에요."}</div>`;
+  else if(VAI_TXT && VAI_TXT.locked) h += `<div class="vai-loading">🔒 ${esc(VAI_TXT.msg||"AI 문장은 회원 전용이에요.")} 아래는 규칙 기반 기본 해석이에요.</div>`;
+  else if(VAI_TXT && VAI_TXT.error) h += `<div class="vai-loading">${esc(VAI_TXT.error)} — 아래는 규칙 기반 기본 해석이에요.</div>`;
+  else if(VAI_TXT && VAI_TXT.none) h += `<div class="vai-loading">${adm?"👑 이 종목은 아직 AI 해석이 없어요. 오른쪽 위 <b>AI 해석 만들기</b>를 누르면 만들어져 회원 모두가 봐요.":"아직 이 종목의 AI 해석이 준비되지 않았어요."} 아래는 규칙 기반 기본 해석이에요.</div>`;
+  else if(VAI_TXT && VAI_TXT.fallback) h += `<div class="vai-loading">${esc(VAI_TXT.error_note||"AI 응답 실패")}${VAI_TXT.cost_usd?` (비용 $${VAI_TXT.cost_usd})`:""}</div>`;
+  if(isAI && VAI_TXT.facts_asof && VAI_TXT.facts_asof !== f.asof) h += `<div class="vai-loading">이 AI 문장은 <b>${esc(VAI_TXT.facts_asof)}</b> 숫자로 쓴 거예요. 위 배지·표는 오늘(${esc(f.asof)}) 숫자라 조금 다를 수 있어요.</div>`;
+  if(VAI_SEL && VAI_SEL !== vaiSel() && isAI) h += `<div class="vai-loading">선택값이 바뀌었어요 · 위 배지와 PEG 표는 바로 반영됐어요. 아래 문장은 선택과 상관없이 전체 숫자로 쓴 해석이에요${adm?` (<a href="javascript:void(0)" onclick="vaiAI(true)">다시 생성</a>)`:""}.</div>`;
+  const li = xs => xs && xs.length ? `<ul>${xs.map(x => `<li>${esc(x)}</li>`).join("")}</ul>` : `<div class="muted" style="font-size:12px">해당 없음</div>`;
+  h += `<div class="vai-2"><div class="vai-box g"><div class="vai-h">싸다는 근거</div>${li(T.cheap_reasons)}</div>
+    <div class="vai-box b"><div class="vai-h">조심할 근거</div>${li(T.expensive_reasons)}</div></div>`;
+  if(T.illusions && T.illusions.length) h += `<div class="vai-sec">🔍 착시·주의점</div>${T.illusions.map(x => `<div class="vai-ill"><b>▸ ${esc(x.title)}</b> — ${esc(x.body)}</div>`).join("")}`;
+  // PEG 매트릭스(서버 계산) + 지금 고른 조합 표시
+  const M = pg.matrix || [];
+  if(M.length){
+    const gcols = [...new Map(M.map(m => [m.g_key, m.g_label+" "+(m.g>=0?"+":"")+m.g+"%"])).entries()];
+    const rows = [...new Map(M.map(m => [m.basis, m.basis_label+" "+m.per])).entries()];
+    const cell = m => { if(!m) return `<td>-</td>`; const sel = m.basis===basis && m.g_key===PEG_G, cl = m.band==="cheap"?"pg-good":m.band==="expensive"?"pg-bad":"pg-mid";
+      return `<td class="${sel?"sel":""}${m.paired?" pr":""}" title="${esc(m.note||"")}">${m.peg==null?`<span class="muted" style="font-size:11px">${esc(m.note||"-")}</span>`:`<b class="${m.distorted?"muted":cl}">${m.peg.toFixed(2)}</b>${m.distorted?"<sup>왜곡</sup>":""}`}</td>`; };
+    h += `<div class="vai-sec">🎚️ PEG를 모든 조합으로 계산하면 <span class="muted" style="font-size:11.5px;font-weight:400">· 굵은 테두리 = 지금 고른 조합, 점선 = 시점이 맞는 권장 짝${pg.yahoo_5y?` · 야후 5년 PEG ${pg.yahoo_5y}`:""}</span></div>
+      <div style="overflow-x:auto"><table class="pg-tbl vai-m"><tr><th></th>${gcols.map(([k,l]) => `<th>${esc(l)}</th>`).join("")}</tr>
+      ${rows.map(([b,l]) => `<tr><td>${esc(l)}</td>${gcols.map(([k]) => cell(M.find(m => m.basis===b && m.g_key===k))).join("")}</tr>`).join("")}</table></div>`;
+  }
+  h += `<div class="vai-sec">📐 이 기업은 이렇게 보세요</div><div class="vai-rec"><div>1순위 지표: <b>${esc(rec.primary)}</b>${rec.secondary?` · 보조: ${esc(rec.secondary)}`:""}
+    ${rec.per_band_link?` <button class="pg-chip on" onclick="vaiGoPer()">PER 밴드 보러가기 ↓</button>`:""}</div>
+    <div style="margin-top:4px">${esc(T.metric_advice || rec.reason)}</div></div>`;
+  if(T.key_question) h += `<div class="vai-sec">❓ 핵심 질문</div><div class="vai-q">${esc(T.key_question)}</div>`;
+  if(T.checklist && T.checklist.length) h += `<div class="vai-sec">✅ 직접 확인해 볼 것</div><div class="vai-chk">${T.checklist.map(x => `<label><input type="checkbox"> ${esc(x)}</label>`).join("")}</div>`;
+  if(T.lesson) h += `<div class="vai-lesson">📚 강의 포인트: <b>${esc(T.lesson)}</b></div>`;
+  let prov = isAI ? `AI 문장: ${esc(VAI_TXT.provider.startsWith("gemini")?"Gemini":"Claude")}${VAI_TXT.at?` (${esc(VAI_TXT.at)} 작성)`:""}${VAI_TXT.removed?` · 입력에 없는 숫자가 든 문장 ${VAI_TXT.removed}개 제외`:""}` : "문장: 규칙 기반 기본 해석";
+  if(adm) prov += ` · 👑 관리자: 엔진 ${esc(VAI_TXT.provider_now||"키 없음")}${VAI_TXT.cost_usd!=null?` · 이번 생성 $${VAI_TXT.cost_usd}`:""} · 이번 달 누적 $${(VAI_TXT.spend_month||0).toFixed(2)}`;
+  h += `<div class="vai-foot">공개 데이터(${esc(f.fin_source||"야후")}·야후) 기반 자동 해석이며 투자 권유가 아닙니다. 기준일 ${esc(f.asof)}${f.ttm_end?` · 최근 12개월 = ${esc(f.ttm_end)}까지`:""} · 업종 ${esc(f.biz_type)} · ${prov}</div>`;
+  el.innerHTML = h;
+}
+
 // ── 과거 PSR 밴드 ──
 let PSRH = null, PSRH_SPAN = 0;
 function loadPsrHist(d){

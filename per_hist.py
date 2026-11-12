@@ -16,8 +16,20 @@ import datetime as dt
 import xml.etree.ElementTree as ET
 import requests
 
-# SEC는 연락처가 담긴 User-Agent를 요구
-_UA = {"User-Agent": "hirchan-valuation research contact@example.com"}
+# SEC는 연락처가 담긴 User-Agent를 요구(헤더는 영문만 가능) + 초당 10회 제한
+_UA = {"User-Agent": "hirchan-valuation research contact@example.com"}   # 요청서 주소(naver)는 SEC가 403으로 막아 기존 값 유지
+_SEC_LOCK = __import__("threading").Lock()
+_SEC_LAST = [0.0]
+
+
+def sec_get(url, timeout=30):
+    """SEC 요청 공용 — 요청 사이 최소 0.12초(초당 10회 미만)."""
+    with _SEC_LOCK:
+        w = _SEC_LAST[0] + 0.12 - time.time()
+        if w > 0:
+            time.sleep(w)
+        _SEC_LAST[0] = time.time()
+    return requests.get(url, headers=_UA, timeout=timeout)
 _CIK = {}
 _CACHE = {}
 _TTL = 6 * 3600
@@ -26,8 +38,7 @@ _TTL = 6 * 3600
 def _cik(sym):
     if not _CIK:
         try:
-            m = requests.get("https://www.sec.gov/files/company_tickers.json",
-                             headers=_UA, timeout=20).json()
+            m = sec_get("https://www.sec.gov/files/company_tickers.json", timeout=20).json()
             for v in m.values():
                 _CIK[v["ticker"].upper()] = str(v["cik_str"]).zfill(10)
         except Exception:
@@ -44,8 +55,7 @@ def _eps_quarterly(cik):
     j = None
     for tag in ("EarningsPerShareDiluted", "EarningsPerShareBasic"):
         try:
-            r = requests.get(f"https://data.sec.gov/api/xbrl/companyconcept/CIK{cik}/us-gaap/{tag}.json",
-                             headers=_UA, timeout=20)
+            r = sec_get(f"https://data.sec.gov/api/xbrl/companyconcept/CIK{cik}/us-gaap/{tag}.json", timeout=20)
             if r.status_code == 200:
                 j = r.json()
                 break
@@ -346,8 +356,7 @@ def _concept(cik, tag):
     if not hit or time.time() - hit[0] > _TTL:
         g = {}
         try:
-            r = requests.get(f"https://data.sec.gov/api/xbrl/companyfacts/CIK{cik}.json",
-                             headers=_UA, timeout=30)
+            r = sec_get(f"https://data.sec.gov/api/xbrl/companyfacts/CIK{cik}.json")
             if r.status_code == 200:
                 allg = r.json().get("facts", {}).get("us-gaap", {})
                 for t in _REV_TAGS + _SHARE_TAGS:
@@ -463,7 +472,8 @@ def psr_history(ticker):
         return None
     tq = sorted(ttm)
     out = {"ticker": sym, "series": ser, "latest": ser[-1]["psr"], "asof": ser[-1]["d"],
-           "source": "SEC EDGAR(매출·주식수)+Yahoo(가격)", "years": round((tq[-1] - tq[0]).days / 365.25, 1)}
+           "source": "SEC EDGAR(매출·주식수)+Yahoo(가격)", "years": round((tq[-1] - tq[0]).days / 365.25, 1),
+           "rev_ttm": [{"d": k.isoformat(), "v": ttm[k]} for k in tq]}   # AI 종합 해석(상장 초기 성장률)용
     _PSR_CACHE[sym] = (time.time(), out)
     return out
 
@@ -560,6 +570,7 @@ def psr_history_kr(ticker):
         return None
     tq = sorted(ttm)
     out = {"ticker": stock6, "series": ser, "latest": ser[-1]["psr"], "asof": ser[-1]["d"],
-           "source": "DART(매출·주식수)+Yahoo(가격)", "years": round((tq[-1] - tq[0]).days / 365.25, 1)}
+           "source": "DART(매출·주식수)+Yahoo(가격)", "years": round((tq[-1] - tq[0]).days / 365.25, 1),
+           "rev_ttm": [{"d": k.isoformat(), "v": ttm[k]} for k in tq]}
     _PSR_CACHE[stock6] = (time.time(), out)
     return out

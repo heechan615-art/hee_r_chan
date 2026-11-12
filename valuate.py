@@ -1299,6 +1299,7 @@ def analyze_data(ticker):
 
     return {
         "ticker": ticker, "name": name, "currency": cur, "source": src,
+        "sector": info.get("sector"), "industry": info.get("industry"),   # AI 종합 해석의 업종 판정용
         "price": price, "eps_ttm": ttm_eps, "per_ttm": cur_per,
         "eps_fwd": fwd_eps, "per_fwd": fwd_per,
         "pbr_ttm": cur_pbr, "bps": cur_bps,

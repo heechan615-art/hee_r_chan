@@ -238,6 +238,8 @@ def api_analyze():
         except Exception as e:
             return jsonify({"error": f"분석 실패: {repr(e)[:150]}"}), 500
         _cache_put(ck, out)
+        if out.get("ticker"):        # 🧠 AI 종합 해석이 확정 티커로 다시 찾을 수 있게
+            _cache_put("analyze:" + str(out["ticker"]).lower(), out)
     out = dict(out)                  # 캐시 원본 보존 — 요청별 필드는 복사본에만
     if left is not None:             # 분석에 성공했을 때만 차감
         session["guest_uses"] = _guest_uses() + 1
@@ -565,6 +567,166 @@ def api_econ_ask():
             return jsonify({"error": f"답을 만들지 못했어요: {repr(e)[:150]}"}), 500
         if ck and not out.get("error"):
             _cache_put(ck, out)
+    return jsonify(out)
+
+
+# ───────── 🧠 AI 종합 해석 (기업 밸류에이션 탭, PSR 밴드 아래) ─────────
+_VAL_AI_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "val_ai_cache.json")
+
+
+def _val_facts(ticker):
+    """규칙 엔진 facts. 가치평가 결과(5분 캐시)·과거 PSR(6시간)·재무 항목(6시간) 재사용, 6시간 캐시."""
+    import valuation_rules, per_hist, edgar_facts
+    tk = ticker.strip().lower()
+    day = datetime.now(KST).strftime("%Y-%m-%d")
+    ck = f"valfacts:{tk}:{day}"
+    out = _cache_get(ck, 6 * 3600)
+    if out is not None:
+        return out
+    a = _cache_get("analyze:" + tk, 6 * 3600) or clean(analyze_data(ticker))
+    t = a.get("ticker") or ticker
+    psr = _cache_get("psrhist:" + str(t).lower(), 6 * 3600) or clean(per_hist.psr_history(t))
+    fin = None if valuate.is_korean(t) else edgar_facts.us_financials(t)
+    out = clean(valuation_rules.build_facts(a, psr, fin))
+    _cache_put(ck, out)
+    return out
+
+
+def _val_ai_file(key=None, value=None, cost=None):
+    """파일 보관(Supabase를 못 쓸 때 대신) {"items": {티커: 결과}, "spend": {"YYYY-MM": 달러}}."""
+    import json
+    try:
+        with open(_VAL_AI_FILE, encoding="utf-8") as f:
+            db = json.load(f)
+        if "items" not in db:
+            db = {"items": {}, "spend": {}}
+    except Exception:
+        db = {"items": {}, "spend": {}}
+    if value is None and cost is None:
+        return db
+    if value is not None:
+        db["items"][key] = value
+    if cost:
+        m = datetime.now(KST).strftime("%Y-%m")
+        db["spend"][m] = round(db["spend"].get(m, 0) + cost, 4)
+    try:
+        os.makedirs(os.path.dirname(_VAL_AI_FILE), exist_ok=True)
+        with open(_VAL_AI_FILE, "w", encoding="utf-8") as f:
+            json.dump(db, f, ensure_ascii=False)
+    except Exception:
+        pass
+    return db
+
+
+def _val_ai_sb(method, key=None, data=None):
+    """Supabase 표 val_ai(supabase_val_ai.sql) — 서버 재시작·재배포에도 해석이 지워지지 않게.
+    실패하면 None(→ 파일 보관으로 대신)."""
+    if not auth.auth_enabled():
+        return None
+    try:
+        h = auth._headers()
+        url = f"{auth._URL}/rest/v1/val_ai"
+        if method == "GET":
+            r = requests.get(url, headers=h, params={"key": f"eq.{key}", "select": "data"}, timeout=15)
+            r.raise_for_status()
+            rows = r.json()
+            return {"found": bool(rows), "data": rows[0]["data"] if rows else None}
+        r = requests.post(url, headers=dict(h, Prefer="resolution=merge-duplicates,return=minimal"), timeout=8,
+                          json={"key": key, "data": data, "updated_at": datetime.now(timezone.utc).isoformat()})
+        r.raise_for_status()
+        return {"ok": True}
+    except Exception as e:
+        print(f"[val_ai] Supabase {method} 실패 → 파일 보관 사용: {repr(e)[:160]}")
+        return None
+
+
+def _val_ai_get(ticker):
+    sb = _val_ai_sb("GET", ticker)
+    if sb is not None:
+        return sb["data"]
+    return _val_ai_file()["items"].get(ticker)
+
+
+def _val_ai_put(ticker, out):
+    _val_ai_file(ticker, out)                     # 로컬 사본(백업)
+    _val_ai_sb("POST", ticker, out)
+
+
+def _val_ai_spend(cost=None):
+    """이번 달 AI 비용 누적(달러). cost를 주면 더한 뒤 반환."""
+    key = "spend:" + datetime.now(KST).strftime("%Y-%m")
+    sb = _val_ai_sb("GET", key)
+    if sb is None:
+        return _val_ai_file(cost=cost)["spend"].get(key[6:], 0)
+    cur = float((sb["data"] or {}).get("usd", 0))
+    if cost:
+        cur = round(cur + cost, 4)
+        _val_ai_sb("POST", key, {"usd": cur})
+        _val_ai_file(cost=cost)
+    return cur
+
+
+def _val_ai_admin():
+    """AI 해석 생성(비용 발생)은 관리자만. 로그인 미설정 로컬은 관리자 취급."""
+    return (not auth.auth_enabled()) or _require_admin()
+
+
+@app.route("/api/val_facts")
+def api_val_facts():
+    """규칙 엔진 결과(진단 배지·PEG 매트릭스·템플릿 문장). 공개."""
+    import valuation_rules
+    ticker = (request.args.get("ticker") or "").strip()
+    if not ticker:
+        return jsonify({"error": "종목 코드를 입력하세요."}), 400
+    try:
+        f = _val_facts(ticker)
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+    except Exception as e:
+        return jsonify({"error": f"해석 자료를 만들지 못했어요: {repr(e)[:150]}"}), 500
+    return jsonify({"facts": f, "template": valuation_rules.template_text(f)})
+
+
+@app.route("/api/val_ai")
+def api_val_ai():
+    """AI 문장. 만들기(gen=1, API 비용 발생)는 관리자만 — 회원은 관리자가 만들어 둔 해석을 봄(비용 없음).
+    종목별로 가장 최근 해석 1개 영구 보관(Supabase 표 val_ai, 안 되면 data/val_ai_cache.json)."""
+    admin = _val_ai_admin()
+    if not admin and not _is_member():
+        return jsonify({"error": "AI 문장 해석은 회원 전용이에요. 위 진단 배지와 기본 해석은 누구나 볼 수 있어요.", "locked": True}), 402
+    import valuation_ai
+    ticker = (request.args.get("ticker") or "").strip()
+    if not ticker:
+        return jsonify({"error": "종목 코드를 입력하세요."}), 400
+    ck = f"valai:{ticker.lower()}"
+    if request.args.get("gen") == "1":
+        if not admin:
+            return jsonify({"error": "AI 해석 만들기는 관리자만 할 수 있어요."}), 403
+        try:
+            f = _val_facts(ticker)
+            out = clean(valuation_ai.narrate(f))
+        except Exception as e:
+            return jsonify({"error": f"AI 해석을 만들지 못했어요: {repr(e)[:150]}"}), 500
+        out["at"] = datetime.now(KST).strftime("%Y-%m-%d %H:%M")
+        out["facts_asof"] = f.get("asof")
+        spend = _val_ai_spend(out.get("cost_usd"))
+        if not out.get("fallback"):            # 템플릿 폴백은 저장하지 않음
+            _cache_put(ck, out)
+            _val_ai_put(ticker.lower(), out)
+    else:
+        out = _cache_get(ck, 600) or _val_ai_get(ticker.lower())   # 메모리 10분 → Supabase(영구)
+        if out is None:
+            out = {"none": True}
+        else:
+            _cache_put(ck, out)
+        spend = _val_ai_spend() if admin else None
+    out = dict(out)
+    out["admin"] = admin
+    if admin:
+        out["provider_now"] = valuation_ai.provider()
+        out["spend_month"] = spend or 0
+    else:
+        out.pop("usage", None); out.pop("cost_usd", None)
     return jsonify(out)
 
 
