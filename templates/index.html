@@ -4689,7 +4689,7 @@ function vaiRender(){
   if(T.lesson) h += `<div class="vai-lesson">📚 강의 포인트: <b>${esc(T.lesson)}</b></div>`;
   let prov = isAI ? `AI 문장: ${esc(VAI_TXT.provider.startsWith("gemini")?"Gemini":"Claude")}${VAI_TXT.at?` (${esc(VAI_TXT.at)} 작성)`:""}${VAI_TXT.removed?` · 입력에 없는 숫자가 든 문장 ${VAI_TXT.removed}개 제외`:""}` : "문장: 규칙 기반 기본 해석";
   if(adm) prov += ` · 👑 관리자: 엔진 ${esc(VAI_TXT.provider_now||"키 없음")}${VAI_TXT.cost_usd!=null?` · 이번 생성 $${VAI_TXT.cost_usd}`:""} · 이번 달 누적 $${(VAI_TXT.spend_month||0).toFixed(2)}`;
-  h += `<div class="vai-foot">공개 데이터(${esc(f.fin_source||"야후")}·야후) 기반 자동 해석이며 투자 권유가 아닙니다. 기준일 ${esc(f.asof)}${f.ttm_end?` · 최근 12개월 = ${esc(f.ttm_end)}까지`:""} · 업종 ${esc(f.biz_type)} · ${prov}</div>`;
+  h += `<div class="vai-foot">공개 데이터(${esc(f.fin_source||"야후")}·야후) 기반 자동 해석이며 투자 권유가 아닙니다. 기준일 ${esc(f.asof)}${f.ttm_end?` · 최근 12개월 = ${esc(f.ttm_end)}까지`:""} · ${f.biz_type==="업종 정보 없음"?"업종 정보 없음":"업종 "+esc(f.biz_type)} · ${prov}</div>`;
   el.innerHTML = h;
 }
 

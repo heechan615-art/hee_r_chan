@@ -566,6 +566,17 @@ def peg_sales_block(tk, info, nv_annual, ticker, price, us_fh=None):
                         rev_fwd.append({"label": lb, "value": v, "growth": g})
         except Exception:
             pass
+        if not growth:   # 야후 Analysis가 막히면(클라우드) 나스닥(Zacks) 컨센서스 성장률
+            ng = _nasdaq_growth(ticker)
+            if ng:
+                g0 = ng[0][1]
+                growth.append({"key": "y0", "label": f"올해 EPS 성장률(FY{ng[0][0]})", "value": round(g0, 4), "src": "나스닥(Zacks)"})
+                if len(ng) > 1:
+                    g1 = ng[1][1]
+                    growth.append({"key": "y1", "label": f"내년 EPS 성장률(FY{ng[1][0]})", "value": round(g1, 4), "src": "나스닥(Zacks)"})
+                    if g0 > -1 and g1 > -1:
+                        growth.append({"key": "y2", "label": "2년 연평균(올해·내년)",
+                                       "value": round(((1 + g0) * (1 + g1)) ** 0.5 - 1, 4), "src": "나스닥(Zacks)"})
         if rev_growth_ttm is None and us_fh.get("rev_growth") is not None:
             rev_growth_ttm = us_fh["rev_growth"] / 100.0
 
@@ -579,6 +590,15 @@ def peg_sales_block(tk, info, nv_annual, ticker, price, us_fh=None):
     if not rev_ttm and mcap and num(info.get("priceToSalesTrailing12Months")):
         rev_ttm = mcap / num(info.get("priceToSalesTrailing12Months"))
     fcf = num(info.get("freeCashflow"))
+    # 야후 .info가 비면(클라우드) Finnhub 지표로 매출·EV·마진 보강
+    fh_psr = num(us_fh.get("psr"))
+    if not rev_ttm and mcap and fh_psr:
+        rev_ttm = mcap / fh_psr
+    if ev is None:
+        ev = num(us_fh.get("ev"))
+    fh_gm = num(us_fh.get("gross_margin"))
+    fh_nm = num(us_fh.get("net_margin"))
+    fh_pfcf = num(us_fh.get("pfcf"))
     out = {
         "growth": growth,
         "yahoo_peg": num(info.get("trailingPegRatio")),
@@ -586,11 +606,14 @@ def peg_sales_block(tk, info, nv_annual, ticker, price, us_fh=None):
         "rev_growth_ttm": rev_growth_ttm,
         "psr": (mcap / rev_ttm) if (mcap and rev_ttm) else num(us_fh.get("psr")),
         "ev_s": (ev / rev_ttm) if (ev and rev_ttm) else None,
-        "gross_margin": num(info.get("grossMargins")),
+        "gross_margin": num(info.get("grossMargins")) if info.get("grossMargins") is not None
+                        else (fh_gm / 100 if fh_gm is not None else None),
         "op_margin": num(info.get("operatingMargins")) if info.get("operatingMargins") is not None
                      else (num(us_fh.get("opmargin")) / 100 if us_fh.get("opmargin") is not None else None),
-        "fcf_margin": (fcf / rev_ttm) if (fcf is not None and rev_ttm) else None,
-        "net_income": num(info.get("netIncomeToCommon")),
+        "fcf_margin": (fcf / rev_ttm) if (fcf is not None and rev_ttm)
+                      else ((fh_psr / fh_pfcf) if (fh_psr and fh_pfcf) else None),   # FCF/매출 = PSR ÷ P/FCF
+        "net_income": num(info.get("netIncomeToCommon")) if info.get("netIncomeToCommon") is not None
+                      else ((fh_nm / 100 * rev_ttm) if (fh_nm is not None and rev_ttm) else None),
     }
     for r in out["rev_fwd"]:
         r["psr"] = (mcap / r["value"]) if mcap else None
@@ -1030,9 +1053,95 @@ def _finnhub_metrics(symbol):
             "opmargin": m.get("operatingMarginTTM"),
             "psr": m.get("psTTM"),
             "rev_growth": m.get("revenueGrowthTTMYoy"),
+            "gross_margin": m.get("grossMarginTTM"),        # %
+            "net_margin": m.get("netProfitMarginTTM"),      # %
+            "ev": m.get("enterpriseValue") * 1e6 if m.get("enterpriseValue") else None,
+            "pfcf": m.get("pfcfShareTTM"),
         }
     except Exception:
         return {}
+
+
+def _finnhub_profile(symbol):
+    """Finnhub 회사 프로필(이름·업종). 실패 시 {}."""
+    key = os.environ.get("FINNHUB_API_KEY")
+    if not key:
+        return {}
+    try:
+        r = requests.get("https://finnhub.io/api/v1/stock/profile2",
+                         params={"symbol": symbol.upper(), "token": key}, timeout=8)
+        return (r.json() or {}) if r.status_code == 200 else {}
+    except Exception:
+        return {}
+
+
+def _nasdaq_json(path):
+    """나스닥 공개 API(curl_cffi) data 부분. 실패 시 None."""
+    try:
+        from curl_cffi import requests as creq
+        r = creq.get("https://api.nasdaq.com/api/" + path, impersonate="chrome", timeout=10)
+        if r.status_code == 200:
+            return (r.json() or {}).get("data")
+    except Exception:
+        pass
+    return None
+
+
+# 야후식 섹터 이름(AI 종합 해석 업종 판정·매출 패널 문구가 이 이름을 씀)
+_NQ_SECTOR = {"technology": "Technology", "finance": "Financial Services", "health care": "Healthcare",
+              "consumer staples": "Consumer Defensive", "consumer discretionary": "Consumer Cyclical",
+              "industrials": "Industrials", "utilities": "Utilities", "real estate": "Real Estate",
+              "energy": "Energy", "basic materials": "Basic Materials",
+              "telecommunications": "Communication Services"}
+_FH_SECTOR = {"media": "Communication Services", "telecommunication": "Communication Services",
+              "banking": "Financial Services", "insurance": "Financial Services",
+              "financial services": "Financial Services", "semiconductors": "Technology",
+              "beverages": "Consumer Defensive", "food products": "Consumer Defensive",
+              "tobacco": "Consumer Defensive", "consumer products": "Consumer Defensive",
+              "automobiles": "Consumer Cyclical", "hotels, restaurants & leisure": "Consumer Cyclical",
+              "textiles, apparel & luxury goods": "Consumer Cyclical", "pharmaceuticals": "Healthcare",
+              "biotechnology": "Healthcare", "health care": "Healthcare", "life sciences tools & services": "Healthcare",
+              "utilities": "Utilities", "real estate": "Real Estate", "energy": "Energy",
+              "chemicals": "Basic Materials", "metals & mining": "Basic Materials"}
+
+
+def _us_profile_fallback(symbol):
+    """야후 .info가 막혔을 때(클라우드) 이름·업종 — Finnhub 업종 + 나스닥 업종을 야후식 이름으로.
+    Finnhub은 META·GOOGL을 'Media'로(야후는 통신서비스·인터넷), 나스닥은 소프트웨어를 구분해 줌."""
+    fh = _finnhub_profile(symbol)
+    nq = _nasdaq_json(f"company/{symbol.upper()}/company-profile") or {}
+    fi = (fh.get("finnhubIndustry") or "").strip()
+    ns = ((nq.get("Sector") or {}).get("value") or "").strip()
+    ni = ((nq.get("Industry") or {}).get("value") or "").strip()
+    fl, nil = fi.lower(), ni.lower()
+    sector = _FH_SECTOR.get(fl) or _NQ_SECTOR.get(ns.lower()) or (fi or None)
+    if fl == "media" and ("computer software" in nil or "edp" in nil):
+        industry = "Internet Content & Information"
+    elif fl == "semiconductors" or "semiconductor" in nil:
+        industry = "Semiconductors"
+    elif fl == "banking":
+        industry = "Banks"
+    elif fl == "insurance":
+        industry = "Insurance"
+    elif "software" in nil or fl == "software":
+        industry = "Software - Application"
+    else:
+        industry = ni or fi or None
+    return {"sector": sector, "industry": industry, "name": fh.get("name") or None}
+
+
+def _nasdaq_growth(symbol):
+    """나스닥(Zacks 컨센서스) 회계연도별 EPS 성장률 [(연도, 소수)] — 첫 해 = 올해(진행 중인 회계연도)."""
+    d = _nasdaq_json(f"analyst/{symbol.upper()}/peg-ratio") or {}
+    rows = ((d.get("gr") or {}).get("peGrowthChart")) or []
+    out = []
+    for r in rows:
+        try:
+            if r.get("z") == "Growth" and r.get("y") is not None:
+                out.append((str(r["x"]), float(r["y"]) / 100))
+        except (TypeError, ValueError):
+            pass
+    return sorted(out)
 
 
 # ----------------------------- 분석 (데이터 반환) -----------------------------
@@ -1054,6 +1163,13 @@ def analyze_data(ticker):
         info = tk.info
     except Exception:
         info = {}
+    # 미국: 클라우드에서 야후 .info가 막혀 업종·이름이 비면 Finnhub·나스닥으로 채움
+    if not is_korean(ticker) and not (info or {}).get("sector"):
+        prof = _safe(lambda: _us_profile_fallback(ticker)) or {}
+        info = dict(info or {})
+        info["sector"], info["industry"] = prof.get("sector"), prof.get("industry")
+        if prof.get("name") and not (info.get("shortName") or info.get("longName")):
+            info["shortName"] = prof["name"]
     # 국내는 네이버 자동완성의 한글 종목명 우선 (yfinance는 영문 축약명)
     name = kr_name or info.get("shortName") or info.get("longName") or ticker
     cur = info.get("currency", "")
