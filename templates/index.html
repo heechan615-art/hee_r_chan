@@ -359,6 +359,13 @@
   .vai-m sup{font-size:9px;color:var(--muted);margin-left:2px}
   .vai-rec,.vai-q{font-size:13px;line-height:1.7;background:var(--panel);border-radius:10px;padding:10px 12px}
   .vai-chk{display:flex;flex-direction:column;gap:5px;font-size:13px;line-height:1.55} .vai-chk input{margin-right:4px}
+  .vai-fc{margin:2px 0 8px 22px;padding:8px 10px;border-left:3px solid var(--line);background:var(--panel);border-radius:0 8px 8px 0;font-size:12.5px;line-height:1.6}
+  .vai-fcs{display:inline-block;font-size:11px;font-weight:700;padding:1px 7px;border-radius:10px;margin-right:4px;background:#eef0f4;color:#555}
+  .vai-fcs.g{background:#e3f4e8;color:#1f7a3d} .vai-fcs.w{background:#fff3d6;color:#8a5a00} .vai-fcs.i{background:#e6efff;color:#2a5bd7}
+  .vai-fcq{margin-top:4px;font-style:italic;color:var(--muted);font-size:12px}
+  .vai-fcl{display:inline-block;margin-top:4px;font-size:11.5px;color:#2a5bd7;text-decoration:none} .vai-fcl:hover{text-decoration:underline}
+  .vai-fcbtn{font-size:11.5px;margin-left:8px;vertical-align:middle}
+  .vai-fcfoot{font-size:11.5px;color:var(--muted);margin:4px 0 6px;line-height:1.5}
   .vai-lesson{margin-top:12px;font-size:13.5px;background:var(--brand-soft);border-radius:10px;padding:9px 12px}
   .vai-foot{margin-top:12px;font-size:11px;color:var(--muted);line-height:1.6;border-top:1px dashed var(--line);padding-top:8px}
   /* PEG · 매출 기반 밸류 */
@@ -1164,7 +1171,7 @@
        export_valueai.py가 static/econ/bundle.json을 만든다. 코드: static/econ.js · econ.css -->
   <div id="tab-econ" style="display:none">
     <div class="sub">미국·한국·중국·유럽 경제지표 발표를 히르찬 방식으로 해석 · 추세 그래프 · 카톡 브리핑 요약</div>
-    <link rel="stylesheet" href="/static/econ.css?v=6">
+    <link rel="stylesheet" href="/static/econ.css?v=13">
     <div id="econ-root"></div>
   </div>
 
@@ -4599,13 +4606,13 @@ function psInner(d){
   return h;
 }
 // ── 🧠 AI 종합 해석: 규칙 엔진 진단(/api/val_facts, 공개) → AI 문장(/api/val_ai, 회원) ──
-let VAI = null, VAI_TXT = null, VAI_SEL = null, VAI_OPEN = null, VAI_LOADING = false;
+let VAI = null, VAI_TXT = null, VAI_SEL = null, VAI_OPEN = null, VAI_LOADING = false, VAI_CHECKING = false, VAI_FCERR = null;
 const VAI_ICON = {one_off_gain:"⚠️", per_inversion:"🔀", heavy_capex:"🏗️", negative_fcf:"💸", fcf_anomaly:"🧾", revenue_down_eps_up:"↘️",
   margin_regime_change:"🔄", peg_unstable:"🎚️", peg_robust_expensive:"💰", peg_robust_cheap:"🏷️", peg_base_effect:"🚀", peg_mismatch:"🧩",
   early_growth_inflation:"🎈", extreme_band:"📏", structural_break:"📉", data_gap:"🕳️", tax_anomaly:"🧮", panel_basis:"ℹ️", panel_basis_op:"ℹ️"};
 function vaiSel(){ return [PEG_BASIS, PEG_G, PEG_CUSTOM, PS_MARGIN].join("|"); }
 function loadValAI(d){
-  VAI = null; VAI_TXT = null; VAI_SEL = null; VAI_OPEN = null;
+  VAI = null; VAI_TXT = null; VAI_SEL = null; VAI_OPEN = null; VAI_CHECKING = false; VAI_FCERR = null;
   const tk = d.ticker;
   fetch("/api/val_facts?ticker=" + encodeURIComponent(tk)).then(r => r.json()).then(res => {
     if(!LAST || LAST.ticker !== tk) return;
@@ -4623,6 +4630,18 @@ function vaiAI(gen){
     VAI_TXT = st===402 ? {locked:true, msg:j.error} : (j.error ? {error:j.error, admin:(VAI_TXT||{}).admin} : j);
     VAI_SEL = vaiSel(); vaiRender();
   }).catch(() => { VAI_LOADING = false; VAI_TXT = {error:"AI 해석 요청 실패", admin:(VAI_TXT||{}).admin}; vaiRender(); });
+}
+function vaiCheck(){
+  if(!VAI || VAI_CHECKING) return; const tk = VAI.facts.ticker;
+  if(VAI_TXT && VAI_TXT.filing_check && !confirm("다시 확인하면 AI 비용이 한 번 더 들어요(약 $0.05). 계속할까요?")) return;
+  VAI_CHECKING = true; VAI_FCERR = null; vaiRender();
+  fetch("/api/val_ai_check?ticker=" + encodeURIComponent(tk)).then(async r => ({st:r.status, j: await r.json()})).then(({j}) => {
+    VAI_CHECKING = false;
+    if(!VAI || VAI.facts.ticker !== tk) return;
+    if(j.error) VAI_FCERR = j.error;
+    else { VAI_TXT.filing_check = j.filing_check; if(j.spend_month!=null) VAI_TXT.spend_month = j.spend_month; }
+    vaiRender();
+  }).catch(() => { VAI_CHECKING = false; VAI_FCERR = "공시 확인 요청 실패"; vaiRender(); });
 }
 function vaiToggle(id){ VAI_OPEN = VAI_OPEN===id ? null : id; vaiRender(); }
 function vaiGoPer(){ const el = document.getElementById("sigma-row"); if(el) el.scrollIntoView({behavior:"smooth", block:"start"}); }
@@ -4685,7 +4704,21 @@ function vaiRender(){
     ${rec.per_band_link?` <button class="pg-chip on" onclick="vaiGoPer()">PER 밴드 보러가기 ↓</button>`:""}</div>
     <div style="margin-top:4px">${esc(T.metric_advice || rec.reason)}</div></div>`;
   if(T.key_question) h += `<div class="vai-sec">❓ 핵심 질문</div><div class="vai-q">${esc(T.key_question)}</div>`;
-  if(T.checklist && T.checklist.length) h += `<div class="vai-sec">✅ 직접 확인해 볼 것</div><div class="vai-chk">${T.checklist.map(x => `<label><input type="checkbox"> ${esc(x)}</label>`).join("")}</div>`;
+  if(T.checklist && T.checklist.length){
+    const FC = isAI ? VAI_TXT.filing_check : null;
+    const fcBtn = (isAI && VAI_TXT.admin && /^[A-Za-z.\-]+$/.test(f.ticker||"")) ? `<button class="pg-chip vai-fcbtn" onclick="vaiCheck()" ${VAI_CHECKING?"disabled":""} title="관리자 전용 — SEC 공시·실적발표 자료를 받아 AI가 항목별로 확인(약 $0.03~0.1)">${VAI_CHECKING?"공시 읽는 중… (30초~1분)":(FC?"👑 다시 확인":"👑 공시로 확인하기")}</button>` : "";
+    const stc = {"확인됨":"g","일부 확인":"w","찾지 못함":"n","앱에서 확인":"i"};
+    h += `<div class="vai-sec">✅ 직접 확인해 볼 것 ${fcBtn}</div><div class="vai-chk">${T.checklist.map((x, i) => {
+      const r = FC && FC.items ? FC.items[i] : null;
+      let a = "";
+      if(r) a = `<div class="vai-fc"><span class="vai-fcs ${stc[r.status]||"n"}">${esc(r.status)}</span> ${esc(r.answer)}
+        ${r.quote?`<div class="vai-fcq">“${esc(r.quote)}”</div>`:""}
+        ${r.source?`<a class="vai-fcl" href="${esc(r.source.url)}" target="_blank" rel="noopener">${esc(r.source.kind)} · ${esc(r.source.title)} ↗</a>`:""}</div>`;
+      return `<label><input type="checkbox"${r && r.status==="확인됨"?" checked":""}> ${esc(x)}</label>${a}`;
+    }).join("")}</div>`;
+    if(FC) h += `<div class="vai-fcfoot">${FC.summary?`<b>${esc(FC.summary)}</b> · `:""}AI가 공시·회사 발표 자료에서 찾은 내용이에요(${esc(FC.at||"")} 확인). 회사의 설명을 옮긴 것이니 원문 링크로 직접 확인해 보세요.${VAI_TXT.admin && FC.cost_usd!=null?` · 👑 비용 $${FC.cost_usd}`:""}</div>`;
+    if(VAI_FCERR) h += `<div class="vai-loading">${esc(VAI_FCERR)}</div>`;
+  }
   if(T.lesson) h += `<div class="vai-lesson">📚 강의 포인트: <b>${esc(T.lesson)}</b></div>`;
   let prov = isAI ? `AI 문장: ${esc(VAI_TXT.provider.startsWith("gemini")?"Gemini":"Claude")}${VAI_TXT.at?` (${esc(VAI_TXT.at)} 작성)`:""}${VAI_TXT.removed?` · 입력에 없는 숫자가 든 문장 ${VAI_TXT.removed}개 제외`:""}` : "문장: 규칙 기반 기본 해석";
   if(adm) prov += ` · 👑 관리자: 엔진 ${esc(VAI_TXT.provider_now||"키 없음")}${VAI_TXT.cost_usd!=null?` · 이번 생성 $${VAI_TXT.cost_usd}`:""} · 이번 달 누적 $${(VAI_TXT.spend_month||0).toFixed(2)}`;
@@ -5568,7 +5601,7 @@ window.uploadFactset = uploadFactset;   // 인라인 onchange가 IIFE 밖에서 
 })();
 </script>
 <script src="/static/portfolio.js?v=11" defer></script>
-<script src="/static/econ.js?v=6" defer></script>
+<script src="/static/econ.js?v=11" defer></script>
 <script src="/static/sector.js?v=7" defer></script>
 <button type="button" id="to-top" aria-label="맨 위로"><span class="ar">↑</span>맨 위로</button>
 <script>

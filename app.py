@@ -8,6 +8,7 @@
 """
 import os
 import re
+import threading
 import math
 import time
 import requests
@@ -570,6 +571,114 @@ def api_econ_ask():
     return jsonify(out)
 
 
+# ───────── 👑 경제지표 리서치 보고서 PDF (관리자 전용) ─────────
+# 원본은 히르찬 맥의 경제지표 노트(10번)가 만든 보고서. export_valueai.py가 econ_briefs/(static 밖 → 주소로 바로 못 엶)에 PDF와 목록을 둔다.
+_BRIEF_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "econ_briefs")
+
+
+@app.route("/api/econ/briefs")
+def api_econ_briefs():
+    import json
+    if not _val_ai_admin():
+        return jsonify({"error": "관리자 전용이에요."}), 403
+    try:
+        with open(os.path.join(_BRIEF_DIR, "index.json"), encoding="utf-8") as f:
+            return jsonify({"items": json.load(f)})
+    except FileNotFoundError:
+        return jsonify({"items": []})
+
+
+@app.route("/api/econ/brief_pdf")
+def api_econ_brief_pdf():
+    import json
+    from flask import send_file
+    if not _val_ai_admin():
+        return jsonify({"error": "관리자 전용이에요."}), 403
+    bid = request.args.get("id", "")
+    path = os.path.join(_BRIEF_DIR, f"{bid}.pdf")
+    if not re.fullmatch(r"[\w\-가-힣]+", bid) or not os.path.exists(path):
+        return jsonify({"error": "보고서 PDF가 없어요."}), 404
+    try:
+        with open(os.path.join(_BRIEF_DIR, "index.json"), encoding="utf-8") as f:
+            name = next((x.get("filename") for x in json.load(f) if x.get("id") == bid), None)
+    except Exception:
+        name = None
+    return send_file(path, mimetype="application/pdf", as_attachment=True, download_name=name or f"{bid}.pdf", max_age=0)
+
+
+# ───────── 💳 신용 스프레드 (회원 보기) — FRED ICE BofA OAS, 6시간마다 새로 받음 ─────────
+_SPREAD_LOCK = threading.Lock()
+
+
+@app.route("/api/econ/spreads")
+def api_econ_spreads():
+    import time as _t
+    import econ_spreads
+    d = econ_spreads.load()
+    if not d or _t.time() - os.path.getmtime(econ_spreads.OUT) > 6 * 3600:
+        with _SPREAD_LOCK:
+            d = econ_spreads.load()
+            if not d or _t.time() - os.path.getmtime(econ_spreads.OUT) > 6 * 3600:
+                try:
+                    econ_spreads.update()
+                except Exception as e:
+                    print("신용 스프레드 받기 실패:", e)
+                    if d:          # 옛 자료라도 보여 줌
+                        os.utime(econ_spreads.OUT)   # 실패해도 6시간 동안은 다시 시도하지 않음
+                d = econ_spreads.load()
+    return jsonify(d or {"error": "신용 스프레드 자료를 받지 못했어요. 잠시 뒤 다시 열어 주세요."})
+
+
+# ───────── 👑 기타 보고서 분석 · 히르찬 매크로 리서치 (관리자 전용) ─────────
+# 원본은 경제지표 노트(10번). export_valueai.py가 econ_private/(static 밖)에 둔다.
+_PRIV_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "econ_private")
+
+
+def _priv_index(kind):
+    import json
+    try:
+        with open(os.path.join(_PRIV_DIR, kind, "index.json"), encoding="utf-8") as f:
+            return json.load(f)
+    except FileNotFoundError:
+        return []
+
+
+@app.route("/api/econ/other")
+def api_econ_other():
+    if not _val_ai_admin():
+        return jsonify({"error": "관리자 전용이에요."}), 403
+    oid = request.args.get("id", "")
+    if not oid:
+        return jsonify({"items": _priv_index("other")})
+    meta = next((x for x in _priv_index("other") if x.get("id") == oid), None)
+    path = os.path.join(_PRIV_DIR, "other", f"{oid}.md")
+    if not meta or not re.fullmatch(r"[\w\-]+", oid) or not os.path.exists(path):
+        return jsonify({"error": "분석 글을 찾지 못했어요."}), 404
+    with open(path, encoding="utf-8") as f:
+        return jsonify({"meta": meta, "body": f.read()})
+
+
+@app.route("/api/econ/hmr")
+def api_econ_hmr():
+    if not _val_ai_admin():
+        return jsonify({"error": "관리자 전용이에요."}), 403
+    return jsonify({"items": _priv_index("hmr")})
+
+
+@app.route("/api/econ/hmr_pdf")
+def api_econ_hmr_pdf():
+    """보기(dl 없음) = 원본 PDF, 받기(dl=1) = 연준 발언 포인트 번호를 뺀 PDF"""
+    from flask import send_file
+    if not _val_ai_admin():
+        return jsonify({"error": "관리자 전용이에요."}), 403
+    rid, dl = request.args.get("id", ""), request.args.get("dl") == "1"
+    meta = next((x for x in _priv_index("hmr") if x.get("id") == rid), None)
+    path = os.path.join(_PRIV_DIR, "hmr", f"{rid}{'.dl' if dl else ''}.pdf")
+    if not meta or not re.fullmatch(r"[\w\-]+", rid) or not os.path.exists(path):
+        return jsonify({"error": "리포트 PDF가 없어요."}), 404
+    return send_file(path, mimetype="application/pdf", as_attachment=dl, download_name=meta.get("filename") or f"{rid}.pdf", max_age=0)
+
+
 # ───────── 🧠 AI 종합 해석 (기업 밸류에이션 탭, PSR 밴드 아래) ─────────
 _VAL_AI_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "val_ai_cache.json")
 
@@ -727,7 +836,40 @@ def api_val_ai():
         out["spend_month"] = spend or 0
     else:
         out.pop("usage", None); out.pop("cost_usd", None)
+        if out.get("filing_check"):
+            out["filing_check"] = {k: v for k, v in out["filing_check"].items() if k not in ("usage", "cost_usd")}
     return jsonify(out)
+
+
+@app.route("/api/val_ai_check")
+def api_val_ai_check():
+    """✅ '직접 확인해 볼 것'을 공시·실적발표 자료로 자동 확인(미국 종목). 관리자만 실행(API 비용),
+    결과는 그 종목 AI 해석에 붙여 영구 보관 → 회원도 봄. 해석을 다시 만들면(항목이 바뀌므로) 결과도 새로."""
+    if not _val_ai_admin():
+        return jsonify({"error": "공시 확인은 관리자만 실행할 수 있어요."}), 403
+    import filing_check
+    ticker = (request.args.get("ticker") or "").strip()
+    tk = ticker.lower()
+    if not ticker:
+        return jsonify({"error": "종목 코드를 입력하세요."}), 400
+    if valuate.is_korean(ticker):
+        return jsonify({"error": "공시 자동 확인은 아직 미국 종목만 돼요(국내 DART는 준비 중)."}), 400
+    out = _cache_get("valai:" + tk, 600) or _val_ai_get(tk)
+    cl = ((out or {}).get("text") or {}).get("checklist") or []
+    if not cl:
+        return jsonify({"error": "먼저 AI 해석을 만들어 주세요(확인 항목이 해석에서 나와요)."}), 400
+    try:
+        f = _val_facts(ticker)
+        res = clean(filing_check.check(f.get("ticker") or ticker.upper(), f.get("name"), cl, f))
+    except Exception as e:
+        return jsonify({"error": f"공시 확인에 실패했어요: {repr(e)[:150]}"}), 500
+    res["at"] = datetime.now(KST).strftime("%Y-%m-%d %H:%M")
+    spend = _val_ai_spend(res.get("cost_usd"))
+    out = dict(out)
+    out["filing_check"] = res
+    _val_ai_put(tk, out)
+    _cache_put("valai:" + tk, out)
+    return jsonify({"filing_check": res, "spend_month": spend})
 
 
 @app.route("/api/snp/upload_factset", methods=["POST"])

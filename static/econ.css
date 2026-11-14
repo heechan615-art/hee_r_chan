@@ -178,3 +178,103 @@ html.is-mobile #tab-econ .ec-nav button{flex:1;justify-content:center;padding:11
 #tab-econ .qa-row{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:8px;flex-wrap:wrap}
 #tab-econ .qa-row button{background:#0e1c36;color:#fff;border:0;border-radius:10px;padding:9px 18px;font-weight:700;font-size:14px;cursor:pointer}
 #tab-econ #ec-qa-f{display:block;margin:0}
+
+/* 👑 리서치 보고서 PDF(관리자 전용) */
+#tab-econ .ec-briefs{margin-top:16px}
+#tab-econ .ec-briefs h2 small{font-size:12.5px;color:#7b8392;font-weight:700}
+#tab-econ .ec-bcols{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px}
+#tab-econ .ec-bcols h3{font-size:14.5px;margin:4px 0 6px}
+#tab-econ .ec-brow{display:flex;align-items:center;gap:8px;padding:8px 0;border-top:1px solid #f2f4f7;font-size:14px;text-decoration:none;color:inherit}
+#tab-econ .ec-brow b{flex:0 1 auto;min-width:0;max-width:60%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#tab-econ .ec-brow span{flex:1;min-width:0;color:#7b8392;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#tab-econ .ec-brow em{flex:none;font-style:normal;font-size:12.5px;font-weight:800;color:#163a5c;border:1px solid #c9d6e6;border-radius:8px;padding:3px 8px}
+#tab-econ .ec-st{flex:none;font-style:normal;padding:1px 8px;border-radius:99px;font-weight:900;font-size:12px;background:#e9eef5;color:#163a5c}
+#tab-econ .ec-st.pos{background:#d3f9d8;color:#1b5e2b}#tab-econ .ec-st.neg{background:#ffe3e3;color:#b42318}#tab-econ .ec-st.mix{background:#fff3bf;color:#7a4b00}
+#tab-econ .ec-bbtn{display:block;margin-top:14px;background:#f3f7fc;border:1px solid #c9d6e6;border-left:5px solid #B0883A;border-radius:14px;padding:12px 16px;font-weight:900;color:#163a5c;text-decoration:none;font-size:15px}
+#tab-econ .ec-bbtn small{display:block;font-weight:700;color:#7b8392;font-size:12.5px;margin-top:2px}
+#tab-econ .ec-bbtn.none{color:#7b8392;font-weight:800;font-size:14px}
+@media (max-width:820px){#tab-econ .ec-bcols{grid-template-columns:minmax(0,1fr)}#tab-econ .ec-brow b{max-width:45%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}}
+/* 🏛️ 연준 인사 발언 · 💳 신용 스프레드 · 👑 기타 보고서 · 히르찬 리서치 — 경제지표 노트 style.css에서 옮김 */
+#tab-econ .fscale{display:flex;align-items:flex-end;gap:12px;margin:6px 0 4px}
+#tab-econ .fs-end{flex:none;display:flex;flex-direction:column;align-items:center;line-height:1.15;padding-bottom:16px}
+#tab-econ .fs-end .ico{font-size:30px}#tab-econ .fscale:not(.big) .fs-end .ico{font-size:24px}
+#tab-econ .fs-end b{font-size:13px}#tab-econ .fs-end small{font-size:12px;font-weight:800}
+#tab-econ .fs-end.hawk{color:#c2410c}#tab-econ .fs-end.dove{color:#1c7ed6}
+#tab-econ .fs-mid{flex:1;min-width:0;position:relative;margin:0 10px}
+#tab-econ .fs-tags{position:relative}
+#tab-econ .fs-tag{position:absolute;transform:translateX(-50%);white-space:nowrap;text-decoration:none;font-size:12.5px;font-weight:800;background:#fff;border:1.5px solid var(--c);color:var(--c);border-radius:999px;padding:2px 9px;line-height:1.5}
+#tab-econ .fs-tag b{font-weight:900}#tab-econ .fs-tag:hover{background:var(--c);color:#fff}
+#tab-econ .fs-track{position:relative;height:12px;border-radius:999px;background:linear-gradient(90deg,#c2410c,#f2b48c 35%,#e9ecf1 50%,#a5c8f0 65%,#1c7ed6)}
+#tab-econ .fs-track i,#tab-econ .fc-bar i{position:absolute;top:50%;width:16px;height:16px;border-radius:50%;background:var(--c);border:3px solid #fff;box-shadow:0 0 0 1px var(--c);transform:translate(-50%,-50%)}
+#tab-econ .fs-ticks{position:relative;height:18px;font-size:11.5px;color:var(--muted);margin-top:4px}
+#tab-econ .fs-ticks span{position:absolute;transform:translateX(-50%);white-space:nowrap}
+#tab-econ .fs-note{font-size:13px;color:var(--muted);margin:10px 0 0}
+@media (max-width:640px){#tab-econ .fs-end .ico{font-size:22px}#tab-econ .fs-mid{margin:0 2px}#tab-econ .fs-tag{font-size:11px;padding:1px 6px}}#tab-econ .fgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
+#tab-econ .fcard .fc-h{display:flex;gap:8px;align-items:center;font-size:16px}
+#tab-econ .fcard .vt{font-size:11px;font-weight:800;background:var(--ok2);color:var(--ok);border-radius:6px;padding:1px 6px}
+#tab-econ .fcard .fc-s{font-size:14px;font-weight:800;margin-top:6px}#tab-econ .fcard .fc-s>b{font-size:22px}
+#tab-econ .fc-bar{position:relative;height:8px;border-radius:999px;margin:8px 0 10px;background:linear-gradient(90deg,#c2410c,#e9ecf1 50%,#1c7ed6)}
+#tab-econ .fc-bar i{width:13px;height:13px;border-width:2px}
+#tab-econ .fcard .fc-t{font-size:13px;color:#4a515c;line-height:1.55}
+#tab-econ .fd{font-size:12px;font-weight:800;border-radius:6px;padding:1px 7px;margin-left:4px;white-space:nowrap}
+#tab-econ .fd.hawk{background:#ffe8d9;color:#c2410c}#tab-econ .fd.dove{background:#dbeafe;color:#1d4ed8}#tab-econ .fd.keep{background:var(--panel);color:#4a515c}
+#tab-econ .fpts{display:grid;gap:12px}
+#tab-econ .fpt .fp-h{display:flex;gap:10px;align-items:center;font-size:16px}
+#tab-econ .fpt .no{flex:none;width:26px;height:26px;border-radius:50%;background:var(--ink);color:#fff;display:grid;place-items:center;font-size:13px;font-weight:900}
+#tab-econ .fp-now{margin:6px 0 4px 36px;font-size:14px;font-weight:700;color:#163a5c}
+#tab-econ .fp-tl{list-style:none;margin:8px 0 0 36px;padding:0;border-left:2px solid var(--line);font-size:14px}
+#tab-econ .fp-tl li{display:flex;gap:8px;align-items:baseline;padding:5px 0 5px 12px;flex-wrap:wrap}
+#tab-econ .fp-d{font-size:12.5px;color:var(--muted);font-weight:700;white-space:nowrap}
+#tab-econ .chg{font-size:11.5px;font-weight:800;border-radius:6px;padding:1px 7px;white-space:nowrap;background:var(--panel);color:#4a515c}
+#tab-econ .chg.new{background:var(--ok2);color:var(--ok)}#tab-econ .chg.up{background:#ffe8d9;color:#c2410c}#tab-econ .chg.down{background:#dbeafe;color:#1d4ed8}#tab-econ .chg.turn{background:#f3e8ff;color:#7c3aed}#tab-econ .chg.none{opacity:.7}
+#tab-econ .fo h3{font-size:15px;margin:14px 0 8px}
+#tab-econ .fo-head{background:#fff8e1;border:1px solid #f3e3bd;border-radius:12px;padding:12px 16px;font-size:15px;font-weight:800;line-height:1.55}
+#tab-econ .fo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(320px,100%),1fr));gap:10px}
+#tab-econ .fo-item{border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+#tab-econ .fo-item>b{font-size:14.5px}#tab-econ .fo-item p,#tab-econ .fo-o p{margin:4px 0 6px;font-size:13.5px;color:#4a515c;line-height:1.6}
+#tab-econ .fo-ws,#tab-econ .fo-sh{display:flex;flex-wrap:wrap;gap:4px;align-items:center}
+#tab-econ .fo-who{font-size:12px;font-weight:800;color:var(--c);border:1px solid var(--c);border-radius:999px;padding:0 8px;text-decoration:none;background:#fff;white-space:nowrap}
+#tab-econ .fo-who:hover{background:var(--c);color:#fff}
+#tab-econ .fo-side{background:var(--panel);border-radius:10px;padding:8px 10px;margin-top:6px}#tab-econ .fo-side p{margin:4px 0 0}
+#tab-econ .fo-lb{font-size:12.5px;font-weight:900;margin-right:4px}
+#tab-econ .fo-other{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(250px,100%),1fr));gap:10px}
+#tab-econ .fo-o{border:1px solid var(--line);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column}
+#tab-econ .fo-o>b{font-size:14px;margin-top:6px}
+#tab-econ .fo-tag{font-size:11.5px;font-weight:800;color:#8a6d1f;background:#fff3cf;border-radius:6px;padding:0 6px}
+#tab-econ .fo-more{font-size:12.5px;font-weight:800;margin-top:auto}
+@media (max-width:760px){#tab-econ .fo-grid{grid-template-columns:1fr}#tab-econ .fo summary h2,#tab-econ .fs-head h2{flex-wrap:wrap;row-gap:2px}#tab-econ .fo summary h2 small,#tab-econ .fs-head h2 small{flex-basis:100%}}#tab-econ .fs-head{display:flex;justify-content:space-between;align-items:flex-start;gap:8px 12px;flex-wrap:wrap;margin-bottom:10px}
+#tab-econ .fs-legend{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:800;color:var(--ok);background:var(--ok2);border:1px solid #b7e1c1;border-radius:999px;padding:3px 10px;white-space:nowrap}
+#tab-econ .fs-legend i{width:10px;height:10px;border-radius:50%;background:var(--ok)}
+#tab-econ .fcard.none .fc-s{color:var(--muted);font-size:15px}#tab-econ .fcard.none .fc-bar{opacity:.35}#tab-econ .fcard.none .fc-t{color:var(--muted)}
+#tab-econ .stance{flex:none;font-style:normal;padding:1px 9px;border-radius:99px;font-weight:900;font-size:12px;background:#e9eef5;color:#163a5c}
+#tab-econ .stance.pos{background:#d3f9d8;color:#1b5e2b}#tab-econ .stance.neg{background:#ffe3e3;color:#b42318}#tab-econ .stance.mix{background:#fff3bf;color:#7a4b00}
+#tab-econ .sp-head{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;font-size:14px}
+#tab-econ .sp-head a{margin-left:auto;font-weight:800;font-size:13.5px;text-decoration:none}
+#tab-econ .sp-mini{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;margin:12px 0}
+#tab-econ .sp-mini div{background:#f6f8fb;border:1px solid var(--line);border-radius:10px;padding:8px 10px;display:flex;flex-direction:column;gap:1px}
+#tab-econ .sp-mini small{font-weight:800;color:#41526a}#tab-econ .sp-mini b{font-size:18px}#tab-econ .sp-mini span{font-size:12px}#tab-econ .sp-mini i{font-style:normal;font-size:11.5px;color:var(--muted)}
+#tab-econ .sp-up{color:#c2255c;font-weight:700}#tab-econ .sp-dn{color:#1864ab;font-weight:700}
+#tab-econ .sp-ws{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+#tab-econ .sp-w{border:1px solid var(--line);border-radius:10px;padding:8px 12px;font-size:13px;display:flex;flex-direction:column;gap:2px;background:#fff}
+#tab-econ .sp-w.hit{border-color:#e03131;background:#fff5f5}
+#tab-econ .sp-w small{color:var(--muted);font-size:11.5px;line-height:1.45}
+#tab-econ .sp-bar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:16px 0 10px;font-size:13px}
+#tab-econ .sp-bar button{border:1px solid var(--line);background:#fff;border-radius:8px;padding:5px 12px;font:inherit;font-weight:700;cursor:pointer}
+#tab-econ .sp-bar button.on{background:#163a5c;color:#fff;border-color:#163a5c}
+#tab-econ .sp-two{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:12px 0}
+@media (max-width:820px){#tab-econ .sp-mini{grid-template-columns:repeat(3,minmax(0,1fr))}#tab-econ .sp-ws,#tab-econ .sp-two{grid-template-columns:1fr}}
+#tab-econ .ec-hub{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px;margin:0 0 16px}
+#tab-econ .ec-hub a{display:flex;flex-direction:column;gap:2px;text-decoration:none;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 16px;transition:.15s}
+#tab-econ .ec-hub a:hover{border-color:#cdd3dc;box-shadow:0 4px 14px rgba(16,24,40,.08)}
+#tab-econ .ec-hub b{font-size:15px;font-weight:900}#tab-econ .ec-hub span{font-size:12.5px;color:var(--muted)}
+#tab-econ .ec-hub a.adm{background:#fffaf0;border-color:#f0dfb8}
+#tab-econ .ec-sph{margin-top:16px}
+#tab-econ .ec-hrow{display:flex;gap:12px;align-items:center;justify-content:space-between;padding:12px 0;border-top:1px solid var(--line2)}
+#tab-econ .ec-hrow:first-child{border-top:0}
+#tab-econ .ec-hrow>div:first-child{display:flex;flex-direction:column;min-width:0}
+#tab-econ .ec-hrow small{color:var(--muted);font-weight:700}#tab-econ .ec-hrow b{font-size:15.5px;font-weight:900}#tab-econ .ec-hrow span{font-size:13px;color:#4a515c}
+#tab-econ .ec-hact{display:flex;gap:6px;flex:none}
+#tab-econ .ec-hact a{border:1px solid var(--line);border-radius:9px;padding:6px 12px;font-size:13px;font-weight:800;text-decoration:none;white-space:nowrap}
+#tab-econ .ec-hact a.dl{background:#0e1c36;color:#fff;border-color:#0e1c36}
+@media (max-width:640px){#tab-econ .ec-hrow{flex-direction:column;align-items:stretch}#tab-econ .ec-hact a{flex:1;text-align:center}}
+#tab-econ .sp-bar button{color:#163a5c;box-shadow:none}#tab-econ .sp-bar button.on{color:#fff}
