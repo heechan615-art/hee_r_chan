@@ -623,7 +623,15 @@ def api_econ_spreads():
                     econ_spreads.update()
                 except Exception as e:
                     print("신용 스프레드 받기 실패:", e)
-                    if d:          # 옛 자료라도 보여 줌
+                    import json as _j
+                    try:        # 맥이 받아 둔 최신본이 더 새로우면 그걸로
+                        seed = _j.loads(econ_spreads.SEED.read_text(encoding="utf-8"))
+                        if not d or seed.get("updated", "") > d.get("updated", ""):
+                            econ_spreads.OUT.parent.mkdir(exist_ok=True)
+                            econ_spreads.OUT.write_text(_j.dumps(seed, ensure_ascii=False), encoding="utf-8")
+                    except Exception:
+                        pass
+                    if econ_spreads.OUT.exists():
                         os.utime(econ_spreads.OUT)   # 실패해도 6시간 동안은 다시 시도하지 않음
                 d = econ_spreads.load()
     return jsonify(d or {"error": "신용 스프레드 자료를 받지 못했어요. 잠시 뒤 다시 열어 주세요."})

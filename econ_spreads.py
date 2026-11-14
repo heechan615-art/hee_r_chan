@@ -32,7 +32,12 @@ SPREAD_STEP = {"CCC": 1.0, "B": 0.5, "BB": 0.3, "BBB": 0.15}
 
 def fetch():
     ids = ",".join(s[0] for s in SERIES)
-    raw = urllib.request.urlopen(URL + ids, timeout=60).read().decode()
+    try:
+        raw = urllib.request.urlopen(URL + ids, timeout=30).read().decode()
+    except Exception:       # 클라우드(Render)에서 막히면 브라우저처럼 한 번 더
+        import requests
+        raw = requests.get(URL + ids, timeout=30, headers={"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36",
+                                                          "Accept": "text/csv,*/*"}).text
     rows = list(csv.reader(io.StringIO(raw)))
     head, data = rows[0], {s[0]: {} for s in SERIES}
     for r in rows[1:]:
@@ -99,6 +104,9 @@ def update():
     before = ((load() or {}).get("latest") or {}).get("BAMLH0A0HYM2", {}).get("date")
     OUT.write_text(json.dumps(res, ensure_ascii=False), encoding="utf-8")
     return "same" if before == res["latest"]["BAMLH0A0HYM2"]["date"] else "updated"
+
+
+SEED = ROOT / "econ_spreads_seed.json"   # 맥(경제지표 노트)이 받아 둔 최신본 — 사이트 서버가 FRED에서 못 받을 때 대신 보여 줌
 
 
 def load():
