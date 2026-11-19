@@ -322,12 +322,12 @@
     const hub = root().querySelector(".ec-hub");
     if(hub){ hub.insertAdjacentHTML("beforeend", `<a class="adm" href="#" data-go="o"><b>👑 기타 보고서</b><span>다른 기관 자료 분석 · 관리자 전용</span></a>
       <a class="adm" href="#" data-go="hr"><b>👑 히르찬 매크로 리서치</b><span>리포트 PDF 보기·받기 · 관리자 전용</span></a>`); bindNav(); }
-    const W = L.filter(b => b.kind === "weekly"), I = L.filter(b => b.kind === "report");
+    const W = L.filter(b => b.kind === "weekly"), I = L.filter(b => b.kind === "report" || b.kind === "other");
     const row = b => `<a class="ec-brow" href="${pdfUrl(b.id)}"><b>${esc(b.kind === "weekly" ? `${(b.start || "").slice(5).replace("-", "/")}~${(b.end || "").slice(5).replace("-", "/")}` : `${b.name || nameOf(b.indicator)} · ${b.period || ""}`)}</b>
       <span>${esc(b.conclusion || b.title || "")}</span>${b.stance ? `<i class="ec-st ${stCls(b.stance)}">${esc(b.stance)}</i>` : ""}<em>⬇ PDF</em></a>`;
     top.insertAdjacentHTML("afterend", `<div class="panel ec-briefs"><h2 style="margin-top:0">👑 매크로 리서치 보고서 <small>관리자에게만 보여요 · 누르면 PDF를 받아요</small></h2>
       ${L.length ? `<div class="ec-bcols"><div><h3>주간 종합</h3>${W.length ? W.map(row).join("") : `<p class="muted">아직 없어요.</p>`}</div>
-        <div><h3>지표 보고서</h3>${I.length ? I.slice(0, 12).map(row).join("") : `<p class="muted">아직 없어요.</p>`}</div></div>`
+        <div><h3>지표·기관 자료 보고서</h3>${I.length ? I.slice(0, 12).map(row).join("") : `<p class="muted">아직 없어요.</p>`}</div></div>`
       : `<p class="muted" style="margin:0">아직 올라온 보고서가 없어요. 맥의 경제지표 노트에서 만들고 사이트에 반영하면 여기 생겨요.</p>`}</div>`);
   }
   async function briefsReport(id){
@@ -537,7 +537,12 @@
       <div class="rhead"><div class="tg">${esc(m.org || "기타 보고서")} · 관리자 전용</div><h1>${esc(m.title || id)}</h1>
         <div class="mt">${m.date ? `<span>자료 <b>${esc(m.date)}</b></span>` : ""}${m.made ? `<span>분석 <b>${esc(m.made)}</b></span>` : ""}${m.stance ? `<span>위험자산 관점 <i class="ec-st ${stCls(m.stance)}">${esc(m.stance)}</i></span>` : ""}</div></div>
       ${m.conclusion ? `<div class="concl"><small>한 줄 결론</small>${esc(m.conclusion)}</div>` : ""}
+      <div id="ec-obrief"></div>
       <div class="md" id="ec-other"></div>`;
+    adminBriefs().then(L => {   // 이 자료로 만든 📑 리서치 보고서 PDF가 있으면 받기 버튼
+      const b = (L || []).find(x => x.kind === "other" && x.oid === id), box = document.getElementById("ec-obrief");
+      if(b && box && cur[0] === "od") box.innerHTML = `<a class="ec-bbtn" href="${pdfUrl(b.id)}">👑 리서치 보고서 PDF 받기 <small>${esc(b.title || "")}${b.made ? ` · ${esc(b.made)} 작성` : ""} · 관리자 전용</small></a>`;
+    });
     renderMd(j.body.replace(/==([^=\n]+)==/g, "**$1**"), document.getElementById("ec-other"));
     document.querySelectorAll("#ec-other a[href^='http']").forEach(a => { a.target = "_blank"; a.rel = "noopener"; });
     addNav(); bindNav();
