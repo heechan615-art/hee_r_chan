@@ -278,3 +278,43 @@ html.is-mobile #tab-econ .ec-nav button{flex:1;justify-content:center;padding:11
 #tab-econ .ec-hact a.dl{background:#0e1c36;color:#fff;border-color:#0e1c36}
 @media (max-width:640px){#tab-econ .ec-hrow{flex-direction:column;align-items:stretch}#tab-econ .ec-hact a{flex:1;text-align:center}}
 #tab-econ .sp-bar button{color:#163a5c;box-shadow:none}#tab-econ .sp-bar button.on{color:#fff}
+
+/* 🤖 AI 리스크 계기판(원본: 경제지표 노트 style.css) */
+#tab-econ .ai-its{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,250px),1fr));gap:8px;margin-top:8px}
+#tab-econ .ai-it{border:1px solid #e5e7eb;border-radius:10px;padding:9px 11px;display:flex;flex-direction:column;gap:3px;background:#fff}
+#tab-econ .ai-it b{font-size:13.5px} #tab-econ .ai-it .v{font-size:18px;font-weight:800} #tab-econ .ai-it small{font-size:11.5px;color:#7b8392;line-height:1.5}
+#tab-econ .ai-it.neg{border-color:#f3c4c4;background:#fff7f7} #tab-econ .ai-it.mix{border-color:#f1dfb0;background:#fffcf2} #tab-econ .ai-it.pos{border-color:#cfe8d6;background:#f6fbf7}
+#tab-econ .ai-rows{display:flex;flex-direction:column;gap:6px;margin-top:10px}
+#tab-econ .ai-row{display:grid;grid-template-columns:150px 90px 1fr;gap:8px;align-items:center;font-size:13.5px;border-bottom:1px dashed #eceef2;padding-bottom:5px}
+#tab-econ .ai-row small{color:#7b8392;font-size:12px}
+@media (max-width:640px){#tab-econ .ai-row{grid-template-columns:1fr auto}#tab-econ .ai-row small{grid-column:1/-1}}
+#tab-econ .ai-narr{border:2px solid #b0883a;background:#fffdf7}
+#tab-econ .ai-narr .lab{font-size:12.5px;font-weight:800;color:#8f6d2b} #tab-econ .ai-narr .lab small{font-weight:500;color:#7b8392;margin-left:6px}
+#tab-econ .ai-narr h2{margin:6px 0 10px;font-size:19px} #tab-econ .ai-narr p{font-size:14.5px;line-height:1.75;margin:0 0 8px}
+#tab-econ .ai-watch{margin-top:10px;background:#f6efda;border-radius:10px;padding:9px 12px;font-size:13.5px} #tab-econ .ai-watch ul{margin:6px 0 0;padding-left:18px} #tab-econ .ai-watch li{margin:3px 0;line-height:1.6}
+#tab-econ .ai-gp .lab{font-size:12.5px;font-weight:800;color:#8f6d2b} #tab-econ .ai-gp .lab small{font-weight:500;color:#7b8392;margin-left:6px}
+#tab-econ .ai-gwrap{display:grid;grid-template-columns:minmax(0,320px) 1fr;gap:14px;align-items:center;margin-top:8px}
+#tab-econ .ai-gs{display:grid;grid-template-columns:repeat(auto-fit,minmax(128px,1fr));gap:8px}
+#tab-econ .ai-g{display:flex;flex-direction:column;align-items:center;text-align:center;border:1px solid #eceef2;border-radius:12px;padding:8px 6px;background:#fff}
+#tab-econ .ai-g .t{font-size:12.5px;font-weight:800;color:#4a515c} #tab-econ .ai-g.big .t{font-size:15px}
+#tab-econ .ai-g .n{font-size:24px;font-weight:900;line-height:1;margin-top:-4px} #tab-econ .ai-g.big .n{font-size:40px}
+#tab-econ .ai-g .n small{display:block;font-size:12px;font-weight:800;margin-top:3px} #tab-econ .ai-g.big .n small{font-size:15px}
+#tab-econ .ai-g .h{display:flex;gap:8px;font-size:11px;color:#7b8392;margin-top:6px;flex-wrap:wrap;justify-content:center} #tab-econ .ai-g .h b{color:#1d2433}
+@media (max-width:640px){#tab-econ .ai-gwrap{grid-template-columns:1fr} #tab-econ .ai-gs{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+#tab-econ .fg-side{display:flex;flex-direction:column;gap:8px}
+#tab-econ .fg-row{display:flex;justify-content:space-between;gap:10px;border-bottom:1px dashed #eceef2;padding:6px 2px;font-size:13.5px}
+#tab-econ .fg-row span{color:#5b6372;font-weight:700}
+#tab-econ .fg-row b{text-align:right}
+#tab-econ .fg-mv{margin:4px 0 0;font-size:13.5px;font-weight:700;color:#1d2433}
+
+/* 🛰️ AI 위험 추적 */
+#tab-econ .aiw-tabs{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 14px}
+#tab-econ .aiw-tabs a{text-decoration:none;font-size:13.5px;font-weight:800;padding:7px 12px;border-radius:999px;border:1px solid #e3e6eb;background:#fff;color:#41526a;white-space:nowrap}
+#tab-econ .aiw-tabs a.on{background:#1d2433;border-color:#1d2433;color:#fff}
+#tab-econ .aiw-grid{display:grid;grid-template-columns:1fr;gap:0}
+#tab-econ .aiw-grid .sp-mini{grid-template-columns:repeat(auto-fit,minmax(118px,1fr))}
+#tab-econ .aiw-mini{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin-top:10px}
+#tab-econ .aiw-mini a{display:flex;flex-direction:column;gap:3px;text-decoration:none;color:inherit;background:#f6f8fb;border:1px solid #e3e6eb;border-radius:10px;padding:10px 12px}
+#tab-econ .aiw-mini small{font-weight:800;color:#41526a} #tab-econ .aiw-mini b{font-size:22px} #tab-econ .aiw-mini span{font-size:12.5px} #tab-econ .aiw-mini .stance{align-self:flex-start}
+@media (max-width:640px){#tab-econ .aiw-tabs{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none} #tab-econ .aiw-tabs::-webkit-scrollbar{display:none}}

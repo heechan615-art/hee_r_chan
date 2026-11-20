@@ -64,7 +64,7 @@
     }
     cur = [view, id || ""];
     destroy();
-    const V = {i: indicator, g: group, r: report, f: fedHome, fp: fedPersonPage, fs: fedSpeech, s: spreadPage, o: otherList, od: otherOne, hr: hmrList};
+    const V = {i: indicator, g: group, r: report, f: fedHome, fp: fedPersonPage, fs: fedSpeech, s: spreadPage, a: aiPageV, w: aiwPageV, m: memPage, c: cuPage, o: otherList, od: otherOne, hr: hmrList};
     (V[view] || home)(id);
     if(view !== "h") addNav();
     if(back && back.y != null) window.scrollTo(0, back.y);
@@ -95,7 +95,7 @@
     const up = D.filter(i => i.next_release && i.next_release >= today()).sort((a, b) => a.next_release < b.next_release ? -1 : 1);
     const name = id => (G().some(g => g.id === id) ? "🧩 " : "") + nameOf(id);
     let h = `<div class="ec-hub">${FP().length ? `<a href="#" data-go="f"><b>🏛️ 연준 인사 발언</b><span>매파 ↔ 비둘기 위치 · 발언 종합 · 인사별 기록</span></a>` : ""}
-      <a href="#" data-go="s"><b>💳 신용 스프레드</b><span>하이일드·투자등급·등급별 전이 · 매일 자동</span></a></div>
+      <a href="#" data-go="w"><b>🛰️ AI 위험 추적</b><span>AI 리스크 계기판 · 신용 스프레드 · 메모리 가격 · 공장 가동률</span></a></div>
     <div class="home-top">
       <div class="panel"><h2 style="margin-top:0">📝 최근 해석 <small>${reps.length ? reps.length + "건" : ""}</small></h2>
         ${reps.length ? `<div class="rlist">${reps.slice(0, 6).map(r => `<a href="#" data-go="r:${esc(r.id)}"><div class="dt"><b>${esc((r.release || "").slice(5).replace("-", "/"))}</b>발표</div>
@@ -114,7 +114,7 @@
     root().innerHTML = h + `<p class="foot">숫자는 발표 원문 그대로이며, 계산·추정값은 따로 표시해요. 투자 권유가 아닌 공부용 해석이에요. · 업데이트 ${esc(B.updated)}</p>`;
     bindNav();
     briefsHome();
-    spreadHome();
+    aiwHomeV();
   }
   function card(ind){
     const s = primary(ind), l = s ? last(s, 2) : [];
@@ -390,10 +390,48 @@
     return `<a href="#" data-go="fs:${esc(m.id)}"><div class="dt"><b>${esc((m.date || "").slice(5).replace("-", "/"))}</b>${esc((m.date || "").slice(0, 4))}</div>
       <div><div class="t">${(m.persons || []).map(fedName).map(esc).join(" · ")}${m.event ? ` · ${esc(m.event)}` : ""}</div><div class="c">${esc(m.title || "")}</div></div></a>`;
   }
+  // 🧭 FOMC 종합 온도계: 인사별 위치 점수를 가중 평균(의장 ×3 · 투표권 ×2 · 그 외 ×1), 왼쪽 🦅 매파 ↔ 오른쪽 🕊️ 비둘기
+  const FG_BANDS = [[1, 15, "#c2410c"], [15, 30, "#ea7a3c"], [30, 45, "#f5b183"], [45, 55, "#adb5bd"], [55, 70, "#8ec5f0"], [70, 85, "#4aa3e8"], [85, 100, "#1c7ed6"]];
+  const fgW = p => /의장/.test(p.role || "") && !/부의장|전 의장/.test(p.role || "") ? 3 : p.voter ? 2 : 1;
+  function fgAt(P, day){   // day(YYYY-MM-DD)까지 나온 마지막 점수로 계산 · day 없으면 지금
+    let s = 0, w = 0, n = 0;
+    P.forEach(p => { const h = (p.history || []).filter(x => x.score != null && (!day || x.date <= day));
+      const v = day ? (h.length ? h[h.length - 1].score : null) : p.score; if(v == null) return;
+      s += v * fgW(p); w += fgW(p); n++; });
+    return n >= 5 ? {score: s / w, n} : null;   // 5명 미만이면 비워 둠
+  }
+  function fgDay(days){ const d = new Date(Date.now() - days * 864e5); return d.toISOString().slice(0, 10); }
+  function fedGauge(P){
+    const now = fgAt(P); if(!now) return "";
+    const avg = L => L.length ? L.reduce((a, p) => a + p.score, 0) / L.length : null;
+    const PS = P.filter(p => p.score != null), vAvg = avg(PS.filter(p => p.voter)), aAvg = avg(PS);
+    const R = 120, sw = 26, pad = sw / 2 + 20, W = 2 * (R + pad), cx = W / 2, cy = R + pad;
+    const pt = (s, r) => { const a = Math.PI * (1 - (s - 1) / 99); return [cx + r * Math.cos(a), cy - r * Math.sin(a)]; };
+    const arc = (a, b, col) => { const [x1, y1] = pt(a, R), [x2, y2] = pt(b, R); return `<path d="M${x1.toFixed(1)} ${y1.toFixed(1)} A${R} ${R} 0 0 1 ${x2.toFixed(1)} ${y2.toFixed(1)}" stroke="${col}" stroke-width="${sw}" fill="none"/>`; };
+    const s = Math.max(1, Math.min(100, now.score)), [nx, ny] = pt(s, R - sw / 2 - 6);
+    const ticks = [1, 25, 50, 75, 100].map(t => { const [x, y] = pt(t, R + sw / 2 + 9); return `<text x="${x.toFixed(1)}" y="${(y + 3).toFixed(1)}" font-size="11" fill="#9aa1ab" text-anchor="middle">${t}</text>`; }).join("");
+    const svg = `<svg viewBox="0 0 ${W} ${cy + 12}" width="100%" style="max-width:320px">${FG_BANDS.map(g => arc(g[0] + 0.5, g[1] - 0.5, g[2])).join("")}${ticks}
+      <line x1="${cx}" y1="${cy}" x2="${nx.toFixed(1)}" y2="${ny.toFixed(1)}" stroke="#1d2433" stroke-width="4" stroke-linecap="round"/><circle cx="${cx}" cy="${cy}" r="8" fill="#1d2433"/></svg>`;
+    const H = [["1주 전", 7], ["2주 전", 14], ["1달 전", 30]].map(([k, d]) => { const x = fgAt(P, fgDay(d)); return `<span>${k} <b>${x ? Math.round(x.score) : "-"}</b></span>`; }).join("");
+    const wk = fgAt(P, fgDay(7)), dd = wk ? now.score - wk.score : null;
+    const mv = dd == null ? "" : Math.abs(dd) < 1 ? "1주 전과 거의 같아요." : `1주 전보다 ${dd < 0 ? "🦅 매파 쪽으로" : "🕊️ 비둘기 쪽으로"} ${Math.abs(dd).toFixed(1)} 움직였어요.`;
+    const ext = PS.slice().sort((a, b) => a.score - b.score), nm = p => `${esc(p.name)} ${p.score}`;
+    return `<div class="panel ai-gp fg"><div class="lab">🧭 FOMC 종합 온도계 <small>왼쪽 🦅 매파 · 오른쪽 🕊️ 비둘기 — 인사별 위치 점수를 하나로 모은 것</small></div>
+      <div class="ai-gwrap"><div class="ai-g big"><div class="t">종합 (${now.n}명)</div>${svg}
+        <div class="n" style="color:${fedColor(s)}">${Math.round(s)}<small>${fedLabel(Math.round(s))}</small></div><div class="h">${H}</div></div>
+        <div class="fg-side"><div class="fg-row"><span>🗳️ 투표권자 평균</span><b style="color:${fedColor(vAvg)}">${vAvg == null ? "-" : `${vAvg.toFixed(1)} · ${fedLabel(Math.round(vAvg))}`}</b></div>
+          <div class="fg-row"><span>👥 전체 단순 평균</span><b style="color:${fedColor(aAvg)}">${aAvg == null ? "-" : `${aAvg.toFixed(1)} · ${fedLabel(Math.round(aAvg))}`}</b></div>
+          <div class="fg-row"><span>🦅 가장 매파</span><b>${ext.slice(0, 2).map(nm).join(" · ")}</b></div>
+          <div class="fg-row"><span>🕊️ 가장 비둘기 쪽</span><b>${ext.slice(-2).reverse().map(nm).join(" · ")}</b></div>
+          ${mv ? `<p class="fg-mv">${mv}</p>` : ""}</div></div>
+      <p class="muted" style="font-size:12px;margin:8px 0 0">계산법: 발언을 정리한 인사의 지금 위치 점수(1 매파 ~ 100 비둘기)를 가중 평균 — 의장 ×3 · 2026년 투표권자 ×2 · 그 외 ×1. 지난 값은 그날까지 나온 마지막 점수로 다시 계산(5명 미만이면 '-'). 1~15 강한 매파 · 16~30 매파 · 31~45 약한 매파 · 46~54 중립 · 55~69 약한 비둘기 · 70~85 비둘기 · 86~100 강한 비둘기 — 히르찬의 판단 기준(공식 지표 아님).</p></div>`;
+  }
+
   function fedHome(){
     const P = FP(), S = FS(), PS = P.filter(p => p.score != null);
     root().innerHTML = `<h1>🏛️ 연준 인사 발언 모음</h1>
       <p class="muted" style="margin:0 0 16px">연준 인사의 연설·인터뷰를 히르찬이 정리해요. 지난 발언과 무엇이 달라졌는지, 매파·비둘기 위치가 어디쯤인지 발언마다 이어서 고쳐요.</p>
+      ${fedGauge(P)}
       <div class="panel"><div class="fs-head"><h2 style="margin:0">🦅 매파 ↔ 비둘기 🕊️ 위치 <small>${PS.length ? `${PS.length}명 · 이름을 누르면 변화 기록` : ""}</small></h2>
         ${P.some(p => p.voter) ? `<span class="fs-legend"><i></i>초록색: 2026년 FOMC 투표권 (${PS.filter(p => p.voter).length}명 · 전체 ${P.filter(p => p.voter).length}명)</span>` : ""}</div>
         ${PS.length ? fedScale(PS, true) : `<div class="empty">아직 정리한 발언이 없어요.</div>`}
@@ -475,7 +513,7 @@
     const j = await spLoad(); if(cur[0] !== "s") return;
     if(j.error){ root().innerHTML = `<div class="empty">${esc(j.error)}</div>`; addNav(); return; }
     const S = j.series, T = j.transfer, ids = Object.keys(S);
-    root().innerHTML = `<div class="crumb"><a href="#" data-go="h">경제지표 홈</a> › 💳 신용 스프레드</div>
+    root().innerHTML = `${aiwNav("s")}
       <h1>💳 신용 스프레드</h1>
       <p class="muted" style="margin:0 0 14px">회사채 금리가 같은 만기 국채보다 얼마나 높은지(OAS, %)예요. 벌어질수록 시장이 기업 부도·자금 조달 위험을 크게 본다는 뜻이에요. 가장 약한 CCC부터 벌어지고, B → BB → BBB로 위 등급까지 따라오면 신용 스트레스가 '전이'되는 신호예요.</p>
       <div class="panel"><div class="sp-head"><span class="stance ${STAGE_CLS[T.stage] || ""}">${esc(T.stage)}</span><b>${esc(T.text)}</b></div><p class="muted" style="font-size:12.5px;margin:6px 0 0">${esc(T.rule)}</p>
@@ -508,6 +546,294 @@
     mk("sp-c3", [ser("BAMLH0A3HYC")]);
     mk("sp-c4", [ds("CCC−BB", "#7c3aed", gap("BAMLH0A3HYC", "BAMLH0A1HYBB")), ds("BB−BBB (오른쪽 축)", "#2b8a3e", gap("BAMLH0A1HYBB", "BAMLC0A4CBBB"), {yAxisID: "y2"})], true);
     root().querySelectorAll("[data-r]").forEach(b => b.onclick = () => { SPR_RANGE = b.dataset.r; destroy(); spreadPage(); });
+  }
+
+
+  // ---------- 🤖 AI 리스크 계기판 ①~⑤ (회원 보기 · bundle.json의 ai_risk, 맥의 경제지표 노트 ai_risk.py·ai_market.py가 계산) ----------
+  // 원본 화면: 경제지표 노트 static/ai.js — 고치면 둘 다(aiHome·aiPage를 뺀 공통 함수는 그대로 옮겨 씀)
+  const AI_LV = {g: ["🟢", "pos"], y: ["🟡", "mix"], r: ["🔴", "neg"]};
+  const AI_STAGE = {"여유": "pos", "압박 커지는 중": "mix", "압박 심함": "neg"};
+  const AI_COL = {MSFT: "#1f3a68", GOOGL: "#2b8a3e", AMZN: "#e8590c", META: "#4a7fd4", ORCL: "#9b1c31"};
+  const aiB = v => v == null ? "-" : (Math.abs(v) >= 1e12 ? `$${(v / 1e12).toFixed(2)}조` : `$${(v / 1e9).toLocaleString("en-US", {maximumFractionDigits: 1})}B`);
+
+  function aiSummary(j, link = true){   // 홈 요약: 종합 + ①~⑤ 한 줄씩
+    const A = aiAll(j), S = j.signals, M = j.market || {};
+    const dots = items => items.map(x => (AI_LV[x.level] || ["⚪"])[0]).join("");
+    const line = (nm, items, note) => `<div class="ai-row"><b>${esc(nm)}</b><span>${dots(items)}</span><small>${esc(note || "")}</small></div>`;
+    const P = k => (M.pillars || []).find(p => p.key === k) || {items: []};
+    const G = j.gauges && j.gauges.overall, st = G ? `종합 ${Math.round(G.score)} · ${G.band}` : `종합 ${A.stage}`;
+    return `<div class="sp-head"><span class="stance ${G ? gCls(G.band) : AI_ALL[A.stage]}">${esc(st)}</span><span>🔴 ${A.r} · 🟡 ${A.y} · 🟢 ${A.g}</span>${link ? `<a href="#" data-go="a">그래프·회사별 보기 →</a>` : ""}</div>
+      <div class="ai-rows">${S ? line("① 빅테크 자금 압박", S.items, `${S.stage} — 투자÷영업현금 ${S.items[0].value}% · 장부 밖 리스 ${S.items[3].value > 0 ? "+" : ""}${S.items[3].value}%`) : ""}
+        ${line("② AI 주식 vs 시장", P("mkt").items, M.m ? `AI 인프라 고점 대비 ${M.m.ai_dd}% · 시장 대비 3개월 ${M.m.ai_rel_3m}%` : "")}
+        ${line("③ 쏠림", P("conc").items, M.m ? `시총가중÷동일가중 3년 중 ${M.m.conc_pct3y}%` : "")}
+        ${line("④ 약한 고리", P("weak").items, M.m ? `빚으로 짓는 곳 vs 하이퍼스케일러 3개월 ${M.m.weak_rel_3m}% · BIZD 고점 대비 ${M.m.bizd_dd}%` : "")}
+        ${line("⑤ 수요 확인", P("demand").items, M.tsmc_3m != null ? `TSMC 월매출 전년비 3개월 평균 ${M.tsmc_3m}%${M.m && M.m.mem_3m != null ? ` · D램 현물가 3개월 ${M.m.mem_3m > 0 ? "+" : ""}${M.m.mem_3m}%` : ""}${M.m && M.m.cu_6m != null ? ` · 반도체 가동률 6개월 ${M.m.cu_6m > 0 ? "+" : ""}${M.m.cu_6m}%p` : ""}` : "")}</div>`;
+  }
+  // 🌡️ 온도계(공포탐욕지수 모양 반원 게이지) — 점수 0~100(높을수록 위험), ai_gauge.py
+  const AI_GB = [[0, 20, "#2b8a3e", "안정"], [20, 40, "#82c91e", "낮음"], [40, 60, "#f59f00", "주의"], [60, 80, "#f76707", "경계"], [80, 100, "#c92a2a", "위험"]];
+  const gCls = b => ({"안정": "pos", "낮음": "pos", "주의": "mix", "경계": "neg", "위험": "neg"})[b] || "";
+  function aiGauge(score, title, hist, big){
+    const R = big ? 120 : 78, sw = big ? 26 : 18, pad = sw / 2 + (big ? 20 : 22), W = 2 * (R + pad), cx = W / 2, cy = R + pad;   // 눈금 숫자가 잘리지 않게 둘레 여백
+    const pt = (s, r) => { const a = Math.PI * (1 - s / 100); return [cx + r * Math.cos(a), cy - r * Math.sin(a)]; };
+    const arc = (a, b, col) => { const [x1, y1] = pt(a, R), [x2, y2] = pt(b, R); return `<path d="M${x1.toFixed(1)} ${y1.toFixed(1)} A${R} ${R} 0 0 1 ${x2.toFixed(1)} ${y2.toFixed(1)}" stroke="${col}" stroke-width="${sw}" fill="none"/>`; };
+    const s = score == null ? null : Math.max(0, Math.min(100, score));
+    const band = s == null ? null : AI_GB.find(g => s < g[1] || g[1] === 100);
+    const [nx, ny] = pt(s == null ? 50 : s, R - sw / 2 - 6);
+    const ticks = [0, 20, 40, 60, 80, 100].map(t => { const [x, y] = pt(t, R + sw / 2 + 9); return `<text x="${x.toFixed(1)}" y="${(y + 3).toFixed(1)}" font-size="${big ? 11 : 9}" fill="#9aa1ab" text-anchor="middle">${t}</text>`; }).join("");
+    const svg = `<svg viewBox="0 0 ${W} ${cy + 12}" width="100%" style="max-width:${big ? 320 : 210}px">${AI_GB.map(g => arc(g[0] + 0.6, g[1] - 0.6, g[2])).join("")}${ticks}
+      ${s == null ? "" : `<line x1="${cx}" y1="${cy}" x2="${nx.toFixed(1)}" y2="${ny.toFixed(1)}" stroke="#1d2433" stroke-width="${big ? 4 : 3}" stroke-linecap="round"/><circle cx="${cx}" cy="${cy}" r="${big ? 8 : 6}" fill="#1d2433"/>`}</svg>`;
+    const H = hist || {}, hv = v => v == null ? "-" : Math.round(v);
+    return `<div class="ai-g${big ? " big" : ""}"><div class="t">${esc(title)}</div>${svg}
+      <div class="n" style="color:${band ? band[2] : "#7b8392"}">${s == null ? "-" : Math.round(s)}<small>${band ? band[3] : ""}</small></div>
+      <div class="h"><span>1주 전 <b>${hv(H["1w"])}</b></span><span>1달 전 <b>${hv(H["1m"])}</b></span><span>3달 전 <b>${hv(H["3m"])}</b></span></div></div>`;
+  }
+  function aiGauges(j){
+    const G = j.gauges; if(!G) return "";
+    return `<div class="panel ai-gp"><div class="lab">🌡️ AI 리스크 온도계 <small>0 = 안정 · 100 = 위험 — 공포탐욕지수처럼 신호를 점수로 바꾼 것</small></div>
+      <div class="ai-gwrap">${aiGauge(G.overall.score, "종합", G.overall.hist, true)}
+        <div class="ai-gs">${G.pillars.map(p => aiGauge(p.score, p.name, p.hist)).join("")}</div></div>
+      <p class="muted" style="font-size:12px;margin:8px 0 0">점수 매기는 법: 지표마다 🟡 기준선 = 40점, 🔴 기준선 = 70점이 되게 늘인 뒤 0~100으로 자르고, 칸은 지표 평균(⑤ = TSMC 월매출·D램 현물가·반도체 가동률), 종합은 다섯 칸 평균(같은 무게)이에요. ③ 쏠림은 '3년 중 위치 × 0.45'(+AI 주식이 시장보다 약하면 30). ①은 분기 공시라 1주·1달 전은 지금과 같고 3달 전은 직전 분기예요. 0~20 안정 · 20~40 낮음 · 40~60 주의 · 60~80 경계 · 80~100 위험 — 히르찬의 판단 기준(공식 지표 아님).</p></div>`;
+  }
+  function aiNarr(j){   // 🧭 지금 국면 해석(규칙, ai_market.narrative) — 계기판 맨 위
+    const n = j.narrative; if(!n) return "";
+    const md = t => esc(t).replace(/\*\*(.+?)\*\*/g, "<b>$1</b>");
+    return `<div class="panel ai-narr"><div class="lab">🧭 지금 국면 <small>${esc(n.asof || "")} 시장 · ${esc(n.q || "")} 공시 기준 · 계기판 숫자로 자동으로 쓴 해석</small></div>
+      <h2>${esc(n.head)}</h2>${n.paras.map(p => `<p>${md(p)}</p>`).join("")}
+      <div class="ai-watch"><b>👀 다음에 볼 것</b><ul>${n.watch.map(w => `<li>${md(w)}</li>`).join("")}</ul></div></div>`;
+  }
+  function aiItem(x){
+    const [ic, cls] = AI_LV[x.level] || ["⚪", ""];
+    const v = x.value == null ? "-" : (x.key === "ratio" ? `${x.value}%` : x.key === "over" ? `${x.value}${x.unit}` : `${x.value > 0 ? "+" : ""}${x.value}%`);
+    return `<div class="ai-it ${cls}"><b>${ic} ${esc(x.name)}</b><span class="v">${esc(v)}${x.who && x.who.length ? ` <small>(${esc(x.who.join("·"))})</small>` : ""}</span><small>${esc(x.rule)} — ${esc(x.why)}</small></div>`;
+  }
+
+  function aiMItem(x){
+    const [ic, cls] = AI_LV[x.level] || ["⚪", ""];
+    const v = x.value == null ? "-" : x.fmt === "pct" ? `${x.value}%` : `${x.value > 0 ? "+" : ""}${x.value}${x.fmt === "pt" ? "%p" : "%"}`;
+    return `<div class="ai-it ${cls}"><b>${ic} ${esc(x.name)}</b><span class="v">${esc(v)}</span><small>${esc(x.rule)} — ${esc(x.why)}</small></div>`;
+  }
+  function aiAll(j){   // ①~⑤ 신호를 모아 🔴🟡🟢 개수
+    const L = [...(j.signals ? j.signals.items : []), ...((j.market || {}).pillars || []).flatMap(p => p.items)].map(x => x.level).filter(Boolean);
+    const n = k => L.filter(x => x === k).length;
+    return {r: n("r"), y: n("y"), g: n("g"), stage: n("r") >= 5 ? "경계" : n("r") >= 2 ? "주의" : "안정"};
+  }
+  const AI_ALL = {"안정": "pos", "주의": "mix", "경계": "neg"};
+  function aiMarketBody(M){
+    if(!M) return "";
+    const P = M.per || {}, N = M.names || {}, b = M.baskets || {};
+    const row = s => { const x = P[s]; if(!x) return ""; const c = v => v == null ? "-" : `<span class="${v < 0 ? "sp-up" : ""}">${v > 0 ? "+" : ""}${v}%</span>`;
+      return `<tr><td style="text-align:left">${esc(x.name)} <small class="muted">${s}</small></td><td>${c(x.chg_1m)}</td><td>${c(x.chg_3m)}</td><td>${c(x.dd)}</td></tr>`; };
+    const sec = (k, h, extra) => { const p = (M.pillars || []).find(x => x.key === k); return `<h2>${esc(p ? p.name : h)}</h2>${p ? `<div class="ai-its">${p.items.map(aiMItem).join("")}</div>` : ""}${extra || ""}`; };
+    return `${sec("mkt", "② AI 주식 vs 시장", `<div class="chartbox" style="margin-top:10px"><h3>바구니 ÷ S&P500 동일가중 (최근 3년, 주간, 첫 주 = 100)</h3><div class="cv"><canvas id="ai-c5"></canvas></div><div class="src">AI 인프라: ${esc((b.ai || []).map(s => N[s] || s).join("·"))} · 하이퍼스케일러: ${esc((b.hyper || []).map(s => N[s] || s).join("·"))} — 각각 동일가중. 선이 내려가면 시장(동일가중)보다 약함</div></div>`)}
+      ${sec("conc", "③ 쏠림", `<div class="chartbox" style="margin-top:10px"><h3>S&P500 시가총액가중 ÷ 동일가중 (최근 3년, 주간)</h3><div class="cv"><canvas id="ai-c6"></canvas></div><div class="src">올라갈수록 큰 종목 몇 개가 시장을 끄는 것(쏠림). 지금 최근 3년 중 ${M.m.conc_pct3y}% 위치 · 3개월 ${M.m.conc_3m > 0 ? "+" : ""}${M.m.conc_3m}%</div></div>`)}
+      ${sec("weak", "④ 약한 고리", `<div class="sp-two"><div class="chartbox"><h3>빚으로 짓는 곳 ÷ 하이퍼스케일러 (주간)</h3><div class="cv"><canvas id="ai-c7"></canvas></div><div class="src">코어위브·네비우스·오라클(동일가중, 상장 뒤부터) ÷ 하이퍼스케일러 바구니 · 고점 대비 ${M.m.weak_dd}%</div></div>
+        <div class="chartbox"><h3>사모신용 BDC ETF(BIZD) 가격 (주간)</h3><div class="cv"><canvas id="ai-c8"></canvas></div><div class="src">배당 빼고 가격만 · 고점 대비 ${M.m.bizd_dd}% · S&P500 대비 3개월 ${M.m.bizd_rel_3m > 0 ? "+" : ""}${M.m.bizd_rel_3m}%</div></div></div>`)}
+      ${sec("demand", "⑤ 수요 확인", `<div class="sp-two"><div class="chartbox"><h3>TSMC 월매출 전년비 (%)</h3><div class="cv"><canvas id="ai-c9"></canvas></div><div class="src">최근 3개월 평균 ${M.tsmc_3m}% · 그 전 3개월 ${M.tsmc_prev3m}% — TSMC IR 월매출(대만달러)</div></div>
+        <div class="panel" style="margin:0"><h3 style="margin-top:0">AI 부품 생산자 가격 (PPI 전년비)</h3>${Object.values(M.ppi || {}).map(x => `<p style="margin:6px 0"><b>${esc(x.name)}</b> ${x.yoy == null ? "-" : (x.yoy > 0 ? "+" : "") + x.yoy + "%"} <small class="muted">(${esc(x.month)})</small></p>`).join("")}
+          <p class="muted" style="font-size:12.5px">수요가 강하다는 뜻이지만, 동시에 AI가 물가를 밀어 올리는 통로예요(의사록 'AI 관련 수요가 공급을 압박해 기술 소비재 가격을 올림'). BLS PPI 원계열.</p></div></div>`)}
+      <h2>종목별 흐름</h2><div class="panel tw"><table class="hist"><tr><th>종목</th><th>1개월</th><th>3개월</th><th>1년 고점 대비</th></tr>
+        <tr><td colspan="4" style="text-align:left"><b>AI 인프라</b></td></tr>${(b.ai || []).map(row).join("")}
+        <tr><td colspan="4" style="text-align:left"><b>하이퍼스케일러</b></td></tr>${(b.hyper || []).map(row).join("")}
+        <tr><td colspan="4" style="text-align:left"><b>약한 고리 · 사모신용</b></td></tr>${["CRWV", "NBIS", "BIZD"].map(row).join("")}</table>
+        <p class="muted" style="font-size:12.5px;margin:8px 0 0">야후 파이낸스 종가 · ${esc(M.asof)} 기준 · 받은 시각 ${esc(M.made)}</p></div>`;
+  }
+  function aiMarketCharts(M, mk){
+    if(!M || !M.charts) return;
+    const C = M.charts, ds = (label, color, data, extra) => Object.assign({label, data, borderColor: color, backgroundColor: color, borderWidth: 2, pointRadius: 0, spanGaps: true, tension: .15}, extra || {});
+    const norm = o => { const k = Object.keys(o).sort(), b0 = o[k[0]]; return [k, k.map(d => +(o[d] / b0 * 100).toFixed(1))]; };
+    const [d1, a1] = norm(C.ai_rel), h1 = (() => { const k = Object.keys(C.hy_rel).sort(), b0 = C.hy_rel[k[0]]; return d1.map(d => C.hy_rel[d] != null ? +(C.hy_rel[d] / b0 * 100).toFixed(1) : null); })();
+    mk("ai-c5", "line", d1, [ds("AI 인프라 ÷ 동일가중", "#9b1c31", a1), ds("하이퍼스케일러 ÷ 동일가중", "#1f3a68", h1), ds("100", "#9aa1ab", d1.map(() => 100), {borderDash: [6, 5], borderWidth: 1.2})], "");
+    const kc = Object.keys(C.conc).sort(); mk("ai-c6", "line", kc, [ds("시총가중 ÷ 동일가중", "#7c3aed", kc.map(d => +C.conc[d].toFixed(3)))], "");
+    const [dw, aw] = norm(C.weak_rel); mk("ai-c7", "line", dw, [ds("빚으로 짓는 곳 ÷ 하이퍼스케일러", "#e8590c", aw), ds("100", "#9aa1ab", dw.map(() => 100), {borderDash: [6, 5], borderWidth: 1.2})], "");
+    const kb = Object.keys(C.bizd).sort(); mk("ai-c8", "line", kb, [ds("BIZD", "#2b8a3e", kb.map(d => C.bizd[d]))], "$");
+    const T = M.tsmc || []; mk("ai-c9", "bar", T.map(x => x.m), [ds("TSMC 월매출 전년비", "#1f3a68", T.map(x => x.yoy), {type: "bar"}), ds("20% 기준", "#9aa1ab", T.map(() => 20), {type: "line", borderDash: [6, 5], borderWidth: 1.2})], "%");
+  }
+  function aiCharts(j, mk){
+    const T = j.total, qs = T.map(t => t.q), F = j.firms;
+    const ds = (label, color, data, extra) => Object.assign({label, data, borderColor: color, backgroundColor: color, borderWidth: 2, pointRadius: 2.5, spanGaps: true, tension: .2}, extra || {});
+    const B = v => v == null ? null : +(v / 1e9).toFixed(1);
+    mk("ai-c1", "bar", qs, [ds("투자 지출(최근 4분기, $B)", "#9b1c31", T.map(t => B(t.invest)), {type: "bar", order: 2}),
+      ds("영업현금흐름(최근 4분기, $B)", "#1f3a68", T.map(t => B(t.ocf)), {type: "bar", order: 3}),
+      ds("투자 ÷ 영업현금흐름(%, 오른쪽)", "#e8590c", T.map(t => t.ratio), {type: "line", yAxisID: "y2", order: 1, borderWidth: 2.5}),
+      ds("90% 기준선(오른쪽)", "#9aa1ab", qs.map(() => 90), {type: "line", yAxisID: "y2", borderDash: [6, 5], borderWidth: 1.5, pointRadius: 0, order: 0})], "$B", "%");
+    mk("ai-c2", "line", qs, [ds("차입금", "#1f3a68", T.map(t => B(t.debt))), ds("장부 안 리스 부채", "#4a7fd4", T.map(t => B(t.lease)), {borderDash: [5, 4]}),
+      ds("장부 밖 데이터센터 리스(미개시)", "#9b1c31", T.map(t => B(t.nc)), {borderWidth: 3}), ds("잉여현금흐름(최근 4분기)", "#2b8a3e", T.map(t => B(t.fcf)))], "$B");
+    mk("ai-c3", "line", qs, [...F.map(f => ds(f.name, AI_COL[f.ticker], qs.map(q => { const r = f.rows.find(x => x.q === q); return r ? r.ratio : null; }))),
+      ds("100%(번 만큼 다 투자)", "#9aa1ab", qs.map(() => 100), {borderDash: [6, 5], borderWidth: 1.5, pointRadius: 0})], "%");
+    const nq = qs.filter(q => F.some(f => (f.rows.find(x => x.q === q) || {}).nc));
+    mk("ai-c4", "bar", nq, F.map(f => ds(f.name, AI_COL[f.ticker], nq.map(q => B((f.rows.find(x => x.q === q) || {}).nc)), {type: "bar", stack: "s"})), "$B", null, true);
+  }
+  function aiBody(j){
+    const S = j.signals, F = j.firms;
+    const last = f => f.rows[f.rows.length - 1] || {};
+    return `<div class="panel"><div class="sp-head"><span class="stance ${AI_STAGE[S.stage] || ""}">${esc(S.stage)}</span><b>${esc(S.text)}</b></div>
+        <div class="ai-its" style="margin-top:10px">${S.items.map(aiItem).join("")}</div>
+        <p class="muted" style="font-size:12.5px;margin:8px 0 0">단계: 🔴가 3개 이상이면 '압박 심함', 🔴가 1~2개이거나 🟡가 3개 이상이면 '압박 커지는 중', 아니면 '여유'. 기준 숫자는 히르찬의 판단 기준이에요(공식 기준 아님).</p></div>
+      <div class="panel tw" style="margin-top:12px"><table class="hist"><tr><th>회사</th><th>기준 분기</th><th>투자 지출</th><th>영업현금흐름</th><th>투자÷영업현금</th><th>잉여현금</th><th>차입금(1년 변화)</th><th>장부 밖 리스(1년 변화)</th></tr>
+        ${F.map(f => { const r = last(f); return `<tr><td style="text-align:left"><b style="color:${AI_COL[f.ticker]}">●</b> ${esc(f.name)} <small class="muted">${f.ticker}</small></td><td>${esc(r.end || "-")}</td><td>${aiB(r.invest)}</td><td>${aiB(r.ocf)}</td>
+          <td class="${(r.ratio || 0) >= 100 ? "sp-up" : ""}"><b>${r.ratio == null ? "-" : r.ratio + "%"}</b></td><td class="${(r.fcf || 0) < 0 ? "sp-up" : ""}">${aiB(r.fcf)}</td>
+          <td>${aiB(r.debt)} <small>${r.debt_yoy == null ? "" : `(${r.debt_yoy > 0 ? "+" : ""}${r.debt_yoy}%)`}</small></td><td>${aiB(r.nc)} <small>${r.nc_yoy == null ? "" : `(${r.nc_yoy > 0 ? "+" : ""}${r.nc_yoy}%)`}</small></td></tr>`; }).join("")}
+        </table><p class="muted" style="font-size:12.5px;margin:8px 0 0">금액은 최근 4분기 합(잔액은 분기 말). 투자 지출 = 유형자산 취득(아마존은 생산자산 취득) + 금융리스 원금 상환. 오라클은 회계분기가 달라(5월 결산) 가장 가까운 달력 분기에 맞췄어요.</p></div>
+      <div class="chartbox" style="margin-top:12px"><h3>5곳 합계 — 투자 지출 vs 영업현금흐름 (최근 4분기 합)</h3><div class="cv" style="height:300px"><canvas id="ai-c1"></canvas></div><div class="src">주황 선(오른쪽 축)이 90%를 넘으면 번 현금을 거의 다 투자에 쓰는 상태</div></div>
+      <div class="chartbox" style="margin-top:12px"><h3>5곳 합계 — 빚·리스·잉여현금 ($B)</h3><div class="cv" style="height:300px"><canvas id="ai-c2"></canvas></div><div class="src">빨간 굵은 선 = 아직 시작 안 해 부채로 잡히지 않은 데이터센터 리스 약정(의사록의 '장부 밖 리스'). 5곳 모두 공시에 있는 분기만</div></div>
+      <div class="sp-two"><div class="chartbox"><h3>회사별 투자 ÷ 영업현금흐름 (%)</h3><div class="cv"><canvas id="ai-c3"></canvas></div><div class="src">점선 100% 위 = 번 것보다 더 투자(빚·외부 돈 필요)</div></div>
+        <div class="chartbox"><h3>회사별 장부 밖 데이터센터 리스 ($B)</h3><div class="cv"><canvas id="ai-c4"></canvas></div><div class="src">각 회사 10-Q·10-K 본문의 '아직 시작 안 한 리스' 금액</div></div></div>
+      <details class="panel" style="margin-top:12px"><summary><b>📄 장부 밖 리스 — 공시 원문 문장 보기</b></summary>
+        ${F.filter(f => f.not_commenced).map(f => `<p style="font-size:13px"><b>${esc(f.name)}</b> (${esc(f.not_commenced.form || "")} · ${esc(f.nc_hist && f.nc_hist[0] ? f.nc_hist[0].date : "")}) ${aiB(f.not_commenced.usd)} — <i class="muted">“…${esc(f.not_commenced.text)}…”</i> <a href="${esc(f.not_commenced.url)}" target="_blank" rel="noopener">원문 ↗</a></p>`).join("")}</details>
+      <p class="muted" style="font-size:12.5px">왜 보나: 10월 FOMC 의사록은 'AI 관련 빚이 빠르게 늘었고 상당 부분이 복잡하고 불투명한 금융 구조로 이뤄졌다', '장부 밖 리스 약정과 순환 금융이 AI 투자 수익이 실망스러우면 손실을 키울 수 있다'고 했어요. 이 칸은 그중 공시로 확인할 수 있는 부분(현금·빚·장부 밖 리스)을 매 분기 따라가요. 출처: SEC EDGAR(회사 공시) · 받은 시각 ${esc(j.made)}. 투자 권유가 아니에요.</p>`;
+  }
+  function aiHomeV(){
+    const j = B.ai_risk, top = document.getElementById("ec-sslot");
+    if(!j || !j.signals || cur[0] !== "h" || !top) return;
+    top.insertAdjacentHTML("beforebegin", `<div class="panel ec-aih"><h2 style="margin-top:0">🤖 AI 리스크 계기판 <small>10월 FOMC 의사록이 짚은 AI발 위험 5갈래</small></h2>${aiSummary(j)}</div>`);
+    bindNav();
+  }
+  function aiPageV(){
+    const j = B.ai_risk;
+    if(!j || !j.signals){ root().innerHTML = `<div class="empty">아직 계산한 자료가 없어요.</div>`; return; }
+    root().innerHTML = `${aiwNav("a")}
+      <h1>🤖 AI 리스크 계기판</h1>
+      <p class="muted" style="margin:0 0 14px">10월 FOMC 의사록이 짚은 AI발 위험(빚·장부 밖 리스, 자산 가격 재평가, 소수 기업 쏠림, 레버리지 높은 약한 고리)을 공시·시장 자료로 따라가요. 판단 기준 숫자는 히르찬의 판단 기준이에요(공식 기준 아님).</p>
+      ${aiNarr(j)}${aiGauges(j)}
+      <div class="panel">${aiSummary(j, false)}<p class="muted" style="font-size:12.5px;margin:8px 0 0">종합 점수는 위 온도계(0~100)예요. 🔴🟡🟢는 지표 신호 개수.</p></div>
+      <h2>① 빅테크 자금 압박 <small class="muted">AI 데이터센터를 가장 많이 짓는 5곳이 투자를 번 현금으로 감당하는지</small></h2>${aiBody(j)}${aiMarketBody(j.market)}`;
+    bindNav();
+    const mkc = (id, type, labels, sets, unit, unit2, stacked) => {
+      const el = document.getElementById(id); if(!el) return;
+      const fmt = u => v => u === "$B" ? `$${(+v).toLocaleString("en-US")}B` : u === "%" ? `${+v}%` : u === "$" ? `$${+v}` : v;
+      const scales = {y: {stacked: !!stacked, ticks: {callback: fmt(unit)}, grid: {color: "#eef0f3"}}, x: {stacked: !!stacked, grid: {display: false}}};
+      if(unit2) scales.y2 = {position: "right", grid: {display: false}, ticks: {callback: fmt(unit2)}};
+      charts.push(new Chart(el, {type, data: {labels, datasets: sets}, options: {responsive: true, maintainAspectRatio: false, interaction: {mode: "index", intersect: false}, plugins: {legend: {labels: {boxWidth: 12}}}, scales}}));
+    };
+    aiCharts(j, mkc); aiMarketCharts(j.market, mkc);
+  }
+
+  // ---------- 🛰️ AI 위험 추적 (노트 aiw.js 옮김 · 메모리·가동률은 bundle.json의 ai_risk.semis) ----------
+  // 선 그래프(색 지정·기준 점선) — 노트 lineChart와 같은 모양
+  function aiwLC(el, months, sets, target, unit, refs){
+    const n = months.length;
+    return new Chart(el, {type: "line", data: {labels: months.map(ym), datasets: [
+        ...sets.map((s, i) => ({label: s.label, data: months.map(m => s.data[m] ?? null), borderColor: s.color || PAL[i % PAL.length], backgroundColor: s.color || PAL[i % PAL.length],
+          borderWidth: i === 0 ? 2.5 : 2, pointRadius: n <= 13 ? 3.5 : 0, pointHoverRadius: 5, spanGaps: true, tension: .25})),
+        ...(refs || []).map(r => ({label: r.label, data: months.map(() => r.value), borderColor: "#9aa1ab", backgroundColor: "#9aa1ab", borderDash: [6, 5], borderWidth: 1.5, pointRadius: 0}))]},
+      options: {responsive: true, maintainAspectRatio: false, interaction: {mode: "index", intersect: false},
+        plugins: {legend: {labels: {boxWidth: 12}}, tooltip: {callbacks: {label: c => `${c.dataset.label}: ${c.parsed.y ?? "-"}${unit === "%" ? "%" : ""}`}}},
+        scales: {y: {ticks: {callback: v => +(+v).toFixed(4) + (unit === "%" ? "%" : "")}, grid: {color: "#eef0f3"}}, x: {grid: {display: false}, ticks: {maxTicksLimit: 12}}}}});
+  }
+  const AIW_TABS = [["w", "🛰️ 한눈에"], ["a", "🤖 AI 리스크 계기판"], ["s", "💳 신용 스프레드"], ["m", "💾 메모리 가격"], ["c", "🏭 공장 가동률"]];
+  function aiwNav(cur){
+    return `<div class="crumb"><a href="#" data-go="h">경제지표 홈</a> › <a href="#" data-go="w">🛰️ AI 위험 추적</a>${cur !== "w" ? ` › ${esc((AIW_TABS.find(t => t[0] === cur) || ["", ""])[1])}` : ""}</div>
+      <nav class="aiw-tabs">${AIW_TABS.map(([k, t]) => `<a href="#" data-go="${k}" class="${k === cur ? "on" : ""}">${t}</a>`).join("")}</nav>`;
+  }
+  const MEM_COL = {"DDR5 16Gb": "#9b1c31", "DDR4 16Gb": "#1f3a68", "DDR4 8Gb": "#4a7fd4", "NAND 512Gb 웨이퍼": "#2b8a3e"};
+  const CU_COL = {"CAPUTLG3344S": "#9b1c31", "MCUMFN": "#1f3a68", "TCU": "#9aa1ab"};
+  const pc = (v, u = "%") => v == null ? "-" : `<span class="${v < 0 ? "sp-dn" : v > 0 ? "sp-up" : ""}">${v > 0 ? "+" : ""}${v}${u}</span>`;
+  async function aiwData(){
+    const s = await spLoad(), a = B.ai_risk;
+    return {a: a && a.signals ? a : null, s: s && !s.error ? s : null, m: a && a.semis};
+  }
+  function aiwSigs(list){ return `<div class="ai-its">${(list || []).map(aiMItem).join("")}</div>`; }
+
+  // 홈 화면 한 칸(접기) — 네 갈래 숫자 한 줄씩 + 탭으로
+  async function aiwHomeV(){
+    const {a, s, m} = await aiwData();
+    const el = document.getElementById("ec-sslot"); if(!el || cur[0] !== "h") return;
+    if(!a && !s) return;
+    const G = a && a.gauges && a.gauges.overall, T = s && s.transfer, mi = m ? m.mem.items[0] : null, ci = m ? m.cu.items[0] : null;
+    el.innerHTML = `<div class="panel ec-aih"><h2 style="margin-top:0">🛰️ AI 위험 추적 <small>AI 리스크 계기판 · 신용 스프레드 · 메모리 가격 · 공장 가동률</small></h2>
+      <div class="aiw-mini">
+        ${G ? `<a href="#" data-go="a"><small>🤖 AI 리스크 온도계</small><b>${Math.round(G.score)}</b><span class="stance ${gCls(G.band)}">${esc(G.band)}</span></a>` : ""}
+        ${T ? `<a href="#" data-go="s"><small>💳 하이일드 스프레드</small><b>${(Object.values(s.latest).find(x => x.short === "하이일드") || Object.values(s.latest)[0]).last.toFixed(2)}%</b><span class="stance ${STAGE_CLS[T.stage] || ""}">${esc(T.stage)}</span></a>` : ""}
+        ${mi ? `<a href="#" data-go="m"><small>💾 ${esc(mi.short)} 현물가</small><b>$${mi.last}</b><span>3달 ${pc(mi.chg_3m)}</span></a>` : ""}
+        ${ci ? `<a href="#" data-go="c"><small>🏭 ${esc(ci.short)} 가동률</small><b>${ci.last}%</b><span>6달 ${pc(ci.chg_6m, "%p")}</span></a>` : ""}
+      </div><div style="text-align:right;margin-top:8px"><a href="#" data-go="w" style="font-size:13px;font-weight:800">AI 위험 추적 전체 보기 →</a></div></div>`;
+    bindNav();
+  }
+
+  async function aiwPageV(){
+    root().innerHTML = `<p class="muted">불러오는 중…</p>`;
+    const {a, s, m} = await aiwData(); if(cur[0] !== "w") return;
+    const G = a && a.gauges && a.gauges.overall, T = s && s.transfer;
+    root().innerHTML = `${aiwNav("w")}<h1 style="margin-bottom:4px">🛰️ AI 위험 추적</h1>
+      <p class="muted" style="margin:0 0 14px">10월 FOMC 의사록이 짚은 AI발 위험을 한곳에서 따라가요 — 돈(빅테크 빚·리스), 시장(주가·쏠림·약한 고리), 신용(회사채 가산금리), 수요(TSMC·메모리 값·공장 가동률). 판단 기준 숫자는 히르찬의 판단 기준이에요(공식 기준 아님).</p>
+      ${a ? aiNarr(a) + aiGauges(a) : ""}
+      <div class="aiw-grid">
+        ${a ? `<div class="panel"><h2 style="margin:0 0 8px">🤖 AI 리스크 계기판</h2>${aiSummary(a)}</div>` : ""}
+        ${s ? `<div class="panel"><h2 style="margin:0 0 8px">💳 신용 스프레드 <small>${esc(Object.values(s.latest)[0].date)} 기준</small></h2>
+          <div class="sp-head"><span class="stance ${STAGE_CLS[T.stage] || ""}">${esc(T.stage)}</span><span>${esc(T.text)}</span><a href="#" data-go="s">그래프·전체 보기 →</a></div>
+          <div class="sp-mini">${Object.values(s.latest).map(x => `<div><small>${esc(x.short)}</small><b>${x.last.toFixed(2)}%</b><span class="${chgCls(x.chg_1m)}">1달 ${sgn(x.chg_1m)}</span><i>3년 중 ${x.pct_3y}%</i></div>`).join("")}</div></div>` : ""}
+        ${m ? `<div class="panel"><h2 style="margin:0 0 8px">💾 메모리 가격 <small>현물가 세션 평균</small></h2>
+          <div class="sp-head"><span>${m.signals.filter(x => x.key === "mem").map(x => `${(AI_LV[x.level] || ["⚪"])[0]} ${esc(x.name)} ${pc(x.value)}`).join("")}</span><a href="#" data-go="m">그래프·전체 보기 →</a></div>
+          <div class="sp-mini">${m.mem.items.map(x => `<div><small>${esc(x.short)}</small><b>$${x.last}</b><span>3달 ${pc(x.chg_3m)}</span><i>1년 ${x.chg_1y == null ? "-" : (x.chg_1y > 0 ? "+" : "") + x.chg_1y + "%"}</i></div>`).join("")}</div></div>
+        <div class="panel"><h2 style="margin:0 0 8px">🏭 공장 가동률 <small>미국 · ${esc(m.cu.items[0].date.slice(0, 7))}</small></h2>
+          <div class="sp-head"><span>${m.signals.filter(x => x.key === "cu").map(x => `${(AI_LV[x.level] || ["⚪"])[0]} ${esc(x.name)} ${pc(x.value, "%p")}`).join("")}</span><a href="#" data-go="c">그래프·전체 보기 →</a></div>
+          <div class="sp-mini">${m.cu.items.map(x => `<div><small>${esc(x.short)}</small><b>${x.last}%</b><span>6달 ${pc(x.chg_6m, "%p")}</span><i>2000년 이후 평균 ${x.avg_2000}%</i></div>`).join("")}</div></div>` : ""}
+      </div>`;
+    addNav(); bindNav();
+  }
+
+  let MEM_RANGE = "1y";
+  function memPage(){
+    const j = (B.ai_risk || {}).semis || {error: "아직 받은 자료가 없어요."};
+    if(j.error){ root().innerHTML = aiwNav("m") + `<p>${esc(j.error)}</p>`; return; }
+    const M = j.mem, I = M.items, H = M.hist, last = Object.keys(H).sort().pop();
+    root().innerHTML = `${aiwNav("m")}<h1 style="margin-bottom:4px">💾 메모리 가격</h1>
+      <p class="muted" style="margin:0 0 14px">D램·낸드 현물가(대리점·유통 시장에서 그날 거래되는 값, 달러)예요. AI 서버가 고대역폭 메모리(HBM)와 서버용 D램을 빨아들이면 일반 메모리 생산이 줄어 값이 오르고, 수요가 식으면 현물가가 계약가보다 먼저 빠져요 — 그래서 AI 수요의 가장 빠른 체온계예요.</p>
+      <div class="panel">${aiwSigs(j.signals.filter(x => x.key === "mem"))}</div>
+      <div class="panel"><div style="overflow-x:auto"><table class="hist"><thead><tr><th>품목</th><th>지금($)</th><th>1주</th><th>1달</th><th>3달</th><th>1년</th><th>기록 중 최고 대비</th><th>기준일</th></tr></thead><tbody>
+        ${I.map(x => `<tr><td style="text-align:left"><b style="color:${MEM_COL[x.short]}">●</b> ${esc(x.short)} <small class="muted">${esc(x.why)}</small></td><td><b>${x.last}</b></td><td>${pc(x.chg_1w)}</td><td>${pc(x.chg_1m)}</td><td>${pc(x.chg_3m)}</td><td>${pc(x.chg_1y)}</td><td>${pc(x.from_hi)}</td><td>${esc(x.date)}</td></tr>`).join("")}
+        </tbody></table></div>
+        <p class="muted" style="font-size:12.5px;margin:8px 0 0">D램은 매일, 낸드 웨이퍼는 주 1회 갱신. 과거 값은 웹 아카이브에 남은 DRAMeXchange 화면 사본(대략 주 1개)으로 채워서 1주·1달 변화는 기록 간격만큼 오차가 있어요. 앞으로는 매일 쌓여요.</p></div>
+      <div class="sp-bar"><span>기간</span>${[["3m", "3개월"], ["1y", "1년"], ["all", "전체"]].map(([k, t]) => `<button type="button" data-r="${k}" class="${MEM_RANGE === k ? "on" : ""}">${t}</button>`).join("")}
+        <span style="margin-left:auto" class="muted">${esc(M.source)} · 받은 시각 ${esc(j.made)}</span></div>
+      <div class="chartbox"><h3>D램 현물가 ($, 세션 평균)</h3><div class="cv" style="height:300px"><canvas id="mm-c1"></canvas></div><div class="src">DDR5 16Gb 4800/5600 · DDR4 16Gb 3200 · DDR4 8Gb 3200 (예전 기록은 같은 용량의 2666 속도 품목으로 이어 붙임)</div></div>
+      <div class="sp-two"><div class="chartbox"><h3>낸드 웨이퍼 현물가 ($)</h3><div class="cv"><canvas id="mm-c2"></canvas></div><div class="src">512Gb·256Gb TLC 웨이퍼</div></div>
+        <div class="chartbox"><h3>D램 3개월 변화율 (%)</h3><div class="cv"><canvas id="mm-c3"></canvas></div><div class="src">0 아래로 내려가면 ⑤ 수요 확인 🟡, −15% 아래면 🔴</div></div></div>
+      <details class="panel" style="margin-top:12px"><summary><b>📋 ${esc(last)} 받은 전체 품목</b></summary><table class="hist">${Object.entries(H[last] || {}).map(([k, v]) => `<tr><td style="text-align:left">${esc(k)}</td><td>$${v}</td></tr>`).join("")}</table></details>`;
+    bindNav();
+    const days = {"3m": 92, "1y": 366, "all": 99999}[MEM_RANGE];
+    const cut = new Date(Date.now() - days * 864e5).toISOString().slice(0, 10);
+    const dates = Object.keys(H).sort().filter(d => d >= cut);
+    const ser = x => ({label: x.short, color: MEM_COL[x.short], data: Object.fromEntries(dates.map(d => [d, x.series[d] ?? null]))});
+    const lc = (id, sets, unit, refs) => { const el = document.getElementById(id); const c = aiwLC(el, dates, sets, null, unit, refs); c.data.labels = dates; c.options.elements = {point: {radius: dates.length < 60 ? 2 : 0}}; c.update(); charts.push(c); };
+    const D = I.filter(x => x.short.startsWith("DDR"));
+    lc("mm-c1", D.map(ser), "");
+    lc("mm-c2", [...I.filter(x => x.short.startsWith("NAND")).map(ser), {label: "256Gb TLC", color: "#82c91e", data: Object.fromEntries(dates.map(d => [d, H[d]["256Gb TLC"] ?? null]))}], "");
+    const chg3 = S => { const all = Object.keys(S).sort(); return Object.fromEntries(dates.map(d => {
+      const cut3 = new Date(new Date(d).getTime() - 91 * 864e5).toISOString().slice(0, 10), prev = all.filter(k => k <= cut3).pop();
+      return [d, prev && S[d] != null && (new Date(cut3) - new Date(prev)) / 864e5 <= 21 ? +((S[d] / S[prev] - 1) * 100).toFixed(1) : null]; })); };
+    lc("mm-c3", D.map(x => ({label: x.short, color: MEM_COL[x.short], data: chg3(x.series)})), "%", [{value: 0, label: "0%"}, {value: -15, label: "−15%"}]);
+    root().querySelectorAll("[data-r]").forEach(b => b.onclick = () => { MEM_RANGE = b.dataset.r; destroy(); memPage(); addNav(); });
+  }
+
+  let CU_RANGE = "10y";
+  function cuPage(){
+    const j = (B.ai_risk || {}).semis || {error: "아직 받은 자료가 없어요."};
+    if(j.error){ root().innerHTML = aiwNav("c") + `<p>${esc(j.error)}</p>`; return; }
+    const C = j.cu, S = C.series, N = C.names;
+    root().innerHTML = `${aiwNav("c")}<h1 style="margin-bottom:4px">🏭 공장 가동률</h1>
+      <p class="muted" style="margin:0 0 14px">공장이 낼 수 있는 최대 생산량 중 실제로 얼마나 돌리고 있는지(%)예요(연준 산업생산 통계, 매달 중순 발표). 반도체·전자부품 가동률이 꺾이면 칩 주문이 줄었다는 뜻이고, 전체 가동률이 80%를 넘으면 공급이 빡빡해 물가 압력이 커져요.</p>
+      <div class="panel">${aiwSigs(j.signals.filter(x => x.key === "cu"))}</div>
+      <div class="panel"><div style="overflow-x:auto"><table class="hist"><thead><tr><th>구분</th><th>지금</th><th>3달</th><th>6달</th><th>1년</th><th>2000년 이후 평균</th><th>장기 평균</th><th>2000년 이후 위치</th></tr></thead><tbody>
+        ${C.items.map(x => `<tr><td style="text-align:left"><b style="color:${CU_COL[x.id]}">●</b> ${esc(x.name)} <small class="muted">${x.id}</small></td><td><b>${x.last}%</b> <small class="muted">${esc(x.date.slice(0, 7))}</small></td><td>${pc(x.chg_3m, "%p")}</td><td>${pc(x.chg_6m, "%p")}</td><td>${pc(x.chg_1y, "%p")}</td><td>${x.avg_2000}%</td><td>${x.avg_long}% <small class="muted">(${esc(x.first.slice(0, 4))}~)</small></td><td>${x.pct_2000}%</td></tr>`).join("")}
+        </tbody></table></div><p class="muted" style="font-size:12.5px;margin:8px 0 0">변화는 %p. '위치'는 2000년 이후 달 중 지금보다 낮거나 같았던 비율(높을수록 공장이 바쁨). 미국 공장 기준이라 TSMC·한국 공장은 TSMC 월매출·메모리 값으로 따로 봐요.</p></div>
+      <div class="sp-bar"><span>기간</span>${[["3y", "3년"], ["10y", "10년"]].map(([k, t]) => `<button type="button" data-r="${k}" class="${CU_RANGE === k ? "on" : ""}">${t}</button>`).join("")}
+        <span style="margin-left:auto" class="muted">${esc(C.source)} · 받은 시각 ${esc(j.made)}</span></div>
+      <div class="chartbox"><h3>가동률 (%)</h3><div class="cv" style="height:300px"><canvas id="cu-c1"></canvas></div><div class="src">점선: 반도체 2000년 이후 평균 · 80%(공급이 빡빡해지는 선)</div></div>
+      <div class="sp-two"><div class="chartbox"><h3>${esc(N.IPG3344S)}</h3><div class="cv"><canvas id="cu-c2"></canvas></div><div class="src">가동률이 같아도 생산 능력이 늘면 생산지수는 올라가요</div></div>
+        <div class="chartbox"><h3>${esc(N.PCU334413334413)} 전년비 (%)</h3><div class="cv"><canvas id="cu-c3"></canvas></div><div class="src">미국에서 만든 반도체 출하 가격(메모리 비중은 작음)</div></div></div>`;
+    bindNav();
+    const yrs = {"3y": 3, "10y": 10}[CU_RANGE], cut = new Date(Date.now() - yrs * 365.25 * 864e5).toISOString().slice(0, 10);
+    const ms = Object.keys(S.TCU).sort().filter(d => d >= cut);
+    const set = (id, label) => ({label, color: CU_COL[id] || "#2b8a3e", data: Object.fromEntries(ms.map(d => [d, S[id][d] ?? null]))});
+    const lc = (id, sets, unit, refs) => { const c = aiwLC(document.getElementById(id), ms.map(d => d.slice(0, 7)), sets.map(x => ({...x, data: Object.fromEntries(Object.entries(x.data).map(([k, v]) => [k.slice(0, 7), v]))})), null, unit, refs); charts.push(c); };
+    const semi = C.items.find(x => x.id === "CAPUTLG3344S");
+    lc("cu-c1", C.items.map(x => set(x.id, x.short)), "%", [{value: semi.avg_2000, label: `반도체 평균 ${semi.avg_2000}%`}, {value: 80, label: "80%"}]);
+    lc("cu-c2", [set("IPG3344S", "생산지수")], "");
+    const P = S.PCU334413334413, pk = Object.keys(P).sort();
+    const yoy = Object.fromEntries(ms.map(d => { const p = pk.find(k => k.slice(0, 7) === `${+d.slice(0, 4) - 1}${d.slice(4, 7)}`); return [d, P[d] != null && p ? +((P[d] / P[p] - 1) * 100).toFixed(1) : null]; }));
+    lc("cu-c3", [{label: "반도체 PPI 전년비", color: "#e8590c", data: yoy}], "%", [{value: 0, label: "0%"}]);
+    root().querySelectorAll("[data-r]").forEach(b => b.onclick = () => { CU_RANGE = b.dataset.r; destroy(); cuPage(); addNav(); });
   }
 
   // ---------- 👑 기타 보고서 분석 · 히르찬 매크로 리서치 (관리자 전용 · 아니면 서버가 403) ----------
