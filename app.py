@@ -250,6 +250,48 @@ def api_analyze():
     return jsonify(out)
 
 
+@app.route("/api/intrinsic")
+def api_intrinsic():
+    """🧮 기업 내재가치 분석 탭: 계산 재료(주당 FCF·할인율·ROE·배당·PER 밴드). 계산은 화면에서(intrinsic.py 설명).
+    기업 밸류에이션 탭과 같은 분석 캐시를 쓰고, 새로 분석할 때만 비회원 횟수 1회 차감."""
+    import intrinsic
+    ticker = (request.args.get("ticker") or "").strip()
+    if not ticker:
+        return jsonify({"error": "회사 이름이나 티커를 입력하세요."}), 400
+    ck = "intrinsic:" + ticker.lower()
+    out = _cache_get(ck, 300)
+    left = None
+    if out is None:
+        an = _cache_get("analyze:" + ticker.lower(), 300)
+        if an is None:
+            left = _guest_left()
+            if left == 0:
+                return jsonify({"error": f"오늘의 무료 체험 {GUEST_LIMIT}회를 모두 사용했습니다. "
+                                         "내일 0시에 다시 채워집니다. 회원가입하시면 제한 없이 이용할 수 있어요.", "locked": True}), 402
+            try:
+                an = clean(analyze_data(ticker))
+            except ValueError as e:
+                return jsonify({"error": str(e)}), 400
+            except Exception as e:
+                return jsonify({"error": f"분석 실패: {repr(e)[:150]}"}), 500
+            _cache_put("analyze:" + ticker.lower(), an)
+        try:
+            yf_ticker = kr_data.resolve_query(ticker)[0]
+            out = clean(intrinsic.build(an, yf_ticker))
+        except ValueError as e:
+            return jsonify({"error": str(e)}), 400
+        except Exception as e:
+            return jsonify({"error": f"내재가치 재료 만들기 실패: {repr(e)[:150]}"}), 500
+        _cache_put(ck, out)
+    out = dict(out)
+    if left is not None:
+        session["guest_uses"] = _guest_uses() + 1
+        session.permanent = True
+        out["guest_left"] = _guest_left()
+        out["guest_limit"] = GUEST_LIMIT
+    return jsonify(out)
+
+
 @app.route("/api/diagnose", methods=["POST"])
 def api_diagnose():
     """사용자가 수정한 재무 숫자로 재무제표 진단 재계산 (순수 함수 diagnose)."""

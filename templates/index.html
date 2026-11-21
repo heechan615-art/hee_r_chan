@@ -1054,6 +1054,7 @@
     <nav class="tabs">
       <button type="button" class="tab-arrow tab-arrow-l" data-step="-1" aria-label="이전 탭">«</button>
       <button class="tab-btn active" data-tab="value">📊 기업 밸류에이션</button>
+      <button class="tab-btn" data-tab="iv">🧮 기업 내재가치 분석</button>
       <button class="tab-btn" data-tab="snp">📈 S&amp;P500 밸류에이션</button>
       <button class="tab-btn" data-tab="findiag">🧾 기업 재무제표 분석</button>
       <button class="tab-btn" data-tab="deep">🔬 기업 심층 분석</button>
@@ -1098,6 +1099,14 @@
   <div id="loading"><div class="spin"></div>데이터 수집 중… (야후·네이버 조회, 5~15초)</div>
   <div id="result"></div>
   <div id="bar-tip"></div>
+  </div>
+
+  <!-- 기업 내재가치 분석 탭: /api/intrinsic(intrinsic.py) 재료 → 화면에서 DCF·역DCF·RIM·DDM·그레이엄·PER 밴드 계산.
+       코드: static/intrinsic.js · intrinsic.css -->
+  <div id="tab-iv" style="display:none">
+    <div class="sub">6가지 방법(DCF·역DCF·잔여이익·배당할인·그레이엄·PER 밴드)으로 내재가치 범위를 구하고, 회사에 맞는 주 방법·매수 구간·해석까지 · 국내 + 미국</div>
+    <link rel="stylesheet" href="/static/intrinsic.css?v=1">
+    <div id="iv-root"></div>
   </div>
 
   <!-- 기업 재무제표 분석 탭 -->
@@ -1171,7 +1180,7 @@
        export_valueai.py가 static/econ/bundle.json을 만든다. 코드: static/econ.js · econ.css -->
   <div id="tab-econ" style="display:none">
     <div class="sub">미국·한국·중국·유럽 경제지표 발표를 히르찬 방식으로 해석 · 추세 그래프 · 카톡 브리핑 요약</div>
-    <link rel="stylesheet" href="/static/econ.css?v=19">
+    <link rel="stylesheet" href="/static/econ.css?v=21">
     <div id="econ-root"></div>
   </div>
 
@@ -1670,7 +1679,7 @@ window.addEventListener("load", () => {
     if(location.hash) history.replaceState(null, "", location.pathname + location.search);
     return;
   }
-  const hm = location.hash.match(/^#(dividend|chart|cards|econ|sector|pf)/);   // #dividend(=KO), #chart(=삼성전자), #cards(=GOOGL_2026Q3)
+  const hm = location.hash.match(/^#(dividend|chart|cards|econ|sector|pf|iv)/);   // #dividend(=KO), #chart(=삼성전자), #cards(=GOOGL_2026Q3)
   if(hm){
     const b = document.querySelector('.tab-btn[data-tab="' + hm[1] + '"]');
     if(b) b.click();
@@ -1973,6 +1982,8 @@ document.querySelectorAll(".tab-btn").forEach(b => b.onclick = () => {
   const t = b.dataset.tab;
   $("#tab-value").style.display = t === "value" ? "" : "none";
   $("#tab-findiag").style.display = t === "findiag" ? "" : "none";
+  $("#tab-iv").style.display = t === "iv" ? "" : "none";
+  if(t === "iv" && window.ivOpen) window.ivOpen();
   $("#tab-briefing").style.display = t === "briefing" ? "" : "none";
   $("#tab-snp").style.display = t === "snp" ? "" : "none";
   $("#tab-deep").style.display = t === "deep" ? "" : "none";
@@ -5601,8 +5612,9 @@ window.uploadFactset = uploadFactset;   // 인라인 onchange가 IIFE 밖에서 
 })();
 </script>
 <script src="/static/portfolio.js?v=11" defer></script>
-<script src="/static/econ.js?v=21" defer></script>
+<script src="/static/econ.js?v=25" defer></script>
 <script src="/static/sector.js?v=7" defer></script>
+<script src="/static/intrinsic.js?v=4" defer></script>
 <button type="button" id="to-top" aria-label="맨 위로"><span class="ar">↑</span>맨 위로</button>
 <script>
 (function(){

@@ -1,0 +1,75 @@
+/* 🧮 기업 내재가치 분석 탭 — #tab-iv 안으로 한정 (static/intrinsic.js) */
+#tab-iv{--line:#e9ecf1;--text:#11151a;--muted:#7b8392;--ink:#0e1c36;--gold:#B0883A;line-height:1.6;font-feature-settings:"tnum" 1;min-width:0;contain:inline-size}
+#tab-iv .iv-f{display:flex;gap:8px;margin-bottom:10px}
+#tab-iv .iv-f input{flex:1;min-width:0}
+#tab-iv .iv-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px}
+#tab-iv .iv-empty,#tab-iv .iv-loading,#tab-iv .iv-err{background:#fff;border:1px solid var(--line);border-radius:14px;padding:18px;color:var(--muted)}
+#tab-iv .iv-loading{display:flex;align-items:center;gap:10px}
+#tab-iv .iv-err{color:#b42318;background:#fff5f5;border-color:#f5c2c2}
+#tab-iv .iv-head{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.5fr);gap:14px;align-items:stretch;margin-bottom:14px}
+#tab-iv .iv-head h2{margin:0;font-size:22px;letter-spacing:-.02em}
+#tab-iv .iv-head h2 small{display:block;font-size:13px;color:var(--muted);font-weight:600;margin-top:2px}
+#tab-iv .iv-px{margin-top:10px;font-size:14px;color:var(--muted)} #tab-iv .iv-px b{display:block;font-size:26px;color:var(--text)}
+#tab-iv .iv-verdict{border-radius:16px;padding:14px 18px;border:2px solid}
+#tab-iv .iv-verdict .t{font-weight:900;font-size:16.5px;margin-bottom:8px}
+#tab-iv .iv-verdict .nums{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+#tab-iv .iv-verdict .nums span{font-size:12.5px;color:var(--muted);font-weight:700}
+#tab-iv .iv-verdict .nums b{display:block;font-size:17px;color:var(--text);font-weight:900;word-break:keep-all}
+#tab-iv .iv-g{border-color:#2b8a3e;background:#f1faf3}#tab-iv .iv-y{border-color:#e8a10c;background:#fffbea}#tab-iv .iv-r{border-color:#d63939;background:#fff5f5}
+#tab-iv .iv-panel{background:#fff;border:1px solid var(--line);border-radius:16px;padding:14px 18px;margin-bottom:14px}
+#tab-iv .iv-read{border:2px solid #b0883a;background:#fffdf7}
+#tab-iv .iv-read .lab{font-size:12.5px;font-weight:800;color:#8f6d2b;margin-bottom:6px} #tab-iv .iv-read .lab small{font-weight:500;color:var(--muted);margin-left:6px}
+#tab-iv .iv-read p{font-size:14.5px;line-height:1.75;margin:0 0 8px}
+#tab-iv .iv-warn{margin:6px 0 0;padding-left:4px;list-style:none;font-size:13.5px;color:#7a5a12}
+#tab-iv .iv-h3{font-weight:900;font-size:15.5px;margin-bottom:8px;display:flex;flex-wrap:wrap;align-items:baseline;gap:6px}
+#tab-iv summary.iv-h3{cursor:pointer;margin-bottom:0}
+#tab-iv details[open] summary.iv-h3{margin-bottom:10px}
+#tab-iv .iv-h3 small{font-size:12px;color:var(--muted);font-weight:600}
+#tab-iv .iv-h3 button{margin-left:auto;background:#fff;color:var(--ink);border:1px solid #d5dbe4;border-radius:10px;padding:5px 12px;font-size:12.5px;font-weight:800;cursor:pointer;box-shadow:none}
+#tab-iv .iv-svgwrap{overflow-x:auto}
+#tab-iv .iv-svg{width:100%;min-width:560px;height:auto;display:block}
+#tab-iv .iv-svg .iv-ax{font-size:11px;fill:#7b8392}
+#tab-iv .iv-svg .iv-nm{font-size:12.5px;font-weight:800;fill:#11151a}
+#tab-iv .iv-svg .iv-lab{font-size:11.5px;font-weight:800}
+#tab-iv .iv-ins{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px 14px}
+#tab-iv .iv-in{display:flex;flex-direction:column;gap:3px;font-size:13px;font-weight:800}
+#tab-iv .iv-in input,#tab-iv .iv-in select{border:1px solid #d5dbe4;border-radius:10px;padding:8px 10px;font:inherit;font-size:14.5px;font-weight:700;background:#fff;width:100%;box-sizing:border-box}
+#tab-iv .iv-in em{font-style:normal;font-size:11.5px;color:var(--muted);font-weight:600;line-height:1.4}
+#tab-iv .iv-cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:14px}
+#tab-iv .iv-card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px 14px;border-top:4px solid #4a7fd4}
+#tab-iv .iv-card.main{border-top-color:var(--ink);box-shadow:0 0 0 2px rgba(14,28,54,.12)}
+#tab-iv .iv-card.ref{border-top-color:#c3c8d2}
+#tab-iv .iv-card.off{border-top-color:#e2e5ea;background:#fafbfc}
+#tab-iv .iv-card.rev{border-top-color:#B0883A;background:#fffdf7}
+#tab-iv .iv-card .nm{font-weight:900;font-size:14px}
+#tab-iv .iv-card .tag{display:inline-block;font-size:11px;background:var(--ink);color:#fff;border-radius:6px;padding:1px 6px;margin-left:4px;vertical-align:1px}
+#tab-iv .iv-card .tag.gray{background:#9aa1ab}
+#tab-iv .iv-card .v{font-size:21px;font-weight:900;margin:4px 0 0}
+#tab-iv .iv-card .v small{font-size:12.5px;font-weight:800;margin-left:4px}
+#tab-iv .up{color:#2b8a3e}#tab-iv .dn{color:#d63939}
+#tab-iv .iv-card .rg{font-size:12.5px;color:var(--muted);font-weight:700}
+#tab-iv .iv-card .nt{font-size:12.5px;color:#4b5563;margin-top:6px;line-height:1.55}
+#tab-iv .iv-card .wn{font-size:12.5px;color:#7a5a12;margin-top:6px;line-height:1.5}
+#tab-iv .iv-card .sk{font-size:13px;color:var(--muted);margin-top:6px}
+#tab-iv .iv-scroll{overflow-x:auto}
+#tab-iv .iv-tbl,#tab-iv .iv-sens{border-collapse:collapse;width:100%;font-size:13px}
+#tab-iv .iv-tbl th,#tab-iv .iv-tbl td{padding:6px 8px;border-bottom:1px solid #eef0f4;text-align:right;white-space:nowrap}
+#tab-iv .iv-tbl th:first-child,#tab-iv .iv-tbl td:first-child{text-align:left}
+#tab-iv .iv-tbl tr.sum td{font-weight:800}#tab-iv .iv-tbl tr.tot td{border-top:2px solid var(--ink);font-size:14px}
+#tab-iv .iv-sens th,#tab-iv .iv-sens td{padding:7px 8px;border:1px solid #fff;text-align:center;white-space:nowrap}
+#tab-iv .iv-sens thead th,#tab-iv .iv-sens tbody th{background:#f2f4f7;font-size:12.5px}
+#tab-iv .iv-sens td small{display:block;font-size:11px;font-weight:700;opacity:.8}
+#tab-iv .iv-sens td.s3{background:#c9ecd2}#tab-iv .iv-sens td.s2{background:#ebf7ee}#tab-iv .iv-sens td.s1{background:#fdf0f0}#tab-iv .iv-sens td.s0{background:#f8d4d4}
+#tab-iv .iv-sens td.cur{outline:2.5px solid var(--ink);outline-offset:-3px;font-weight:900}
+#tab-iv .iv-small{font-size:12px;color:var(--muted);margin:8px 0 0;line-height:1.55}
+#tab-iv .iv-how p{font-size:14px;line-height:1.75;margin:0 0 8px}
+@media (max-width:900px){
+  #tab-iv .iv-head{grid-template-columns:1fr}
+  #tab-iv .iv-ins{grid-template-columns:repeat(2,minmax(0,1fr))}
+  #tab-iv .iv-cards{grid-template-columns:1fr}
+}
+html.is-mobile #tab-iv .iv-head{grid-template-columns:1fr}
+html.is-mobile #tab-iv .iv-ins{grid-template-columns:repeat(2,minmax(0,1fr))}
+html.is-mobile #tab-iv .iv-cards{grid-template-columns:1fr}
+@media (max-width:520px){ #tab-iv .iv-verdict .nums{grid-template-columns:1fr} }
+html.is-mobile #tab-iv .iv-verdict .nums{grid-template-columns:1fr}

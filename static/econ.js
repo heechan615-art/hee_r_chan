@@ -508,6 +508,26 @@
       <div class="sp-ws">${j.watch.map(sprWatch).join("")}</div></div>`);
     bindNav();
   }
+  // 📖 OAS가 뭔가요? — 신용 스프레드 화면 위 접는 칸(숫자는 지금 값으로)
+  const OAS_ROWS = [["BBB", "투자등급의 맨 아래 · 비교적 안전"], ["BB", "하이일드(정크본드) 중 가장 우량"], ["B", "하이일드 중간"], ["CCC", "부도 직전급 · 가장 약한 고리"]];
+  function oasHelp(j){
+    const by = Object.fromEntries(Object.values(j.latest).map(x => [x.short, x.last]));
+    const ccc = by.CCC;
+    return `<details class="panel oas-help"><summary>📖 OAS가 뭔가요? <small>회사채 금리가 아니라 '국채보다 더 얹어 주는 이자'예요</small></summary>
+      <p><b>회사채 금리 그 자체가 아니라</b>, 회사채 금리에서 <b>같은 만기 미국 국채 금리를 뺀 차이(가산금리·스프레드)</b>예요. 국채보다 이자를 얼마나 더 줘야 투자자가 사 주는지 = <b>시장이 느끼는 부도 위험의 온도계</b>예요.</p>
+      <p><b>OAS = Option-Adjusted Spread(옵션 조정 스프레드).</b> 회사채엔 회사가 만기 전에 미리 갚을 수 있는 조건(조기상환 옵션)이 붙은 게 많아요. 금리가 떨어지면 회사는 비싼 빚을 미리 갚고 싸게 다시 빌리니, 이 옵션은 투자자에게 불리하고 그만큼 이자에 섞여 있어요. OAS는 이 옵션 몫을 빼고 남은 <b>순수한 신용위험의 대가</b>라, 조건이 다른 채권끼리도 공정하게 비교할 수 있어요. 여기 숫자는 ICE BofA 회사채 지수 전체의 평균 OAS예요.</p>
+      <div style="overflow-x:auto"><table class="hist"><thead><tr><th>등급(높은 순)</th><th>지금 OAS</th><th>뜻</th></tr></thead><tbody>
+        ${OAS_ROWS.filter(([k]) => by[k] != null).map(([k, t]) => `<tr><td><b>${k}</b></td><td>${by[k].toFixed(2)}%</td><td style="text-align:left;white-space:normal;min-width:150px">국채보다 ${by[k].toFixed(2)}%p 더 받아야 팔림 · ${t}</td></tr>`).join("")}
+      </tbody></table></div>
+      ${ccc != null ? `<p class="muted" style="font-size:13px">예: 미국 10년 국채가 5%라면 CCC 회사채 금리는 대략 ${(5 + ccc).toFixed(1)}%라는 뜻이에요. BBB까지가 투자등급, BB부터가 하이일드예요.</p>` : ""}
+      <p><b>읽는 순서</b></p>
+      <ol>
+        <li><b>CCC부터 봐요</b> — 신용 위기는 가장 약한 회사(CCC)에서 시작해 위 등급으로 번져요.</li>
+        <li><b>B·BB가 따라오는지</b> — 아래 등급만 벌어지면 '바닥 스트레스', 위 등급까지 오르면 '전이'예요.</li>
+        <li><b>등급 간 차이 그래프</b> — CCC−BB가 벌어지면 바닥 스트레스, BB−BBB가 벌어지면 하이일드 전반으로 번지는 중이에요.</li>
+        <li><b>BBB·투자등급</b> — 여기까지 오르면 우량 회사도 돈 빌리기 어려워진 것, 경기 침체 우려가 커진 단계예요.</li>
+      </ol></details>`;
+  }
   async function spreadPage(){
     root().innerHTML = `<p class="muted">불러오는 중…</p>`;
     const j = await spLoad(); if(cur[0] !== "s") return;
@@ -516,6 +536,7 @@
     root().innerHTML = `${aiwNav("s")}
       <h1>💳 신용 스프레드</h1>
       <p class="muted" style="margin:0 0 14px">회사채 금리가 같은 만기 국채보다 얼마나 높은지(OAS, %)예요. 벌어질수록 시장이 기업 부도·자금 조달 위험을 크게 본다는 뜻이에요. 가장 약한 CCC부터 벌어지고, B → BB → BBB로 위 등급까지 따라오면 신용 스트레스가 '전이'되는 신호예요.</p>
+      ${oasHelp(j)}
       <div class="panel"><div class="sp-head"><span class="stance ${STAGE_CLS[T.stage] || ""}">${esc(T.stage)}</span><b>${esc(T.text)}</b></div><p class="muted" style="font-size:12.5px;margin:6px 0 0">${esc(T.rule)}</p>
         <div class="sp-ws" style="margin-top:10px">${j.watch.map(sprWatch).join("")}</div></div>
       <div class="panel tw" style="margin-top:12px"><table class="hist"><tr><th>등급</th><th>지금</th><th>1주</th><th>1달</th><th>3달</th><th>최근 3년 위치</th><th>3년 범위</th></tr>
@@ -726,6 +747,7 @@
       <nav class="aiw-tabs">${AIW_TABS.map(([k, t]) => `<a href="#" data-go="${k}" class="${k === cur ? "on" : ""}">${t}</a>`).join("")}</nav>`;
   }
   const MEM_COL = {"DDR5 16Gb": "#9b1c31", "DDR4 16Gb": "#1f3a68", "DDR4 8Gb": "#4a7fd4", "NAND 512Gb 웨이퍼": "#2b8a3e"};
+  const KR_COL = {"KR_MFG_CU": "#1f3a68", "KR_MFG_IDX": "#4a7fd4", "KR_SEMI_IDX": "#9b1c31", "KR_SEMI_CAP": "#2b8a3e"};
   const CU_COL = {"CAPUTLG3344S": "#9b1c31", "MCUMFN": "#1f3a68", "TCU": "#9aa1ab"};
   const pc = (v, u = "%") => v == null ? "-" : `<span class="${v < 0 ? "sp-dn" : v > 0 ? "sp-up" : ""}">${v > 0 ? "+" : ""}${v}${u}</span>`;
   async function aiwData(){
@@ -763,13 +785,36 @@
           <div class="sp-head"><span class="stance ${STAGE_CLS[T.stage] || ""}">${esc(T.stage)}</span><span>${esc(T.text)}</span><a href="#" data-go="s">그래프·전체 보기 →</a></div>
           <div class="sp-mini">${Object.values(s.latest).map(x => `<div><small>${esc(x.short)}</small><b>${x.last.toFixed(2)}%</b><span class="${chgCls(x.chg_1m)}">1달 ${sgn(x.chg_1m)}</span><i>3년 중 ${x.pct_3y}%</i></div>`).join("")}</div></div>` : ""}
         ${m ? `<div class="panel"><h2 style="margin:0 0 8px">💾 메모리 가격 <small>현물가 세션 평균</small></h2>
-          <div class="sp-head"><span>${m.signals.filter(x => x.key === "mem").map(x => `${(AI_LV[x.level] || ["⚪"])[0]} ${esc(x.name)} ${pc(x.value)}`).join("")}</span><a href="#" data-go="m">그래프·전체 보기 →</a></div>
+          <div class="sp-head"><span>${m.signals.filter(x => x.key === "mem").map(x => `${(AI_LV[x.level] || ["⚪"])[0]} ${esc(x.name)} ${pc(x.value)}`).join("")}</span><a href="#" data-go="m">그래프·전체 보기 →</a></div>${m.mem.read ? `<p class="aiw-one">🧭 ${esc(m.mem.read.head)}</p>` : ""}
           <div class="sp-mini">${m.mem.items.map(x => `<div><small>${esc(x.short)}</small><b>$${x.last}</b><span>3달 ${pc(x.chg_3m)}</span><i>1년 ${x.chg_1y == null ? "-" : (x.chg_1y > 0 ? "+" : "") + x.chg_1y + "%"}</i></div>`).join("")}</div></div>
-        <div class="panel"><h2 style="margin:0 0 8px">🏭 공장 가동률 <small>미국 · ${esc(m.cu.items[0].date.slice(0, 7))}</small></h2>
-          <div class="sp-head"><span>${m.signals.filter(x => x.key === "cu").map(x => `${(AI_LV[x.level] || ["⚪"])[0]} ${esc(x.name)} ${pc(x.value, "%p")}`).join("")}</span><a href="#" data-go="c">그래프·전체 보기 →</a></div>
-          <div class="sp-mini">${m.cu.items.map(x => `<div><small>${esc(x.short)}</small><b>${x.last}%</b><span>6달 ${pc(x.chg_6m, "%p")}</span><i>2000년 이후 평균 ${x.avg_2000}%</i></div>`).join("")}</div></div>` : ""}
+        <div class="panel"><h2 style="margin:0 0 8px">🏭 공장 가동률 <small>미국·한국 · 미국 ${esc(m.cu.items[0].date.slice(0, 7))}</small></h2>
+          <div class="sp-head"><span>${m.signals.filter(x => x.key === "cu").map(x => `${(AI_LV[x.level] || ["⚪"])[0]} ${esc(x.name)} ${pc(x.value, "%p")}`).join("")}</span><a href="#" data-go="c">그래프·전체 보기 →</a></div>${m.cu.read ? `<p class="aiw-one">🧭 ${esc(m.cu.read.head)}</p>` : ""}
+          <div class="sp-mini">${m.cu.items.map(x => `<div><small>🇺🇸 ${esc(x.short)}</small><b>${x.last}%</b><span>6달 ${pc(x.chg_6m, "%p")}</span><i>2000년 이후 평균 ${x.avg_2000}%</i></div>`).join("")}${((m.cu.kr || {}).items || []).filter(x => x.id === "KR_SEMI_IDX" || x.id === "KR_MFG_CU").map(x => `<div><small>🇰🇷 ${esc(x.id === "KR_SEMI_IDX" ? "반도체 지수(3달 평균)" : "제조업")}</small><b>${x.unit === "%" ? x.last + "%" : x.avg3}</b><span>${x.unit === "%" ? "1년 전 같은 달 " + (x.yoy_month > 0 ? "+" : "") + x.yoy_month + "%p" : "직전 3달 " + (x.chg_3m > 0 ? "+" : "") + x.chg_3m + "%"}</span><i>2000년 이후 평균 ${x.avg_2000}${x.unit === "%" ? "%" : ""}</i></div>`).join("")}</div></div>` : ""}
       </div>`;
     addNav(); bindNav();
+  }
+
+  // 🧭 해석 패널 — semis.py의 mem_read/cu_read(규칙) + 고정 '읽는 법'
+  const AIW_HOW = {
+    mem: ["현물가는 그날그날 거래값이라 회사 간 계약가보다 1~2분기 먼저 움직여요. 그래서 메모리 회사 실적의 '예고편'이에요.",
+          "주력 DDR5 = AI 서버·최신 PC에 들어가는 D램. 이게 오르면 AI 수요가 아직 뜨겁다는 뜻이에요.",
+          "구형 DDR4 = 회사들이 생산을 줄이는 이전 세대. 공급이 줄어 값이 튀기도 해서 수요보다 '공급 사정'이 많이 섞여 있어요.",
+          "낸드 웨이퍼 = 저장장치(SSD) 재료. D램보다 값이 크게 출렁여요.",
+          "3달 변화로 방향을, 1달 변화로 속도를 봐요. 오르는 속도가 줄다가 1달이 마이너스로 바뀌면 꺾이는 신호예요."],
+    cu:  ["가동률 = 공장이 낼 수 있는 최대 생산량 중 실제로 돌리는 비율. 높을수록 주문이 많아 바쁜 거예요.",
+          "생산지수 = 실제로 만든 양. 공장을 새로 지으면 가동률은 그대로여도 생산지수는 올라가요.",
+          "생산자물가(PPI) = 공장에서 내보내는 값. 가동률과 값이 같이 오르면 공급이 빡빡하다는 뜻이에요.",
+          "산업 전체 가동률 80% 이상이면 공급이 빡빡해 물가를 밀어 올려요.",
+          "미국 공장 숫자라 한국·대만 메모리·파운드리 호황은 덜 잡혀요. 그래서 '꺾임 경보'용으로 봐요.",
+          "한국 숫자는 통계청 조사라 %가 아니라 지수(2020년 = 100)예요. 100보다 높으면 2020년보다 바쁘게 돌린다는 뜻이고, 반도체는 생산능력이 2020년의 2배라 같은 100이어도 만드는 양은 훨씬 많아요."],
+  };
+  function aiwRead(r, kind){
+    if(!r) return "";
+    const [ic] = AI_LV[r.level] || ["⚪"];
+    return `<div class="panel ai-narr"><div class="lab">🧭 지금 어떻게 읽나 <small>숫자가 바뀌면 문장도 규칙대로 다시 써져요(히르찬 기준)</small></div>
+      <h2>${ic} ${esc(r.head)}</h2>${r.paras.map(p => `<p>${esc(p)}</p>`).join("")}
+      <p style="margin-top:10px"><b>👀 앞으로 볼 것</b></p><ul class="aiw-watch">${r.watch.map(w => `<li>${esc(w)}</li>`).join("")}</ul>
+      <details class="aiw-how"><summary>📖 이 화면 읽는 법</summary><ul>${AIW_HOW[kind].map(w => `<li>${esc(w)}</li>`).join("")}</ul></details></div>`;
   }
 
   let MEM_RANGE = "1y";
@@ -779,7 +824,7 @@
     const M = j.mem, I = M.items, H = M.hist, last = Object.keys(H).sort().pop();
     root().innerHTML = `${aiwNav("m")}<h1 style="margin-bottom:4px">💾 메모리 가격</h1>
       <p class="muted" style="margin:0 0 14px">D램·낸드 현물가(대리점·유통 시장에서 그날 거래되는 값, 달러)예요. AI 서버가 고대역폭 메모리(HBM)와 서버용 D램을 빨아들이면 일반 메모리 생산이 줄어 값이 오르고, 수요가 식으면 현물가가 계약가보다 먼저 빠져요 — 그래서 AI 수요의 가장 빠른 체온계예요.</p>
-      <div class="panel">${aiwSigs(j.signals.filter(x => x.key === "mem"))}</div>
+      ${aiwRead(M.read, "mem")}<div class="panel">${aiwSigs(j.signals.filter(x => x.key === "mem"))}</div>
       <div class="panel"><div style="overflow-x:auto"><table class="hist"><thead><tr><th>품목</th><th>지금($)</th><th>1주</th><th>1달</th><th>3달</th><th>1년</th><th>기록 중 최고 대비</th><th>기준일</th></tr></thead><tbody>
         ${I.map(x => `<tr><td style="text-align:left"><b style="color:${MEM_COL[x.short]}">●</b> ${esc(x.short)} <small class="muted">${esc(x.why)}</small></td><td><b>${x.last}</b></td><td>${pc(x.chg_1w)}</td><td>${pc(x.chg_1m)}</td><td>${pc(x.chg_3m)}</td><td>${pc(x.chg_1y)}</td><td>${pc(x.from_hi)}</td><td>${esc(x.date)}</td></tr>`).join("")}
         </tbody></table></div>
@@ -810,10 +855,10 @@
   function cuPage(){
     const j = (B.ai_risk || {}).semis || {error: "아직 받은 자료가 없어요."};
     if(j.error){ root().innerHTML = aiwNav("c") + `<p>${esc(j.error)}</p>`; return; }
-    const C = j.cu, S = C.series, N = C.names;
-    root().innerHTML = `${aiwNav("c")}<h1 style="margin-bottom:4px">🏭 공장 가동률</h1>
+    const C = j.cu, S = C.series, N = C.names, KRB = C.kr && C.kr.items && C.kr.items.length ? C.kr : null;
+    root().innerHTML = `${aiwNav("c")}<h1 style="margin-bottom:4px">🏭 공장 가동률 <small class="muted" style="font-size:15px">미국 · 한국</small></h1>
       <p class="muted" style="margin:0 0 14px">공장이 낼 수 있는 최대 생산량 중 실제로 얼마나 돌리고 있는지(%)예요(연준 산업생산 통계, 매달 중순 발표). 반도체·전자부품 가동률이 꺾이면 칩 주문이 줄었다는 뜻이고, 전체 가동률이 80%를 넘으면 공급이 빡빡해 물가 압력이 커져요.</p>
-      <div class="panel">${aiwSigs(j.signals.filter(x => x.key === "cu"))}</div>
+      ${aiwRead(C.read, "cu")}<div class="panel">${aiwSigs(j.signals.filter(x => x.key === "cu"))}</div>
       <div class="panel"><div style="overflow-x:auto"><table class="hist"><thead><tr><th>구분</th><th>지금</th><th>3달</th><th>6달</th><th>1년</th><th>2000년 이후 평균</th><th>장기 평균</th><th>2000년 이후 위치</th></tr></thead><tbody>
         ${C.items.map(x => `<tr><td style="text-align:left"><b style="color:${CU_COL[x.id]}">●</b> ${esc(x.name)} <small class="muted">${x.id}</small></td><td><b>${x.last}%</b> <small class="muted">${esc(x.date.slice(0, 7))}</small></td><td>${pc(x.chg_3m, "%p")}</td><td>${pc(x.chg_6m, "%p")}</td><td>${pc(x.chg_1y, "%p")}</td><td>${x.avg_2000}%</td><td>${x.avg_long}% <small class="muted">(${esc(x.first.slice(0, 4))}~)</small></td><td>${x.pct_2000}%</td></tr>`).join("")}
         </tbody></table></div><p class="muted" style="font-size:12.5px;margin:8px 0 0">변화는 %p. '위치'는 2000년 이후 달 중 지금보다 낮거나 같았던 비율(높을수록 공장이 바쁨). 미국 공장 기준이라 TSMC·한국 공장은 TSMC 월매출·메모리 값으로 따로 봐요.</p></div>
@@ -821,7 +866,15 @@
         <span style="margin-left:auto" class="muted">${esc(C.source)} · 받은 시각 ${esc(j.made)}</span></div>
       <div class="chartbox"><h3>가동률 (%)</h3><div class="cv" style="height:300px"><canvas id="cu-c1"></canvas></div><div class="src">점선: 반도체 2000년 이후 평균 · 80%(공급이 빡빡해지는 선)</div></div>
       <div class="sp-two"><div class="chartbox"><h3>${esc(N.IPG3344S)}</h3><div class="cv"><canvas id="cu-c2"></canvas></div><div class="src">가동률이 같아도 생산 능력이 늘면 생산지수는 올라가요</div></div>
-        <div class="chartbox"><h3>${esc(N.PCU334413334413)} 전년비 (%)</h3><div class="cv"><canvas id="cu-c3"></canvas></div><div class="src">미국에서 만든 반도체 출하 가격(메모리 비중은 작음)</div></div></div>`;
+        <div class="chartbox"><h3>${esc(N.PCU334413334413)} 전년비 (%)</h3><div class="cv"><canvas id="cu-c3"></canvas></div><div class="src">미국에서 만든 반도체 출하 가격(메모리 비중은 작음)</div></div></div>
+      ${KRB ? `<h2 style="margin:22px 0 8px">🇰🇷 한국 공장 가동률 <small class="muted">${esc(KRB.items[0].date.slice(0, 7))} · 통계청</small></h2>
+      <div class="panel"><div style="overflow-x:auto"><table class="hist"><thead><tr><th>구분</th><th>지금</th><th>3달 평균</th><th>직전 3달 대비</th><th>1년 전 3달 대비</th><th>2000년 이후 평균</th><th>2000년 이후 위치</th></tr></thead><tbody>
+        ${KRB.items.map(x => { const u = x.unit === "%" ? "%" : "", d = x.unit === "%" ? "%p" : "%";
+          return `<tr><td style="text-align:left"><b style="color:${KR_COL[x.id]}">●</b> ${esc(x.name)}</td><td><b>${x.last}${u}</b></td><td>${x.avg3}${u}</td><td>${pc(x.chg_3m, d)}</td><td>${pc(x.chg_1y, d)}</td><td>${x.avg_2000}${u}</td><td>${x.pct_2000}%</td></tr>`; }).join("")}
+        </tbody></table></div><p class="muted" style="font-size:12.5px;margin:8px 0 0">지수는 2020년 = 100. 반도체 가동률지수는 한 달에 10% 넘게 출렁여서 3달 평균끼리 비교해요(지수는 %, 평균가동률은 %p). 평균가동률은 계절 조정 전 숫자예요. 매달 말 통계청 산업활동동향으로 전달 숫자가 나와요.</p></div>
+      <div class="chartbox"><h3>한국 가동률지수 (2020=100, 계절조정)</h3><div class="cv" style="height:300px"><canvas id="cu-k1"></canvas></div><div class="src">굵은 선: 반도체 3달 평균 · 점선 100 = 2020년 수준</div></div>
+      <div class="sp-two"><div class="chartbox"><h3>한국 반도체 생산능력지수 (2020=100)</h3><div class="cv"><canvas id="cu-k2"></canvas></div><div class="src">공장을 새로 지으면 올라가요</div></div>
+        <div class="chartbox"><h3>한국 제조업 평균가동률 (%)</h3><div class="cv"><canvas id="cu-k3"></canvas></div><div class="src">계절 조정 전 숫자 · 점선: 2000년 이후 평균</div></div></div>` : ""}`;
     bindNav();
     const yrs = {"3y": 3, "10y": 10}[CU_RANGE], cut = new Date(Date.now() - yrs * 365.25 * 864e5).toISOString().slice(0, 10);
     const ms = Object.keys(S.TCU).sort().filter(d => d >= cut);
@@ -833,6 +886,17 @@
     const P = S.PCU334413334413, pk = Object.keys(P).sort();
     const yoy = Object.fromEntries(ms.map(d => { const p = pk.find(k => k.slice(0, 7) === `${+d.slice(0, 4) - 1}${d.slice(4, 7)}`); return [d, P[d] != null && p ? +((P[d] / P[p] - 1) * 100).toFixed(1) : null]; }));
     lc("cu-c3", [{label: "반도체 PPI 전년비", color: "#e8590c", data: yoy}], "%", [{value: 0, label: "0%"}]);
+    if(KRB){
+      const K = KRB.series, km = Object.keys(K.KR_SEMI_IDX).sort().filter(d => d >= cut);
+      const ks = (id, label, extra = {}) => ({label, color: KR_COL[id], data: Object.fromEntries(km.map(d => [d.slice(0, 7), K[id][d] ?? null])), ...extra});
+      const sm = Object.keys(K.KR_SEMI_IDX).sort(), avg3 = Object.fromEntries(km.map(d => { const i = sm.indexOf(d), w = sm.slice(Math.max(0, i - 2), i + 1).map(k => K.KR_SEMI_IDX[k]);
+        return [d.slice(0, 7), w.length === 3 ? +(w.reduce((a, b) => a + b, 0) / 3).toFixed(1) : null]; }));
+      const kl = (id, sets, unit, refs) => charts.push(aiwLC(document.getElementById(id), km.map(d => d.slice(0, 7)), sets, null, unit, refs));
+      kl("cu-k1", [ks("KR_SEMI_IDX", "반도체(월)", {color: "#e6a5ae"}), {label: "반도체 3달 평균", color: KR_COL.KR_SEMI_IDX, data: avg3}, ks("KR_MFG_IDX", "제조업")], "", [{value: 100, label: "100"}]);
+      kl("cu-k2", [ks("KR_SEMI_CAP", "반도체 생산능력")], "");
+      const mf = KRB.items.find(x => x.id === "KR_MFG_CU");
+      kl("cu-k3", [ks("KR_MFG_CU", "제조업 평균가동률")], "%", mf ? [{value: mf.avg_2000, label: `평균 ${mf.avg_2000}%`}] : []);
+    }
     root().querySelectorAll("[data-r]").forEach(b => b.onclick = () => { CU_RANGE = b.dataset.r; destroy(); cuPage(); addNav(); });
   }
 
