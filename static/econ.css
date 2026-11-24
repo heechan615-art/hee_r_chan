@@ -359,3 +359,25 @@ html.is-mobile #tab-econ .ec-nav button{flex:1;justify-content:center;padding:11
 #tab-econ .sp-src{font-size:12px;color:#7b8392}
 #tab-econ .sp-notes h2,#tab-econ .ai-tl h2{flex-wrap:wrap;row-gap:2px}
 #tab-econ .sp-notes h2 small,#tab-econ .ai-tl h2 small{flex-basis:100%;margin-left:0}
+/* 💾 메모리 화면: 지금 어디쯤? · 핵심 두 개 (노트 style.css에서 옮김) */
+#tab-econ .mm-stage{border:2px solid #e8a10c;background:#fffbea}
+#tab-econ .mm-stage.pos{border-color:#2b8a3e;background:#f1faf3}#tab-econ .mm-stage.neg{border-color:#d63939;background:#fff5f5}
+#tab-econ .mm-stage .lab{font-size:12.5px;font-weight:800;color:#8f6d2b}#tab-econ .mm-stage .lab small{font-weight:500;color:#7b8392;margin-left:6px}
+#tab-econ .mm-stage h2{margin:6px 0 12px;font-size:18px;line-height:1.5}
+#tab-econ .mm-steps{display:flex;align-items:stretch;gap:8px}
+#tab-econ .mm-step{flex:1;display:flex;gap:10px;align-items:flex-start;background:#fff;border:1px solid #e4e7ec;border-radius:12px;padding:10px 12px;opacity:.6}
+#tab-econ .mm-step.done{opacity:1;border-color:#e8a10c}#tab-econ .mm-step.cur{box-shadow:0 0 0 3px rgba(232,161,12,.35)}
+#tab-econ .mm-step .n{font-size:22px;font-weight:900;line-height:1}
+#tab-econ .mm-step b{display:block;font-size:14px}#tab-econ .mm-step span{display:block;font-size:13px;margin-top:3px}#tab-econ .mm-step small{display:block;font-size:11.5px;color:#7b8392;margin-top:2px}
+#tab-econ .mm-arrow{align-self:center;font-weight:900;color:#9aa1ab}
+#tab-econ .mm-next{margin:12px 0 0;font-weight:700;font-size:14px}
+#tab-econ .mm-keys{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:12px 0}
+#tab-econ .mm-kc{background:#fff;border:1px solid #e4e7ec;border-radius:14px;padding:14px 16px}
+#tab-econ .mm-kc .t{font-weight:900;font-size:15px}#tab-econ .mm-kc .t small{font-weight:500;color:#7b8392;font-size:11.5px;margin-left:4px}
+#tab-econ .mm-kc .v{font-size:26px;font-weight:900;margin:4px 0}#tab-econ .mm-kc .c{font-size:17px;font-weight:800}#tab-econ .mm-kc .c small{font-size:12.5px;font-weight:600;color:#5b6372;margin-left:6px}
+#tab-econ .mm-kc p{font-size:13px;color:#4b5563;margin:6px 0 4px;line-height:1.55}#tab-econ .mm-kc>small{font-size:12px}
+#tab-econ .mm-read,#tab-econ .mm-ref{margin-top:12px}
+@media (max-width:720px){#tab-econ .mm-steps{flex-direction:column}#tab-econ .mm-arrow{transform:rotate(90deg);align-self:center}#tab-econ .mm-keys{grid-template-columns:1fr}}
+#tab-econ .mm-stage h2{display:block}
+#tab-econ .mm-ref h2,#tab-econ .mm-read .lab{flex-wrap:wrap;row-gap:2px}
+#tab-econ .mm-ref h2 small{flex-basis:100%;margin-left:0}

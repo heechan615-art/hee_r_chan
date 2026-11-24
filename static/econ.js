@@ -762,7 +762,7 @@
     return `<div class="panel ai-gp"><div class="lab">🌡️ AI 리스크 온도계 <small>0 = 안정 · 100 = 위험 — 공포탐욕지수처럼 신호를 점수로 바꾼 것</small></div>
       <div class="ai-gwrap">${aiGauge(G.overall.score, "종합", G.overall.hist, true)}
         <div class="ai-gs">${G.pillars.map(p => aiGauge(p.score, p.name, p.hist)).join("")}</div></div>
-      <p class="muted" style="font-size:12px;margin:8px 0 0">점수 매기는 법: 지표마다 🟡 기준선 = 40점, 🔴 기준선 = 70점이 되게 늘인 뒤 0~100으로 자르고, 칸은 지표 평균(⑤ = TSMC 월매출·D램 현물가·반도체 가동률), 종합은 다섯 칸 평균(같은 무게)이에요. ③ 쏠림은 '3년 중 위치 × 0.45'(+AI 주식이 시장보다 약하면 30). ①은 분기 공시라 1주·1달 전은 지금과 같고 3달 전은 직전 분기예요. 0~20 안정 · 20~40 낮음 · 40~60 주의 · 60~80 경계 · 80~100 위험 — 히르찬의 판단 기준(공식 지표 아님).</p></div>
+      <p class="muted" style="font-size:12px;margin:8px 0 0">점수 매기는 법: 지표마다 🟡 기준선 = 40점, 🔴 기준선 = 70점이 되게 늘인 뒤 0~100으로 자르고, 칸은 지표 평균(⑤ = TSMC 월매출·D램 현물가·서버 메모리 모듈·반도체 가동률), 종합은 다섯 칸 평균(같은 무게)이에요. ③ 쏠림은 '3년 중 위치 × 0.45'(+AI 주식이 시장보다 약하면 30). ①은 분기 공시라 1주·1달 전은 지금과 같고 3달 전은 직전 분기예요. 0~20 안정 · 20~40 낮음 · 40~60 주의 · 60~80 경계 · 80~100 위험 — 히르찬의 판단 기준(공식 지표 아님).</p></div>
       ${aiGaugeTlBox(G)}`;
   }
   // 📈 온도계 타임라인 — ai_gauge.series(5거래일마다 그날 기준으로 다시 계산), 접기 박스 (노트 ai.js에서 옮김)
@@ -922,7 +922,7 @@
     return `<div class="crumb"><a href="#" data-go="h">경제지표 홈</a> › <a href="#" data-go="w">🛰️ AI 위험 추적</a>${cur !== "w" ? ` › ${esc((AIW_TABS.find(t => t[0] === cur) || ["", ""])[1])}` : ""}</div>
       <nav class="aiw-tabs">${AIW_TABS.map(([k, t]) => `<a href="#" data-go="${k}" class="${k === cur ? "on" : ""}">${t}</a>`).join("")}</nav>`;
   }
-  const MEM_COL = {"DDR5 16Gb": "#9b1c31", "DDR4 16Gb": "#1f3a68", "DDR4 8Gb": "#4a7fd4", "NAND 512Gb 웨이퍼": "#2b8a3e"};
+  const MEM_COL = {"DDR5 16Gb": "#9b1c31", "DDR4 16Gb": "#1f3a68", "DDR4 8Gb": "#4a7fd4", "NAND 512Gb 웨이퍼": "#2b8a3e", "서버 모듈 RDIMM 32GB": "#7c3aed", "PC 모듈 UDIMM 16GB": "#e8590c"};
   const KR_COL = {"KR_MFG_CU": "#1f3a68", "KR_MFG_IDX": "#4a7fd4", "KR_SEMI_IDX": "#9b1c31", "KR_SEMI_CAP": "#2b8a3e"};
   const CU_COL = {"CAPUTLG3344S": "#9b1c31", "MCUMFN": "#1f3a68", "TCU": "#9aa1ab"};
   const pc = (v, u = "%") => v == null ? "-" : `<span class="${v < 0 ? "sp-dn" : v > 0 ? "sp-up" : ""}">${v > 0 ? "+" : ""}${v}${u}</span>`;
@@ -963,8 +963,9 @@
           ${yldMini(s, ["BB", "B", "CCC"])}${s.yields ? `<div class="chartbox aiw-yc"><h3>💵 BB·B·CCC 실제 금리 — 최근 1년 (%)</h3><div class="cv" style="height:230px"><canvas id="aiw-yc"></canvas></div><div class="src">CCC는 수준이 높아 오른쪽 축 · BBB·하이일드 전체와 더 긴 기간은 신용 스프레드 화면에서</div></div>` : ""}
           ${ustMini(s)}${s.ust ? `<div class="chartbox aiw-yc"><h3>🇺🇸 미국 국채 2년·10년 — 최근 1년 (%)</h3><div class="cv" style="height:230px"><canvas id="aiw-uc"></canvas></div><div class="src">점선 = 10년 − 2년(오른쪽 축) · 국채가 내리는데 회사채 금리가 오르면 신용 걱정 때문</div></div>` : ""}</div>` : ""}
         ${m ? `<div class="panel"><h2 style="margin:0 0 8px">💾 메모리 가격 <small>현물가 세션 평균</small></h2>
-          <div class="sp-head"><span>${m.signals.filter(x => x.key === "mem").map(x => `${(AI_LV[x.level] || ["⚪"])[0]} ${esc(x.name)} ${pc(x.value)}`).join("")}</span><a href="#" data-go="m">그래프·전체 보기 →</a></div>${m.mem.read ? `<p class="aiw-one">🧭 ${esc(m.mem.read.head)}</p>` : ""}
-          <div class="sp-mini">${m.mem.items.map(x => `<div><small>${esc(x.short)}</small><b>$${x.last}</b><span>3달 ${pc(x.chg_3m)}</span><i>1년 ${x.chg_1y == null ? "-" : (x.chg_1y > 0 ? "+" : "") + x.chg_1y + "%"}</i></div>`).join("")}</div></div>
+          <div class="sp-head"><span>${m.signals.filter(x => x.key === "mem" || x.key === "mod").map(x => `${(AI_LV[x.level] || ["⚪"])[0]} ${esc(x.name)} ${pc(x.value)}`).join(" · ")}</span><a href="#" data-go="m">그래프·전체 보기 →</a></div>${m.mem.stage ? `<p class="aiw-one">🧭 지금 ${esc(m.mem.stage.head)} — ${esc(m.mem.stage.text)}</p>` : m.mem.read ? `<p class="aiw-one">🧭 ${esc(m.mem.read.head)}</p>` : ""}
+          <div class="sp-mini">${m.mem.items.filter(x => x.short === "DDR5 16Gb" || x.short.startsWith("서버 모듈")).map(x => `<div><small>${x.short === "DDR5 16Gb" ? "🔹 DDR5 칩" : "🔸 서버 모듈"}</small><b>$${x.last.toLocaleString("en-US")}</b><span>1달 ${pc(x.chg_1m)}</span><i>3달 ${pc(x.chg_3m)}</i></div>`).join("")}</div>
+          <p class="muted" style="font-size:12px;margin:6px 0 0">DDR4·PC 모듈·낸드는 메모리 화면 '참고 품목'에</p></div>
         <div class="panel"><h2 style="margin:0 0 8px">🏭 공장 가동률 <small>미국·한국 · 미국 ${esc(m.cu.items[0].date.slice(0, 7))}</small></h2>
           <div class="sp-head"><span>${m.signals.filter(x => x.key === "cu").map(x => `${(AI_LV[x.level] || ["⚪"])[0]} ${esc(x.name)} ${pc(x.value, "%p")}`).join("")}</span><a href="#" data-go="c">그래프·전체 보기 →</a></div>${m.cu.read ? `<p class="aiw-one">🧭 ${esc(m.cu.read.head)}</p>` : ""}
           <div class="sp-mini">${m.cu.items.map(x => `<div><small>🇺🇸 ${esc(x.short)}</small><b>${x.last}%</b><span>6달 ${pc(x.chg_6m, "%p")}</span><i>2000년 이후 평균 ${x.avg_2000}%</i></div>`).join("")}${((m.cu.kr || {}).items || []).filter(x => x.id === "KR_SEMI_IDX" || x.id === "KR_MFG_CU").map(x => `<div><small>🇰🇷 ${esc(x.id === "KR_SEMI_IDX" ? "반도체 지수(3달 평균)" : "제조업")}</small><b>${x.unit === "%" ? x.last + "%" : x.avg3}</b><span>${x.unit === "%" ? "1년 전 같은 달 " + (x.yoy_month > 0 ? "+" : "") + x.yoy_month + "%p" : "직전 3달 " + (x.chg_3m > 0 ? "+" : "") + x.chg_3m + "%"}</span><i>2000년 이후 평균 ${x.avg_2000}${x.unit === "%" ? "%" : ""}</i></div>`).join("")}</div></div>` : ""}
@@ -983,6 +984,7 @@
           "지난 3년 기준점: 2024년 8월 엔캐리 청산 1.12, 2025년 4월 관세 충격 1.58 — 오른쪽 축 눈금이 좁아 그래프에선 작은 움직임도 크게 보이니 숫자(%p)로 확인해요."],
     mem: ["현물가는 그날그날 거래값이라 회사 간 계약가보다 1~2분기 먼저 움직여요. 그래서 메모리 회사 실적의 '예고편'이에요.",
           "주력 DDR5 = AI 서버·최신 PC에 들어가는 D램. 이게 오르면 AI 수요가 아직 뜨겁다는 뜻이에요.",
+          "서버 모듈(DDR5 RDIMM 32GB) = 16Gb 칩 16개에 제어 칩을 붙인 서버용 완제품. 값엔 칩값 위에 품귀 웃돈이 붙어 있어 수요가 식으면 칩보다 먼저·크게 빠져요 — 칩은 오르는데 모듈이 빠지면 '웃돈부터 빠지는 중'.",
           "구형 DDR4 = 회사들이 생산을 줄이는 이전 세대. 공급이 줄어 값이 튀기도 해서 수요보다 '공급 사정'이 많이 섞여 있어요.",
           "낸드 웨이퍼 = 저장장치(SSD) 재료. D램보다 값이 크게 출렁여요.",
           "3달 변화로 방향을, 1달 변화로 속도를 봐요. 오르는 속도가 줄다가 1달이 마이너스로 바뀌면 꺾이는 신호예요."],
@@ -1003,36 +1005,85 @@
   }
 
   let MEM_RANGE = "1y";
+  // 💾 메모리 화면 — 맨 위 '지금 어디쯤?'(①→②→③) + 핵심 두 개(DDR5 칩·서버 모듈), 나머지는 접어 둠
+  function memStageBox(st){
+    if(!st) return "";
+    const [ic, cls] = AI_LV[st.level] || ["⚪", ""];
+    return `<div class="panel mm-stage ${cls}"><div class="lab">🧭 지금 어디쯤? <small>AI 서버 메모리 과열이 식는 순서 ① → ② → ③ (히르찬 기준)</small></div>
+      <h2>${ic} 지금 <b>${esc(st.head)}</b> — ${esc(st.text)}</h2>
+      <div class="mm-steps">${st.steps.map((x, i) => `<div class="mm-step ${x.done ? "done" : ""} ${i === st.step - 1 ? "cur" : ""}"><div class="n">${x.n}</div><div><b>${esc(x.title)}</b><span>${x.done ? "✅ 지났어요" : "⏳ 아직"} · ${esc(x.now)}</span><small>기준: ${esc(x.rule)}</small></div></div>`).join('<div class="mm-arrow">→</div>')}</div>
+      <p class="mm-next">👀 ${esc(st.next)}</p></div>`;
+  }
+  function memKeyCard(x, kind, sig){
+    if(!x) return "";
+    const [ic] = sig ? (AI_LV[sig.level] || ["⚪"]) : ["⚪"];
+    const what = kind === "chip" ? "메모리 '부품'(칩 1개, 2GB) · 메모리 회사가 실제로 받는 값 → 실적과 직결" : "AI·데이터센터 서버용 '완제품'(칩 16개) · 품귀 웃돈이 붙어 있어 가장 먼저 움직임";
+    const rule = kind === "chip" ? "1달이 마이너스로 돌면 ③ 단계" : "1달 −5% 아래 🟡 · −15% 아래 🔴";
+    return `<div class="mm-kc"><div class="t">${kind === "chip" ? "🔹 DDR5 칩" : "🔸 서버 모듈"} <small>${esc(x.name)}</small></div>
+      <div class="v">$${x.last.toLocaleString("en-US")}</div>
+      <div class="c">1달 ${pc(x.chg_1m)} <small>3달 ${pc(x.chg_3m)} · 최고 대비 ${pc(x.from_hi)}</small></div>
+      <p>${what}</p><small class="muted">지금 신호 ${ic} · 기준: ${rule} · ${esc(x.date)} 기준(${kind === "chip" ? "매일" : "주 1회"})</small></div>`;
+  }
+  function memFoldOpen(k){ try{ return localStorage.getItem("econ:fold:" + k) === "1"; }catch(e){ return false; } }   // 처음엔 접힘
   function memPage(){
     const j = (B.ai_risk || {}).semis || {error: "아직 받은 자료가 없어요."};
     if(j.error){ root().innerHTML = aiwNav("m") + `<p>${esc(j.error)}</p>`; return; }
-    const M = j.mem, I = M.items, H = M.hist, last = Object.keys(H).sort().pop();
+    const M = j.mem, I = M.items, H = M.hist, last = Object.keys(H).sort().pop(), R = M.read;
+    const d5 = I.find(x => x.short === "DDR5 16Gb"), rd = I.find(x => x.short.startsWith("서버 모듈")), ud = I.find(x => x.short.startsWith("PC 모듈"));
+    const sig = k => j.signals.find(x => x.key === k);
     root().innerHTML = `${aiwNav("m")}<h1 style="margin-bottom:4px">💾 메모리 가격</h1>
-      <p class="muted" style="margin:0 0 14px">D램·낸드 현물가(대리점·유통 시장에서 그날 거래되는 값, 달러)예요. AI 서버가 고대역폭 메모리(HBM)와 서버용 D램을 빨아들이면 일반 메모리 생산이 줄어 값이 오르고, 수요가 식으면 현물가가 계약가보다 먼저 빠져요 — 그래서 AI 수요의 가장 빠른 체온계예요.</p>
-      ${aiwRead(M.read, "mem")}<div class="panel">${aiwSigs(j.signals.filter(x => x.key === "mem"))}</div>
-      <div class="panel"><div style="overflow-x:auto"><table class="hist"><thead><tr><th>품목</th><th>지금($)</th><th>1주</th><th>1달</th><th>3달</th><th>1년</th><th>기록 중 최고 대비</th><th>기준일</th></tr></thead><tbody>
-        ${I.map(x => `<tr><td style="text-align:left"><b style="color:${MEM_COL[x.short]}">●</b> ${esc(x.short)} <small class="muted">${esc(x.why)}</small></td><td><b>${x.last}</b></td><td>${pc(x.chg_1w)}</td><td>${pc(x.chg_1m)}</td><td>${pc(x.chg_3m)}</td><td>${pc(x.chg_1y)}</td><td>${pc(x.from_hi)}</td><td>${esc(x.date)}</td></tr>`).join("")}
-        </tbody></table></div>
-        <p class="muted" style="font-size:12.5px;margin:8px 0 0">D램은 매일, 낸드 웨이퍼는 주 1회 갱신. 과거 값은 웹 아카이브에 남은 DRAMeXchange 화면 사본(대략 주 1개)으로 채워서 1주·1달 변화는 기록 간격만큼 오차가 있어요. 앞으로는 매일 쌓여요.</p></div>
+      <p class="muted" style="margin:0 0 14px">AI 수요의 가장 빠른 체온계예요. <b>두 개만 보면 돼요 — DDR5 칩(부품)과 서버 모듈(완제품).</b> 서버 모듈 값엔 품귀 웃돈이 붙어 있어서, AI 서버 수요가 식으면 ① 서버 모듈 웃돈이 먼저 빠지고 → ② 칩 값 오르는 속도가 멈추고 → ③ 칩 값도 내려요.</p>
+      ${memStageBox(M.stage)}
+      <div class="mm-keys">${memKeyCard(rd, "module", sig("mod"))}${memKeyCard(d5, "chip", sig("mem"))}</div>
       <div class="sp-bar"><span>기간</span>${[["3m", "3개월"], ["1y", "1년"], ["all", "전체"]].map(([k, t]) => `<button type="button" data-r="${k}" class="${MEM_RANGE === k ? "on" : ""}">${t}</button>`).join("")}
         <span style="margin-left:auto" class="muted">${esc(M.source)} · 받은 시각 ${esc(j.made)}</span></div>
-      <div class="chartbox"><h3>D램 현물가 ($, 세션 평균)</h3><div class="cv" style="height:300px"><canvas id="mm-c1"></canvas></div><div class="src">DDR5 16Gb 4800/5600 · DDR4 16Gb 3200 · DDR4 8Gb 3200 (예전 기록은 같은 용량의 2666 속도 품목으로 이어 붙임)</div></div>
-      <div class="sp-two"><div class="chartbox"><h3>낸드 웨이퍼 현물가 ($)</h3><div class="cv"><canvas id="mm-c2"></canvas></div><div class="src">512Gb·256Gb TLC 웨이퍼</div></div>
-        <div class="chartbox"><h3>D램 3개월 변화율 (%)</h3><div class="cv"><canvas id="mm-c3"></canvas></div><div class="src">0 아래로 내려가면 ⑤ 수요 확인 🟡, −15% 아래면 🔴</div></div></div>
-      <details class="panel" style="margin-top:12px"><summary><b>📋 ${esc(last)} 받은 전체 품목</b></summary><table class="hist">${Object.entries(H[last] || {}).map(([k, v]) => `<tr><td style="text-align:left">${esc(k)}</td><td>$${v}</td></tr>`).join("")}</table></details>`;
+      <div class="sp-two"><div class="chartbox"><h3>칩 vs 서버 모듈 — 같은 날 = 100</h3><div class="cv"><canvas id="mm-c5"></canvas></div><div class="src">모듈 선이 칩 선보다 먼저 꺾이면 품귀 웃돈이 빠지는 중 · 1년 전(기록이 그보다 짧으면 둘 다 기록이 있는 첫날) = 100</div></div>
+        <div class="chartbox"><h3>1달 변화율 — 칩·서버 모듈 (%)</h3><div class="cv"><canvas id="mm-c6"></canvas></div><div class="src">점선: 0%(칩이 아래로 가면 ③) · −5%(서버 모듈 🟡·①) · −15%(서버 모듈 🔴)</div></div></div>
+      ${R ? `<details class="panel fold ai-narr mm-read" data-fold="memread"${memFoldOpen("memread") ? " open" : ""}><summary><div><div class="lab">🧭 자세한 해석 <small>DDR4·낸드까지 포함 · 숫자가 바뀌면 문장도 규칙대로 다시 써져요</small></div><h2 style="margin:4px 0 0">${(AI_LV[R.level] || ["⚪"])[0]} ${esc(R.head)}</h2></div></summary>
+        ${R.paras.map(x => `<p>${esc(x)}</p>`).join("")}<p style="margin-top:10px"><b>👀 앞으로 볼 것</b></p><ul class="aiw-watch">${R.watch.map(w => `<li>${esc(w)}</li>`).join("")}</ul>
+        <details class="aiw-how"><summary>📖 이 화면 읽는 법</summary><ul>${AIW_HOW.mem.map(w => `<li>${esc(w)}</li>`).join("")}</ul></details></details>` : ""}
+      <details class="panel fold mm-ref" data-fold="memref"${memFoldOpen("memref") ? " open" : ""}><summary><h2 style="margin:0">📦 참고 품목·그래프 <small>DDR4 칩·PC 모듈·낸드 — 안 봐도 돼요(공급 사정이 많이 섞인 숫자)</small></h2></summary>
+        <p class="muted" style="font-size:13px;margin:0 0 8px">DDR4는 한 세대 전 칩이라 회사들이 덜 만들면서 값이 튀고 빠져요 — AI 수요보다 '공급 사정'. PC 모듈은 일반 소비자 쪽 기준선, 낸드는 저장장치(SSD) 재료예요.</p>
+        ${aiwSigs(j.signals.filter(x => x.key === "mem" || x.key === "mod"))}
+        <div style="overflow-x:auto"><table class="hist"><thead><tr><th>품목</th><th>지금($)</th><th>1주</th><th>1달</th><th>3달</th><th>1년</th><th>기록 중 최고 대비</th><th>기준일</th></tr></thead><tbody>
+          ${I.map(x => `<tr><td style="text-align:left"><b style="color:${MEM_COL[x.short]}">●</b> ${esc(x.short)} <small class="muted">${esc(x.why)}</small></td><td><b>${x.last}</b></td><td>${pc(x.chg_1w)}</td><td>${pc(x.chg_1m)}</td><td>${pc(x.chg_3m)}</td><td>${pc(x.chg_1y)}</td><td>${pc(x.from_hi)}</td><td>${esc(x.date)}</td></tr>`).join("")}
+        </tbody></table></div>
+        <p class="muted" style="font-size:12.5px;margin:8px 0 0">D램 칩은 매일, 모듈·낸드 웨이퍼는 주 1회 갱신. 칩(16Gb = 2GB) 값과 모듈(완제품, 32GB = 16Gb 칩 16개) 값은 단위가 달라요. 과거 값은 웹 아카이브에 남은 DRAMeXchange 화면 사본(대략 주 1개)으로 채워서 1주·1달 변화는 기록 간격만큼 오차가 있어요.</p>
+        <div class="chartbox" style="margin-top:12px"><h3>D램 칩 현물가 ($, 세션 평균)</h3><div class="cv" style="height:280px"><canvas id="mm-c1"></canvas></div><div class="src">DDR5 16Gb 4800/5600 · DDR4 16Gb 3200 · DDR4 8Gb 3200 (예전 기록은 같은 용량의 2666 속도 품목으로 이어 붙임)</div></div>
+        <div class="sp-two"><div class="chartbox"><h3>D램 모듈 현물가 ($, 주 1회)</h3><div class="cv"><canvas id="mm-c4"></canvas></div><div class="src">서버 RDIMM 32GB(왼쪽 축) · PC UDIMM 16GB(오른쪽 축), DDR5 4800/5600</div></div>
+          <div class="chartbox"><h3>D램 칩 3개월 변화율 (%)</h3><div class="cv"><canvas id="mm-c3"></canvas></div><div class="src">DDR5 칩 3개월이 0 아래면 ⑤ 수요 확인 🟡, −15% 아래면 🔴</div></div></div>
+        <div class="chartbox" style="margin-top:12px"><h3>낸드 웨이퍼 현물가 ($)</h3><div class="cv"><canvas id="mm-c2"></canvas></div><div class="src">512Gb·256Gb TLC 웨이퍼</div></div>
+        <details style="margin-top:12px"><summary><b>📋 ${esc(last)} 받은 전체 품목</b></summary><table class="hist">${Object.entries(H[last] || {}).map(([k, v]) => `<tr><td style="text-align:left">${esc(k)}</td><td>$${v}</td></tr>`).join("")}</table></details></details>`;
     bindNav();
     const days = {"3m": 92, "1y": 366, "all": 99999}[MEM_RANGE];
     const cut = new Date(Date.now() - days * 864e5).toISOString().slice(0, 10);
     const dates = Object.keys(H).sort().filter(d => d >= cut);
     const ser = x => ({label: x.short, color: MEM_COL[x.short], data: Object.fromEntries(dates.map(d => [d, x.series[d] ?? null]))});
-    const lc = (id, sets, unit, refs) => { const el = document.getElementById(id); const c = aiwLC(el, dates, sets, null, unit, refs); c.data.labels = dates; c.options.elements = {point: {radius: dates.length < 60 ? 2 : 0}}; c.update(); charts.push(c); };
+    const lc = (id, sets, unit, refs, ds) => { const el = document.getElementById(id); if(!el) return; const L = ds || dates, c = aiwLC(el, L, sets, null, unit, refs); c.data.labels = L; c.options.elements = {point: {radius: L.length < 60 ? 2 : 0}}; c.update(); charts.push(c); return c; };
+    const chgN = (S, n) => { const all = Object.keys(S).sort(); return Object.fromEntries(dates.map(d => {   // n일 전(3주 안의 가장 가까운 기록) 대비 %
+      const c0 = new Date(new Date(d).getTime() - n * 864e5).toISOString().slice(0, 10), prev = all.filter(k => k <= c0).pop();
+      return [d, prev && S[d] != null && (new Date(c0) - new Date(prev)) / 864e5 <= 21 ? +((S[d] / S[prev] - 1) * 100).toFixed(1) : null]; })); };
+    // 핵심 그래프
+    if(rd && d5){
+      const md = dates.filter(d => rd.series[d] != null || (ud && ud.series[d] != null));   // 모듈은 주 1회라 값 있는 날만
+      const yr = new Date(Date.now() - 365 * 864e5).toISOString().slice(0, 10), from = [yr, Object.keys(rd.series).sort()[0], Object.keys(d5.series).sort()[0]].sort().pop();   // 둘 다 기록 있는 첫날 = 100
+      const base = S => { const k = Object.keys(S).sort().filter(d => d >= from)[0]; return k ? S[k] : null; };
+      const idx = x => { const b = base(x.series); return Object.fromEntries(md.map(d => [d, x.series[d] != null && b ? +(x.series[d] / b * 100).toFixed(1) : null])); };
+      lc("mm-c5", [{label: "DDR5 칩", color: MEM_COL["DDR5 16Gb"], data: idx(d5)}, {label: "서버 모듈", color: MEM_COL[rd.short], data: idx(rd)}], "", null, md.filter(d => d >= from));
+      const cc = chgN(d5.series, 30), mc = chgN(rd.series, 30), dd = dates.filter(d => d >= from && (cc[d] != null || mc[d] != null));
+      lc("mm-c6", [{label: "DDR5 칩 1달", color: MEM_COL["DDR5 16Gb"], data: cc}, {label: "서버 모듈 1달", color: MEM_COL[rd.short], data: mc}], "%", [{value: 0, label: "0%"}, {value: -5, label: "−5%"}, {value: -15, label: "−15%"}], dd);
+      if(document.getElementById("mm-c4")){
+        const c = lc("mm-c4", [{label: rd.short, color: MEM_COL[rd.short], data: rd.series}], "", null, md);
+        if(c && ud){ c.data.datasets.push({label: ud.short + " (오른쪽 축)", data: md.map(d => ud.series[d] ?? null), borderColor: MEM_COL[ud.short], backgroundColor: MEM_COL[ud.short], borderWidth: 2, pointRadius: 2, spanGaps: true, tension: .25, yAxisID: "y2"});
+          c.options.scales.y2 = {position: "right", grid: {display: false}}; c.update(); }
+      }
+    }
+    // 참고 그래프
     const D = I.filter(x => x.short.startsWith("DDR"));
     lc("mm-c1", D.map(ser), "");
     lc("mm-c2", [...I.filter(x => x.short.startsWith("NAND")).map(ser), {label: "256Gb TLC", color: "#82c91e", data: Object.fromEntries(dates.map(d => [d, H[d]["256Gb TLC"] ?? null]))}], "");
-    const chg3 = S => { const all = Object.keys(S).sort(); return Object.fromEntries(dates.map(d => {
-      const cut3 = new Date(new Date(d).getTime() - 91 * 864e5).toISOString().slice(0, 10), prev = all.filter(k => k <= cut3).pop();
-      return [d, prev && S[d] != null && (new Date(cut3) - new Date(prev)) / 864e5 <= 21 ? +((S[d] / S[prev] - 1) * 100).toFixed(1) : null]; })); };
-    lc("mm-c3", D.map(x => ({label: x.short, color: MEM_COL[x.short], data: chg3(x.series)})), "%", [{value: 0, label: "0%"}, {value: -15, label: "−15%"}]);
+    lc("mm-c3", D.map(x => ({label: x.short, color: MEM_COL[x.short], data: chgN(x.series, 91)})), "%", [{value: 0, label: "0%"}, {value: -15, label: "−15%"}]);
+    root().querySelectorAll("details.fold[data-fold]").forEach(d => d.addEventListener("toggle", () => { try{ localStorage.setItem("econ:fold:" + d.dataset.fold, d.open ? "1" : "0"); }catch(e){} }));
     root().querySelectorAll("[data-r]").forEach(b => b.onclick = () => { MEM_RANGE = b.dataset.r; destroy(); memPage(); addNav(); });
   }
 
