@@ -207,6 +207,7 @@
     if(d.cyclical) warn.push("경기에 따라 이익이 크게 출렁이는 회사(시클리컬)라 한 해 숫자 대신 사이클 평균을 기본으로 썼어요. 호황 꼭대기 이익으로 계산하면 크게 부풀어요.");
     if(base && base.tvShare > 75) warn.push(`DCF 가치의 ${Math.round(base.tvShare)}%가 10년 뒤 잔존가치예요 — 먼 미래 가정에 많이 기대고 있어요.`);
     if(a.mode === "est") warn.push("앞쪽 몇 해는 증권사 컨센서스 추정 잉여현금흐름을 그대로 썼어요. 추정이 틀리면 가치도 같이 달라져요.");
+    if(d.net_debt_ps == null && !d.is_fin) warn.push("부채·현금 자료를 받지 못해 순부채를 0으로 두고 계산했어요(현금이 많은 회사는 DCF가 조금 낮게 나와요).");
     if(d.fin_fx) warn.push(`재무제표 통화가 주가 통화와 달라 환율(${d.fin_fx.toFixed(3)})로 바꿔 계산했어요.`);
     return {paras: P1, warn};
   }

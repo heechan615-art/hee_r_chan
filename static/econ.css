@@ -323,3 +323,26 @@ html.is-mobile #tab-econ .ec-nav button{flex:1;justify-content:center;padding:11
 #tab-econ .aiw-one{margin:0 0 8px;font-size:13.5px;font-weight:700;color:#5c4a1f}
 #tab-econ .oas-help summary{cursor:pointer;font-weight:800;font-size:15px} #tab-econ .oas-help summary small{font-weight:500;color:#7b8392;margin-left:6px;font-size:12.5px}
 #tab-econ .oas-help[open] summary{margin-bottom:8px} #tab-econ .oas-help p{font-size:14px;line-height:1.75;margin:0 0 8px} #tab-econ .oas-help ol{margin:4px 0 0;padding-left:20px;font-size:14px;line-height:1.75}
+/* 📈 온도계 타임라인 · 접기 박스 (econ.js fedTimeline) */
+#tab-econ .fg-top{display:flex;justify-content:flex-end}
+#tab-econ .fg-pick{font-size:12.5px;font-weight:700;color:#5b6372;display:flex;align-items:center;gap:6px}
+#tab-econ .fg-pick select{border:1px solid #d5dbe4;border-radius:8px;padding:4px 8px;font:inherit;font-size:13px;background:#fff;max-width:180px}
+#tab-econ .fg-svgw{overflow-x:auto;margin-top:8px}
+#tab-econ .fg-svg{width:100%;min-width:600px;height:auto;display:block}
+#tab-econ .fg-leg{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12px;color:#5b6372;margin-top:6px}
+#tab-econ .fg-leg i{display:inline-block;width:16px;height:3px;border-radius:2px;vertical-align:3px;margin-right:5px}
+#tab-econ .fg-leg i.pk{background:#7048e8}
+#tab-econ .fg-evs{margin-top:10px;border-top:1px solid #eceef2;padding-top:8px}
+#tab-econ .fg-evs summary{cursor:pointer;font-weight:800;font-size:14px}
+#tab-econ .fg-ev{border-bottom:1px dashed #eceef2;padding:8px 2px}
+#tab-econ .fg-evh{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 10px;font-size:13.5px}
+#tab-econ .fg-val{font-weight:900;font-size:15px}
+#tab-econ .fg-evp{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 8px;font-size:13px;padding:3px 0 3px 14px}
+#tab-econ .fg-evp small{flex-basis:100%;color:#7b8392;font-size:12px}
+#tab-econ .fg-vt{font-size:11px;color:#2b8a3e;border:1px solid #2b8a3e;border-radius:6px;padding:0 4px}
+#tab-econ .fg-sp{font-size:12px;margin-left:auto}
+#tab-econ details.fold>summary{list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:8px;user-select:none}
+#tab-econ details.fold>summary::-webkit-details-marker{display:none}
+#tab-econ details.fold>summary::after{content:"접기 ▴";font-size:12.5px;font-weight:800;color:#7b8392;white-space:nowrap}
+#tab-econ details.fold:not([open])>summary::after{content:"펼치기 ▾"}
+#tab-econ details.fold[open]>summary{margin-bottom:12px}

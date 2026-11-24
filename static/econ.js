@@ -427,11 +427,74 @@
       <p class="muted" style="font-size:12px;margin:8px 0 0">계산법: 발언을 정리한 인사의 지금 위치 점수(1 매파 ~ 100 비둘기)를 가중 평균 — 의장 ×3 · 2026년 투표권자 ×2 · 그 외 ×1. 지난 값은 그날까지 나온 마지막 점수로 다시 계산(5명 미만이면 '-'). 1~15 강한 매파 · 16~30 매파 · 31~45 약한 매파 · 46~54 중립 · 55~69 약한 비둘기 · 70~85 비둘기 · 86~100 강한 비둘기 — 히르찬의 판단 기준(공식 지표 아님).</p></div>`;
   }
 
+  // 📂 접기 상태는 브라우저에 기억(처음엔 펼침)
+  function foldOpen(k){ try{ return localStorage.getItem("econ:fold:" + k) !== "0"; }catch(e){ return true; } }
+  // 📈 종합 온도계 타임라인: 발언이 있던 날마다 그날까지의 마지막 점수로 종합·투표권자·전체 평균을 다시 계산
+  function fgAvgAt(P, day, f){   // 단순 평균(f로 거른 인사만)
+  const L = P.filter(f || (() => true)).map(p => { const h = (p.history || []).filter(x => x.score != null && x.date <= day); return h.length ? h[h.length - 1].score : null; }).filter(v => v != null);
+  return L.length ? L.reduce((a, b) => a + b, 0) / L.length : null;
+}
+  function fgSeries(P){
+  const days = [...new Set(P.flatMap(p => (p.history || []).filter(x => x.score != null).map(x => x.date)))].sort();
+  let prev = null;
+  return days.map(d => {
+    const w = (() => { let s = 0, ww = 0, n = 0; P.forEach(p => { const h = (p.history || []).filter(x => x.score != null && x.date <= d); if(!h.length) return; s += h[h.length - 1].score * fgW(p); ww += fgW(p); n++; }); return n ? {score: s / ww, n} : null; })();
+    const ev = []; P.forEach(p => { const h = (p.history || []).filter(x => x.score != null); h.forEach((x, i) => { if(x.date !== d) return;
+      const b = i ? h[i - 1].score : null; ev.push({p, from: b, to: x.score, speech: x.speech, why: x.why}); }); });
+    const r = {d, all: w && w.score, n: w ? w.n : 0, ok: w && w.n >= 5, voter: fgAvgAt(P, d, p => p.voter), simple: fgAvgAt(P, d), ev, dd: prev && w ? w.score - prev : null};
+    prev = w ? w.score : prev; return r;
+  });
+}
+  let FG_PICK = "";
+  function fedTimeline(P){
+  const S = fgSeries(P); if(S.filter(x => x.ok).length < 2) return "";
+  return `<details class="panel fold fg-tl" data-fold="fedtl"${foldOpen("fedtl") ? " open" : ""}><summary><h2 style="margin:0">📈 온도계 타임라인 <small>발언이 나온 날마다 다시 계산 · 위로 갈수록 🕊️ 비둘기, 아래로 갈수록 🦅 매파</small></h2></summary>
+      <div class="fg-top"><label class="fg-pick">인사 겹쳐 보기 <select id="fgpick"><option value="">없음</option>${P.filter(p => p.score != null).sort((a, b) => a.score - b.score).map(p => `<option value="${esc(p.id)}"${FG_PICK === p.id ? " selected" : ""}>${esc(p.name)} (${p.score})</option>`).join("")}</select></label></div>
+    <div class="fg-svgw" id="fgsvg">${fgChart(P, S)}</div>
+    <div class="fg-leg"><span><i style="background:#1d2433"></i>종합(의장 ×3 · 투표권 ×2)</span><span><i style="background:#2b8a3e"></i>투표권자 평균</span><span><i style="background:#9aa1ab"></i>전체 단순 평균</span><span><i class="pk"></i>고른 인사</span><span class="muted">반영 인사 5명이 모인 날부터 그림(앞의 날은 아래 목록에 참고로)</span></div>
+    <details class="fg-evs"><summary>🗓️ 날짜별로 누가 움직였나 <small class="muted">${S.length}일 · 최신 순</small></summary>${S.slice().reverse().map(fgEvRow).join("")}</details></details>`;
+}
+  function fgEvRow(x){
+  const dd = x.dd == null ? "" : Math.abs(x.dd) < 0.5 ? `<span class="fd keep">종합 거의 그대로</span>` : `<span class="fd ${x.dd < 0 ? "hawk" : "dove"}">종합 ${x.dd < 0 ? "🦅 매파 쪽으로" : "🕊️ 비둘기 쪽으로"} ${Math.abs(x.dd).toFixed(1)}</span>`;
+  return `<div class="fg-ev"><div class="fg-evh"><b>${esc(x.d)}</b><span class="fg-val" style="color:${fedColor(x.all)}">${x.all == null ? "-" : Math.round(x.all)}${x.ok ? "" : " <small>(참고)</small>"}</span>${dd}<small class="muted">${x.n}명 반영</small></div>
+    ${x.ev.map(e => `<div class="fg-evp"><a href="#" data-go="fp:${esc(e.p.id)}">${esc(e.p.name)}</a>${e.p.voter ? `<span class="fg-vt">투표권</span>` : ""}
+      <span>${e.from == null ? `처음 <b style="color:${fedColor(e.to)}">${e.to}</b>` : `${e.from} → <b style="color:${fedColor(e.to)}">${e.to}</b>`}</span>
+      ${e.from == null ? `<span class="fd keep">새로 들어옴</span>` : e.to === e.from ? `<span class="fd keep">같음</span>` : `<span class="fd ${e.to < e.from ? "hawk" : "dove"}">${e.to < e.from ? "🦅" : "🕊️"} ${Math.abs(e.to - e.from)}</span>`}
+      ${e.speech ? `<a class="fg-sp" href="#" data-go="fs:${esc(e.speech)}">발언 →</a>` : ""}${e.why ? `<small>${esc(e.why)}</small>` : ""}</div>`).join("")}</div>`;
+}
+  function fgChart(P, S){
+  const i0 = Math.max(0, S.findIndex(x => x.ok)); S = S.slice(i0);   // 5명 이상 모인 날부터 그림(앞 구간은 아래 목록에만)
+  const W = 760, H = 280, L = 40, R = 16, T = 14, B = 30;
+  const t = d => Date.parse(d + "T00:00:00Z"), t0 = t(S[0].d), t1 = Math.max(t(S[S.length - 1].d), t0 + 864e5);
+  const pk = P.find(p => p.id === FG_PICK), pkA = pk ? (pk.history || []).filter(x => x.score != null) : [], pkB = pkA.filter(x => x.date < S[0].d).pop();
+  const pkH = pkA.filter(x => x.date >= S[0].d); if(pkB && !(pkH[0] && pkH[0].date === S[0].d)) pkH.unshift({...pkB, date: S[0].d});   // 앞 구간의 마지막 점수를 첫날로 이어 붙임
+  const vals = S.flatMap(x => [x.all, x.voter, x.simple]).concat(pkH.map(x => x.score)).filter(v => v != null);
+  const lo = Math.max(1, Math.floor((Math.min(...vals) - 5) / 10) * 10), hi = Math.min(100, Math.max(55, Math.ceil((Math.max(...vals) + 5) / 10) * 10));
+  const X = d => L + (t(d) - t0) / (t1 - t0) * (W - L - R), Y = v => T + (hi - v) / (hi - lo) * (H - T - B);
+  const bands = FG_BANDS.map(([a, b, c]) => { const y1 = Y(Math.min(b, hi)), y2 = Y(Math.max(a, lo)); return y2 > y1 ? `<rect x="${L}" y="${y1.toFixed(1)}" width="${W - L - R}" height="${(y2 - y1).toFixed(1)}" fill="${c}" opacity=".13"/>` : ""; }).join("");
+  const gy = []; for(let v = Math.ceil(lo / 10) * 10; v <= hi; v += 10) gy.push(`<line x1="${L}" x2="${W - R}" y1="${Y(v).toFixed(1)}" y2="${Y(v).toFixed(1)}" stroke="#e3e6eb"${v === 50 ? ` stroke-dasharray="4 3" stroke="#9aa1ab"` : ""}/><text x="${L - 6}" y="${(Y(v) + 4).toFixed(1)}" font-size="11" fill="#9aa1ab" text-anchor="end">${v}</text>`);
+  const gx = []; const dt = (t1 - t0) / 864e5, step = dt > 120 ? 30 : dt > 40 ? 7 : dt > 14 ? 3 : 1;
+  for(let x = t0; x <= t1 + 1; x += step * 864e5){ const d = new Date(x).toISOString().slice(0, 10), xx = X(d); gx.push(`<line x1="${xx.toFixed(1)}" x2="${xx.toFixed(1)}" y1="${T}" y2="${H - B}" stroke="#f0f2f5"/><text x="${xx.toFixed(1)}" y="${H - B + 16}" font-size="11" fill="#9aa1ab" text-anchor="middle">${+d.slice(5, 7)}/${+d.slice(8)}</text>`); }
+  const step2 = (pts) => pts.map((p, i) => i ? `H${p[0].toFixed(1)}V${p[1].toFixed(1)}` : `M${p[0].toFixed(1)} ${p[1].toFixed(1)}`).join("");   // 계단(다음 발언 전까지 그대로)
+  const line = (k, col, wd, dash) => { const all = S.filter(x => x[k] != null), ok = all.filter(x => x.ok);
+    const a = all.length ? `<path d="${step2(all.map(x => [X(x.d), Y(x[k])]))}" stroke="${col}" stroke-width="${wd}" fill="none" opacity=".3"${dash ? ` stroke-dasharray="${dash}"` : ""}/>` : "";
+    const b = ok.length ? `<path d="${step2(ok.map(x => [X(x.d), Y(x[k])]))}" stroke="${col}" stroke-width="${wd}" fill="none"${dash ? ` stroke-dasharray="${dash}"` : ""}/>` : "";
+    return a + b; };
+  const pkl = pkH.length ? `<path d="${step2(pkH.map(x => [X(x.date), Y(x.score)]).concat([[X(S[S.length - 1].d), Y(pkH[pkH.length - 1].score)]]))}" stroke="#7048e8" stroke-width="2" fill="none"/>` + pkH.map(x => `<circle cx="${X(x.date).toFixed(1)}" cy="${Y(x.score).toFixed(1)}" r="4" fill="#7048e8"><title>${esc(pk.name)} ${x.date}: ${x.score}${x.why ? " — " + esc(x.why) : ""}</title></circle>`).join("") : "";
+  const dots = S.map(x => x.all == null ? "" : `<circle cx="${X(x.d).toFixed(1)}" cy="${Y(x.all).toFixed(1)}" r="${x.ok ? 5 : 3.5}" fill="${x.ok ? fedColor(x.all) : "#fff"}" stroke="#1d2433" stroke-width="1.5"${x.ok ? "" : ` opacity=".5"`}><title>${x.d} 종합 ${x.all.toFixed(1)} (${x.n}명)${x.dd != null ? ` · ${x.dd < 0 ? "매파 쪽" : "비둘기 쪽"} ${Math.abs(x.dd).toFixed(1)}` : ""}\n${x.ev.map(e => `${e.p.name} ${e.from == null ? "처음 " + e.to : e.from + "→" + e.to}`).join("\n")}</title></circle>`).join("");
+  const last = S[S.length - 1];
+  return `<svg viewBox="0 0 ${W} ${H}" class="fg-svg">${bands}${gy.join("")}${gx.join("")}
+    <text x="${L + 6}" y="${T + 12}" font-size="11" fill="#1c7ed6" font-weight="700">🕊️ 비둘기</text><text x="${L + 6}" y="${H - B - 6}" font-size="11" fill="#c2410c" font-weight="700">🦅 매파</text>
+    ${line("simple", "#9aa1ab", 1.8)}${line("voter", "#2b8a3e", 2, "6 4")}${line("all", "#1d2433", 3)}${pkl}${dots}
+    <text x="${(X(last.d) - 6).toFixed(1)}" y="${(Y(last.all) - 10).toFixed(1)}" font-size="12.5" font-weight="900" fill="#1d2433" text-anchor="end">${Math.round(last.all)}</text></svg>`;
+}
+
   function fedHome(){
     const P = FP(), S = FS(), PS = P.filter(p => p.score != null);
     root().innerHTML = `<h1>🏛️ 연준 인사 발언 모음</h1>
       <p class="muted" style="margin:0 0 16px">연준 인사의 연설·인터뷰를 히르찬이 정리해요. 지난 발언과 무엇이 달라졌는지, 매파·비둘기 위치가 어디쯤인지 발언마다 이어서 고쳐요.</p>
       ${fedGauge(P)}
+      ${fedTimeline(P)}
       <div class="panel"><div class="fs-head"><h2 style="margin:0">🦅 매파 ↔ 비둘기 🕊️ 위치 <small>${PS.length ? `${PS.length}명 · 이름을 누르면 변화 기록` : ""}</small></h2>
         ${P.some(p => p.voter) ? `<span class="fs-legend"><i></i>초록색: 2026년 FOMC 투표권 (${PS.filter(p => p.voter).length}명 · 전체 ${P.filter(p => p.voter).length}명)</span>` : ""}</div>
         ${PS.length ? fedScale(PS, true) : `<div class="empty">아직 정리한 발언이 없어요.</div>`}
@@ -446,8 +509,12 @@
           <div class="fc-s" style="color:${fedColor(p.score)}"><b>${p.score ?? "-"}</b> ${fedLabel(p.score)} ${fedDelta(p)}</div>
           <div class="fc-bar"><i style="left:${((p.score ?? 50) - 1) / 99 * 100}%;--c:${fedColor(p.score)}"></i></div>
           <div class="fc-t">${esc(p.summary || "")}</div></a>`).join("")}</div>` : ""}
-      ${S.length ? `<h2>🗂️ 최근 정리한 발언 <small>${S.length}건</small></h2><div class="panel rlist">${S.slice(0, 20).map(fedRow).join("")}</div>` : ""}`;
+      ${S.length ? `<details class="panel fold fed-recent" data-fold="fedrecent"${foldOpen("fedrecent") ? " open" : ""}><summary><h2 style="margin:0">🗂️ 최근 정리한 발언 <small>${S.length}건</small></h2></summary><div class="rlist">${S.slice(0, 20).map(fedRow).join("")}</div></details>` : ""}`;
     bindNav();
+    root().querySelectorAll("details.fold").forEach(d => d.addEventListener("toggle", () => { try{ localStorage.setItem("econ:fold:" + d.dataset.fold, d.open ? "1" : "0"); }catch(e){} }));
+    const fgEnd = () => { const w = root().querySelector("#fgsvg"); if(w) w.scrollLeft = w.scrollWidth; };   // 휴대폰: 최신 날짜부터 보이게
+    const fp = root().querySelector("#fgpick"); if(fp) fp.onchange = () => { FG_PICK = fp.value; root().querySelector("#fgsvg").innerHTML = fgChart(P, fgSeries(P)); fgEnd(); };
+    fgEnd(); const ft = root().querySelector(".fg-tl"); if(ft) ft.addEventListener("toggle", () => { if(ft.open) fgEnd(); });
   }
   function fedPersonPage(id){
     const p = fedPerson(id); if(!p){ fedHome(); return; }

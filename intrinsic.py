@@ -5,7 +5,10 @@
 '주당' 숫자로 바꾸고, 분석 결과에 없는 배당 이력만 야후에서 더 받는다.
 """
 import math
+import re
 from datetime import datetime
+
+import requests
 
 import yfsess
 
@@ -27,6 +30,20 @@ def _fx(src, dst):
     try:
         h = yfsess.ticker(f"{src}{dst}=X").history(period="5d")["Close"].dropna()
         return float(h.iloc[-1]) if len(h) else None
+    except Exception:
+        return None
+
+
+def naver_mcap(code6):
+    """국내 시가총액(원) — 야후가 Render(해외 서버)에서 한국 종목 시총을 자주 비워서 네이버 모바일 API로 보충."""
+    try:
+        j = requests.get(f"https://m.stock.naver.com/api/stock/{code6}/integration", timeout=10,
+                         headers={"User-Agent": "Mozilla/5.0"}).json()
+        v = next((x["value"] for x in j.get("totalInfos", []) if x.get("code") == "marketValue"), "")
+        jo = re.search(r"([\d,]+)조", v)
+        eok = re.search(r"([\d,]+)억", v)
+        won = (int(jo.group(1).replace(",", "")) * 10**12 if jo else 0) + (int(eok.group(1).replace(",", "")) * 10**8 if eok else 0)
+        return won or None
     except Exception:
         return None
 
@@ -53,7 +70,7 @@ def dividends(yf_ticker):
     return {"ttm": round(ttm, 4), "years": {str(y): years[y] for y in sorted(years)[-8:]}, "cagr": None if cagr is None else round(cagr, 4)}
 
 
-def build(an, yf_ticker=None):
+def build(an, yf_ticker=None, code6=None):
     """analyze_data 결과(an) → 내재가치 계산 재료. yf_ticker: 배당 이력용 야후 티커(국내는 .KS/.KQ)."""
     price = _num(an.get("price"))
     ps = an.get("peg_sales") or {}
@@ -61,6 +78,8 @@ def build(an, yf_ticker=None):
     disc = tm.get("discount") or {}
     mcap = _num(ps.get("mcap")) or _num(disc.get("mktcap"))
     ev = _num(ps.get("ev"))
+    if not mcap and code6:
+        mcap = naver_mcap(code6)
     if not price or not mcap:
         raise ValueError("주가나 시가총액을 받지 못해 내재가치를 계산할 수 없어요.")
     shares = mcap / price

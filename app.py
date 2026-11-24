@@ -276,8 +276,8 @@ def api_intrinsic():
                 return jsonify({"error": f"분석 실패: {repr(e)[:150]}"}), 500
             _cache_put("analyze:" + ticker.lower(), an)
         try:
-            yf_ticker = kr_data.resolve_query(ticker)[0]
-            out = clean(intrinsic.build(an, yf_ticker))
+            yf_ticker, code6, _ = kr_data.resolve_query(ticker)
+            out = clean(intrinsic.build(an, yf_ticker, code6))
         except ValueError as e:
             return jsonify({"error": str(e)}), 400
         except Exception as e:
