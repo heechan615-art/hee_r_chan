@@ -1,0 +1,8 @@
+{"about": "💳 신용 스프레드 '사건 메모' — 그래프의 큰 움직임 옆에 붙는 날짜별 설명(사람/Claude가 출처와 함께 적음). 숫자는 FRED, 사건은 기사 출처.",
+ "notes": [
+  {"date": "2026-11-20", "tags": ["BB−BBB", "CCC−BB", "하이일드"],
+   "title": "AI 주식 급락 날 — BB−BBB 하루 +0.14%p, 1년 최고 1.07",
+   "text": "엔비디아가 실적 발표 뒤 14% 빠지는 등 'AI 거래'가 풀리며 S&P500 −3.7%(7일 연속 하락, 조정 진입), 나스닥100 −5.6%, VIX 35.9(2025년 4월 이후 최고). 돈이 국채로 몰려 2년 국채가 주간 −15bp(4.61%), 10년 4.92%(−12bp). 이날 BBB 금리는 국채를 따라 −0.07%p 내렸지만 BB 금리는 +0.07%p, CCC는 +0.41%p 올라 — 투자등급은 '안전자산 쪽', 하이일드는 '주식 쪽'으로 갈라졌어요. 미국 하이일드 금리는 19개월 만의 최고(8.5%대). 배경: 11/5 나스닥100 −6.4%(2020년 이후 최악) 이후 AI 차입자(코어위브 채권 가산금리 10%p 이상·CDS 사상 최고)와 하이일드 펀드 자금 유출(11/18까지 1주 미국 −23억 달러), 다시 살아난 연준 추가 인상 걱정.",
+   "src": [["Saxo 11/23 Asia Market Quick Take", "https://home.saxo/en-sg/content/articles/macro/asia-market-quick-take--23-november-2026-23112026"],
+           ["CEO Economy — CCC 스트레스·코어위브", "https://ceoeconomy.com/article/junk-bond-stress-ccc-spreads-coreweave-ecb"]]}
+ ]}

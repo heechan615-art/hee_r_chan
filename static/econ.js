@@ -565,6 +565,76 @@
   function sprWatch(w){
     return `<div class="sp-w ${w.hit ? "hit" : ""}"><b>${esc(w.short)} ${w.line}%</b><span>${w.hit ? "⚠️ 경계선 도달" : `지금 ${w.last.toFixed(2)}% · 경계선까지 ${w.gap.toFixed(2)}%p`}${w.streak ? ` · ${w.streak}일째 위` : ""}</span><small>${esc(w.rule)} — ${esc(w.why)}</small></div>`;
   }
+  // 💵 등급별 실제 금리(유효 수익률) — 금리 = 국채 몫 + OAS (노트 spreads.js에서 옮김)
+  const YLD_ORDER = ["BBB", "BB", "B", "CCC", "하이일드", "투자등급"];
+  function yldList(j){ const Y = j.ylatest || {}; return YLD_ORDER.map(k => Object.values(Y).find(x => x.short === k)).filter(Boolean); }
+  function yldOas(j, k){ return Object.values(j.latest || {}).find(x => x.short === k); }
+  function yldMini(j, keys){
+    const L = yldList(j).filter(x => !keys || keys.includes(x.short)); if(!L.length) return "";
+    return `<div class="sp-ylab">💵 등급별 실제 금리 <small class="muted">(회사채 유효 수익률 = 국채 + 가산금리)</small></div>
+      <div class="sp-mini">${L.map(x => `<div><small>${esc(x.short)} 금리</small><b>${x.last.toFixed(2)}%</b><span class="${chgCls(x.chg_1m)}">1달 ${sgn(x.chg_1m)}</span><i>3년 중 ${x.pct_3y}%</i></div>`).join("")}</div>`;
+  }
+  function yldTable(j){
+    const L = yldList(j); if(!L.length) return "";
+    const split = x => { const o = yldOas(j, x.short); if(!o || x.chg_1m == null || o.chg_1m == null) return "-";
+      const cr = o.chg_1m, rt = +(x.chg_1m - cr).toFixed(2); return `국채 <span class="${chgCls(rt)}">${sgn(rt)}</span> · 가산금리 <span class="${chgCls(cr)}">${sgn(cr)}</span>`; };
+    return `<div class="panel tw" style="margin-top:12px"><h2 style="margin:0 0 4px">💵 등급별 실제 금리 <small>회사채 유효 수익률(%) · ${esc(L[0].date)} 기준</small></h2>
+      <p class="muted" style="font-size:13px;margin:0 0 8px">회사가 지금 돈을 빌리려면 실제로 몇 % 이자를 줘야 하는지예요. <b>금리 = 국채 몫 + 가산금리(OAS)</b> — 금리가 올랐을 때 국채 금리가 올라서인지, 신용 걱정(가산금리)이 커져서인지 오른쪽 칸에서 나눠 봐요.</p>
+      <table class="hist"><tr><th>등급</th><th>지금 금리</th><th>그중 가산금리</th><th>1주</th><th>1달</th><th>3달</th><th>최근 3년 위치</th><th>3년 범위</th><th>1달 변화 나누기</th></tr>
+      ${L.map(x => { const o = yldOas(j, x.short); return `<tr><td style="text-align:left"><b style="color:${SPR_COL[x.short]}">●</b> <b>${esc(x.short)}</b></td><td><b>${x.last.toFixed(2)}%</b></td><td>${o ? o.last.toFixed(2) + "%" : "-"}</td>
+        <td class="${chgCls(x.chg_1w)}">${sgn(x.chg_1w)}</td><td class="${chgCls(x.chg_1m)}">${sgn(x.chg_1m)}</td><td class="${chgCls(x.chg_3m)}">${sgn(x.chg_3m)}</td>
+        <td>${x.pct_3y}%</td><td>${x.min_3y.toFixed(2)}~${x.max_3y.toFixed(2)}%</td><td style="white-space:nowrap">${split(x)}</td></tr>`; }).join("")}
+      </table><p class="muted" style="font-size:12.5px;margin:8px 0 0">'국채 몫'은 금리에서 가산금리를 뺀 나머지(지수 평균 만기의 국채 금리 쪽)예요. 등급마다 평균 만기가 달라 국채 몫도 조금씩 달라요. 변화는 %p · 3년 위치는 높을수록 비쌈.</p></div>`;
+  }
+  // 🇺🇸 국채 2년·10년(FRED DGS2·DGS10)
+  const UST_COL = {"DGS2": "#e8590c", "DGS10": "#1f3a68"};
+  function ustMini(j){
+    const U = j.ustlatest; if(!U || !U.DGS2 || !U.DGS10) return "";
+    const sp = +(U.DGS10.last - U.DGS2.last).toFixed(2);
+    return `<div class="sp-ylab">🇺🇸 미국 국채 금리 <small class="muted">(회사채 금리의 바닥 · ${esc(U.DGS10.date)} 기준)</small></div>
+      <div class="sp-mini">${["DGS2", "DGS10"].map(k => { const x = U[k]; return `<div><small>${esc(x.short)}</small><b>${x.last.toFixed(2)}%</b><span class="${chgCls(x.chg_1m)}">1달 ${sgn(x.chg_1m)}</span><i>3년 중 ${x.pct_3y}%</i></div>`; }).join("")}
+        <div><small>10년 − 2년</small><b>${sp > 0 ? "+" : ""}${sp.toFixed(2)}%p</b><span>${sp < 0 ? "역전(장단기 금리 거꾸로)" : "정상(10년이 더 높음)"}</span><i>장단기 금리 차</i></div></div>`;
+  }
+  // 선 그래프 한 개(왼쪽 축 sets + 오른쪽 축 r) — 한눈에·신용 스프레드 화면 공용
+  function spLine(el, dates, sets, r, unit2){
+    if(!el) return;
+    const ds = (x, ax) => ({label: x.label, data: dates.map(d => x.data[d] ?? null), borderColor: x.color, backgroundColor: x.color, borderWidth: x.w || 2, borderDash: x.dash || [], pointRadius: 0, spanGaps: true, tension: .25, yAxisID: ax});
+    const scales = {y: {ticks: {callback: v => +(+v).toFixed(2) + "%"}, grid: {color: "#eef0f3"}}, x: {grid: {display: false}, ticks: {maxTicksLimit: 8}}};
+    if(r) scales.y2 = {position: "right", grid: {display: false}, ticks: {callback: v => +(+v).toFixed(2) + (unit2 || "%")}};
+    charts.push(new Chart(el, {type: "line", data: {labels: dates, datasets: sets.map(x => ds(x, "y")).concat(r ? [ds(r, "y2")] : [])},
+      options: {responsive: true, maintainAspectRatio: false, interaction: {mode: "index", intersect: false}, plugins: {legend: {labels: {boxWidth: 12}}}, scales}}));
+  }
+  const spCut = days => new Date(Date.now() - days * 864e5).toISOString().slice(0, 10);
+  function yldChart(el, j, days){   // BB·B(왼쪽) + CCC(오른쪽)
+    const Y = j.yields; if(!el || !Y) return;
+    const id = k => Object.keys(Y).find(x => Y[x].short === k), cut = spCut(days), dates = Object.keys(Y[id("B")].data).sort().filter(d => d >= cut);
+    spLine(el, dates, ["BB", "B"].map(k => ({label: k + " 금리", color: SPR_COL[k], data: Y[id(k)].data})), {label: "CCC 금리 (오른쪽 축)", color: SPR_COL.CCC, data: Y[id("CCC")].data});
+  }
+  function ustChart(el, j, days){   // 2년·10년(왼쪽) + 10년−2년(오른쪽, 점선)
+    const U = j.ust; if(!el || !U || !U.DGS2 || !U.DGS10) return;
+    const cut = spCut(days), dates = Object.keys(U.DGS10.data).sort().filter(d => d >= cut);
+    const g = Object.fromEntries(dates.filter(d => U.DGS10.data[d] != null && U.DGS2.data[d] != null).map(d => [d, +(U.DGS10.data[d] - U.DGS2.data[d]).toFixed(2)]));
+    spLine(el, dates, ["DGS2", "DGS10"].map(k => ({label: U[k].short, color: UST_COL[k], data: U[k].data})), {label: "10년 − 2년 (오른쪽 축)", color: "#9aa1ab", data: g, w: 1.5, dash: [5, 4]}, "%p");
+  }
+  // 🧭 등급 간 차이 해석(econ_spreads.gap_read) — 접기 박스
+  function gapRead(r){
+    if(!r) return "";
+    const [ic] = AI_LV[r.level] || ["⚪"];
+    return `<details class="panel fold ai-narr sp-gapread" data-fold="gapread"${foldOpen("gapread") ? " open" : ""}><summary><div><div class="lab">🧭 등급 간 차이 — 지금 어떻게 읽나 <small>숫자가 바뀌면 문장도 규칙대로 다시 써져요(히르찬 기준)</small></div>
+      <h2 style="margin:4px 0 0">${ic} ${esc(r.head)}</h2></div></summary>${r.paras.map(x => `<p>${esc(x)}</p>`).join("")}
+      <p style="margin-top:10px"><b>👀 앞으로 볼 것</b></p><ul class="aiw-watch">${r.watch.map(w => `<li>${esc(w)}</li>`).join("")}</ul>
+      <details class="aiw-how"><summary>📖 이 화면 읽는 법</summary><ul>${AIW_HOW.gap.map(w => `<li>${esc(w)}</li>`).join("")}</ul></details></details>`;
+  }
+  // 📌 사건 메모(econ_spreads_notes.json) — 최근 days일, 최신 순, 접기 박스
+  function spNotes(j, days){
+    const cut = spCut(days), L = (j.notes || []).filter(n => n.date >= cut).sort((a, b) => b.date.localeCompare(a.date));
+    if(!L.length) return "";
+    return `<details class="panel fold sp-notes" data-fold="spnotes"${foldOpen("spnotes") ? " open" : ""}><summary><h2 style="margin:0">📌 사건 메모 <small>${L.length}건 · 최근: ${esc(L[0].date.slice(5).replace("-", "/"))} ${esc(L[0].title)}</small></h2></summary>
+      <p class="muted" style="font-size:12.5px;margin:0 0 4px">그래프가 크게 움직인 날 무슨 일이 있었나 · 숫자는 FRED, 사건은 기사 출처</p>${L.map(n => `<div class="sp-note">
+      <div class="sp-nh"><b>${esc(n.date)}</b>${(n.tags || []).map(t => `<span class="sp-tag">${esc(t)}</span>`).join("")}</div><div class="sp-nt">${esc(n.title)}</div><p>${esc(n.text)}</p>
+      ${(n.src || []).length ? `<div class="sp-src">출처: ${n.src.map(([t, u]) => `<a href="${esc(u)}" target="_blank" rel="noopener">${esc(t)}</a>`).join(" · ")}</div>` : ""}</div>`).join("")}</details>`;
+  }
+  function foldSave(){ root().querySelectorAll("details.fold[data-fold]").forEach(d => { if(d.dataset.fs) return; d.dataset.fs = 1; d.addEventListener("toggle", () => { try{ localStorage.setItem("econ:fold:" + d.dataset.fold, d.open ? "1" : "0"); }catch(e){} }); }); }
   async function spreadHome(){
     const j = await spLoad(), top = document.getElementById("ec-sslot");
     if(!j || j.error || cur[0] !== "h" || !top) return;
@@ -572,6 +642,7 @@
     top.insertAdjacentHTML("afterend", `<div class="panel ec-sph"><h2 style="margin-top:0">💳 신용 스프레드 <small>회사채가 국채보다 더 얹어 주는 금리 · ${esc(L[0].date)} 기준</small></h2>
       <div class="sp-head"><span class="stance ${STAGE_CLS[T.stage] || ""}">${esc(T.stage)}</span><span>${esc(T.text)}</span><a href="#" data-go="s">그래프·전체 보기 →</a></div>
       <div class="sp-mini">${L.map(x => `<div><small>${esc(x.short)}</small><b>${x.last.toFixed(2)}%</b><span class="${chgCls(x.chg_1m)}">1달 ${sgn(x.chg_1m)}</span><i>3년 중 ${x.pct_3y}%</i></div>`).join("")}</div>
+      ${yldMini(j, ["BB", "B", "CCC"])}
       <div class="sp-ws">${j.watch.map(sprWatch).join("")}</div></div>`);
     bindNav();
   }
@@ -586,7 +657,7 @@
       <div style="overflow-x:auto"><table class="hist"><thead><tr><th>등급(높은 순)</th><th>지금 OAS</th><th>뜻</th></tr></thead><tbody>
         ${OAS_ROWS.filter(([k]) => by[k] != null).map(([k, t]) => `<tr><td><b>${k}</b></td><td>${by[k].toFixed(2)}%</td><td style="text-align:left;white-space:normal;min-width:150px">국채보다 ${by[k].toFixed(2)}%p 더 받아야 팔림 · ${t}</td></tr>`).join("")}
       </tbody></table></div>
-      ${ccc != null ? `<p class="muted" style="font-size:13px">예: 미국 10년 국채가 5%라면 CCC 회사채 금리는 대략 ${(5 + ccc).toFixed(1)}%라는 뜻이에요. BBB까지가 투자등급, BB부터가 하이일드예요.</p>` : ""}
+      ${ccc != null ? `<p class="muted" style="font-size:13px">${(() => { const y = yldList(j).find(x => x.short === "CCC"); return y ? `예: 지금 CCC 회사채의 실제 금리(유효 수익률)는 <b>${y.last.toFixed(2)}%</b>, 그중 가산금리(OAS)가 ${ccc.toFixed(2)}%예요 — 나머지 약 ${(y.last - ccc).toFixed(2)}%가 국채 몫이에요. 등급별 실제 금리는 아래 '💵 등급별 실제 금리'에서 봐요.` : `예: 미국 10년 국채가 5%라면 CCC 회사채 금리는 대략 ${(5 + ccc).toFixed(1)}%라는 뜻이에요.`; })()} BBB까지가 투자등급, BB부터가 하이일드예요.</p>` : ""}
       <p><b>읽는 순서</b></p>
       <ol>
         <li><b>CCC부터 봐요</b> — 신용 위기는 가장 약한 회사(CCC)에서 시작해 위 등급으로 번져요.</li>
@@ -609,13 +680,19 @@
       <div class="panel tw" style="margin-top:12px"><table class="hist"><tr><th>등급</th><th>지금</th><th>1주</th><th>1달</th><th>3달</th><th>최근 3년 위치</th><th>3년 범위</th></tr>
         ${ids.map(id => { const x = j.latest[id]; return `<tr><td style="text-align:left"><b style="color:${SPR_COL[x.short]}">●</b> ${esc(S[id].name)}</td><td><b>${x.last.toFixed(2)}%</b></td><td class="${chgCls(x.chg_1w)}">${sgn(x.chg_1w)}</td><td class="${chgCls(x.chg_1m)}">${sgn(x.chg_1m)}</td><td class="${chgCls(x.chg_3m)}">${sgn(x.chg_3m)}</td><td>${x.pct_3y}%</td><td>${x.min_3y.toFixed(2)}~${x.max_3y.toFixed(2)}%</td></tr>`; }).join("")}
         </table><p class="muted" style="font-size:12.5px;margin:8px 0 0">등급 간 차이: ${Object.entries(j.gaps).map(([k, v]) => `${esc(k)} <b>${v.toFixed(2)}%p</b>`).join(" · ")} · 변화는 %p · 3년 위치는 높을수록 넓음</p></div>
+      ${yldTable(j)}
       <div class="sp-bar"><span>기간</span>${[["3m", "3개월"], ["1y", "1년"], ["3y", "3년"]].map(([k, t]) => `<button type="button" data-r="${k}" class="${SPR_RANGE === k ? "on" : ""}">${t}</button>`).join("")}
         <span style="margin-left:auto" class="muted">${esc(j.source)} · 받은 시각 ${esc(j.updated)}</span></div>
       <div class="chartbox"><h3>하이일드·투자등급 (OAS, %)</h3><div class="cv"><canvas id="sp-c1"></canvas></div><div class="src">점선: 감시 경계선(하이일드 3.5%, 투자등급 1.0%)</div></div>
       <div class="chartbox" style="margin-top:12px"><h3>등급별 — CCC가 먼저 벌어지고 위 등급이 따라오는지 (OAS, %)</h3><div class="cv"><canvas id="sp-c2"></canvas></div><div class="src">CCC는 수준이 달라 아래 그래프로 따로 봐요</div></div>
       <div class="sp-two"><div class="chartbox"><h3>CCC 이하 (OAS, %)</h3><div class="cv"><canvas id="sp-c3"></canvas></div></div>
         <div class="chartbox"><h3>등급 간 차이 (%p)</h3><div class="cv"><canvas id="sp-c4"></canvas></div><div class="src">CCC−BB가 벌어지면 바닥 스트레스, BB−BBB가 벌어지면 하이일드 전반으로 번짐</div></div></div>
-      <p class="foot">출처: ICE Data Indices via FRED(세인트루이스 연은). FRED는 ICE 데이터의 최근 3년만 공개해요 — '3년 중 위치'는 그 안에서의 백분위예요. 하루 한 번, 하루 늦게 갱신돼요. 감시 경계선과 전이 단계는 히르찬의 판단 기준이에요.</p>`;
+      ${gapRead(j.gap_read)}
+      ${spNotes(j, 90)}
+      ${j.yields ? `<div class="sp-two"><div class="chartbox"><h3>💵 등급별 실제 금리 — BBB·BB·B (%)</h3><div class="cv"><canvas id="sp-c5"></canvas></div><div class="src">회사채 유효 수익률 = 국채 + 가산금리</div></div>
+        <div class="chartbox"><h3>💵 CCC 이하 실제 금리 (%)</h3><div class="cv"><canvas id="sp-c6"></canvas></div><div class="src">수준이 달라 따로 봐요</div></div></div>` : ""}
+      ${j.ust ? `<div class="chartbox" style="margin-top:12px"><h3>🇺🇸 미국 국채 2년·10년 (%)</h3><div class="cv"><canvas id="sp-c7"></canvas></div><div class="src">FRED DGS2·DGS10 · 점선 = 10년 − 2년(오른쪽 축, 0 아래면 역전) · 회사채 금리 = 국채 몫 + 가산금리</div></div>` : ""}
+      <p class="foot">출처: ICE Data Indices via FRED(세인트루이스 연은) — 가산금리는 OAS, 실제 금리는 Effective Yield 시리즈(…EY), 국채는 DGS2·DGS10. FRED는 ICE 데이터의 최근 3년만 공개해요 — '3년 중 위치'는 그 안에서의 백분위예요. 하루 한 번, 하루 늦게 갱신돼요. 감시 경계선과 전이 단계는 히르찬의 판단 기준이에요.</p>`;
     addNav(); bindNav();
     const days = {"3m": 92, "1y": 366, "3y": 1200}[SPR_RANGE];
     const cut = new Date(Date.now() - days * 864e5).toISOString().slice(0, 10);
@@ -633,6 +710,11 @@
     mk("sp-c2", [ser("BAMLH0A2HYB"), ser("BAMLH0A1HYBB"), ser("BAMLC0A4CBBB")]);
     mk("sp-c3", [ser("BAMLH0A3HYC")]);
     mk("sp-c4", [ds("CCC−BB", "#7c3aed", gap("BAMLH0A3HYC", "BAMLH0A1HYBB")), ds("BB−BBB (오른쪽 축)", "#2b8a3e", gap("BAMLH0A1HYBB", "BAMLC0A4CBBB"), {yAxisID: "y2"})], true);
+    if(j.yields){ const Y = j.yields, yid = k => Object.keys(Y).find(x => Y[x].short === k);
+      spLine(document.getElementById("sp-c5"), dates, ["B", "BB", "BBB"].map(k => ({label: k + " 금리", color: SPR_COL[k], data: Y[yid(k)].data})));
+      spLine(document.getElementById("sp-c6"), dates, [{label: "CCC 금리", color: SPR_COL.CCC, data: Y[yid("CCC")].data}]); }
+    ustChart(document.getElementById("sp-c7"), j, days);
+    foldSave();
     root().querySelectorAll("[data-r]").forEach(b => b.onclick = () => { SPR_RANGE = b.dataset.r; destroy(); spreadPage(); });
   }
 
@@ -680,7 +762,34 @@
     return `<div class="panel ai-gp"><div class="lab">🌡️ AI 리스크 온도계 <small>0 = 안정 · 100 = 위험 — 공포탐욕지수처럼 신호를 점수로 바꾼 것</small></div>
       <div class="ai-gwrap">${aiGauge(G.overall.score, "종합", G.overall.hist, true)}
         <div class="ai-gs">${G.pillars.map(p => aiGauge(p.score, p.name, p.hist)).join("")}</div></div>
-      <p class="muted" style="font-size:12px;margin:8px 0 0">점수 매기는 법: 지표마다 🟡 기준선 = 40점, 🔴 기준선 = 70점이 되게 늘인 뒤 0~100으로 자르고, 칸은 지표 평균(⑤ = TSMC 월매출·D램 현물가·반도체 가동률), 종합은 다섯 칸 평균(같은 무게)이에요. ③ 쏠림은 '3년 중 위치 × 0.45'(+AI 주식이 시장보다 약하면 30). ①은 분기 공시라 1주·1달 전은 지금과 같고 3달 전은 직전 분기예요. 0~20 안정 · 20~40 낮음 · 40~60 주의 · 60~80 경계 · 80~100 위험 — 히르찬의 판단 기준(공식 지표 아님).</p></div>`;
+      <p class="muted" style="font-size:12px;margin:8px 0 0">점수 매기는 법: 지표마다 🟡 기준선 = 40점, 🔴 기준선 = 70점이 되게 늘인 뒤 0~100으로 자르고, 칸은 지표 평균(⑤ = TSMC 월매출·D램 현물가·반도체 가동률), 종합은 다섯 칸 평균(같은 무게)이에요. ③ 쏠림은 '3년 중 위치 × 0.45'(+AI 주식이 시장보다 약하면 30). ①은 분기 공시라 1주·1달 전은 지금과 같고 3달 전은 직전 분기예요. 0~20 안정 · 20~40 낮음 · 40~60 주의 · 60~80 경계 · 80~100 위험 — 히르찬의 판단 기준(공식 지표 아님).</p></div>
+      ${aiGaugeTlBox(G)}`;
+  }
+  // 📈 온도계 타임라인 — ai_gauge.series(5거래일마다 그날 기준으로 다시 계산), 접기 박스 (노트 ai.js에서 옮김)
+  let AI_TL_RANGE = "1y";
+  const AI_TL_COL = {fund: "#9b1c31", mkt: "#e8590c", conc: "#7c3aed", weak: "#2b8a3e", demand: "#4a7fd4"};
+  function aiGaugeTlBox(G){
+    const S = G.series || []; if(S.length < 3) return "";
+    const pk = b => S.reduce((m, x) => x.o != null && (m == null || (b ? x.o > m.o : x.o < m.o)) ? x : m, null), hi = pk(true), lo = pk(false), last = S[S.length - 1];
+    return `<details class="panel fold ai-tl" data-fold="aitl"${foldOpen("aitl") ? " open" : ""}><summary><h2 style="margin:0">📈 온도계 타임라인 <small>종합 ${Math.round(last.o)} · 2년 최고 ${Math.round(hi.o)}(${esc(hi.d)}) · 최저 ${Math.round(lo.o)}(${esc(lo.d)})</small></h2></summary>
+      <div class="sp-bar"><span>기간</span>${[["6m", "6개월"], ["1y", "1년"], ["2y", "2년"]].map(([k, t]) => `<button type="button" data-tlr="${k}" class="${AI_TL_RANGE === k ? "on" : ""}">${t}</button>`).join("")}
+        <span class="muted" style="margin-left:auto;font-size:12px">아래 이름을 누르면 칸별 선을 켜고 꺼요</span></div>
+      <div class="cv" style="height:300px"><canvas id="ai-gtl"></canvas></div>
+      <p class="muted" style="font-size:12px;margin:8px 0 0">5거래일마다 그날까지 알 수 있던 숫자로 다시 계산한 점수예요 — 주가는 그날 종가, TSMC 월매출은 그날 이미 발표된 달까지, ① 빅테크 공시는 분기 끝 + 35일부터 반영, D램 현물가는 기록이 2026년 2월부터라 그 전 ⑤는 TSMC·가동률만으로. 배경 점선: 40 주의 · 60 경계 · 80 위험.</p></details>`;
+  }
+  function aiGaugeTl(j){
+    const el = document.getElementById("ai-gtl"), G = j && j.gauges; if(!el || !G || !G.series) return;
+    const days = {"6m": 183, "1y": 366, "2y": 800}[AI_TL_RANGE], cut = new Date(Date.now() - days * 864e5).toISOString().slice(0, 10);
+    const S = G.series.filter(x => x.d >= cut), dates = S.map(x => x.d);
+    const ds = [{label: "종합", data: S.map(x => x.o), borderColor: "#1d2433", backgroundColor: "#1d2433", borderWidth: 3, pointRadius: 0, tension: .25, spanGaps: true}]
+      .concat(G.pillars.map(p => ({label: p.name, data: S.map(x => x.p[p.key] ?? null), borderColor: AI_TL_COL[p.key], backgroundColor: AI_TL_COL[p.key], borderWidth: 1.5, pointRadius: 0, tension: .25, spanGaps: true, hidden: true})))
+      .concat([[40, "#e8a10c"], [60, "#e8590c"], [80, "#c92a2a"]].map(([v, c]) => ({label: "_" + v, data: dates.map(() => v), borderColor: c, borderDash: [5, 5], borderWidth: 1, pointRadius: 0})));
+    const c = new Chart(el, {type: "line", data: {labels: dates, datasets: ds}, options: {responsive: true, maintainAspectRatio: false, interaction: {mode: "index", intersect: false},
+      plugins: {legend: {labels: {boxWidth: 12, filter: x => !x.text.startsWith("_")}}, tooltip: {filter: x => !x.dataset.label.startsWith("_"), callbacks: {label: x => `${x.dataset.label}: ${x.parsed.y == null ? "-" : Math.round(x.parsed.y)}`}}},
+      scales: {y: {min: 0, max: 100, ticks: {stepSize: 20}, grid: {color: "#eef0f3"}}, x: {grid: {display: false}, ticks: {maxTicksLimit: 10}}}}});
+    charts.push(c);
+    root().querySelectorAll("[data-tlr]").forEach(b => b.onclick = () => { AI_TL_RANGE = b.dataset.tlr; root().querySelectorAll("[data-tlr]").forEach(x => x.classList.toggle("on", x === b)); const i = charts.indexOf(c); if(i >= 0) charts.splice(i, 1); c.destroy(); aiGaugeTl(j); });
+    foldSave();
   }
   function aiNarr(j){   // 🧭 지금 국면 해석(규칙, ai_market.narrative) — 계기판 맨 위
     const n = j.narrative; if(!n) return "";
@@ -793,7 +902,7 @@
       if(unit2) scales.y2 = {position: "right", grid: {display: false}, ticks: {callback: fmt(unit2)}};
       charts.push(new Chart(el, {type, data: {labels, datasets: sets}, options: {responsive: true, maintainAspectRatio: false, interaction: {mode: "index", intersect: false}, plugins: {legend: {labels: {boxWidth: 12}}}, scales}}));
     };
-    aiCharts(j, mkc); aiMarketCharts(j.market, mkc);
+    aiCharts(j, mkc); aiMarketCharts(j.market, mkc); aiGaugeTl(j);
   }
 
   // ---------- 🛰️ AI 위험 추적 (노트 aiw.js 옮김 · 메모리·가동률은 bundle.json의 ai_risk.semis) ----------
@@ -849,8 +958,10 @@
       <div class="aiw-grid">
         ${a ? `<div class="panel"><h2 style="margin:0 0 8px">🤖 AI 리스크 계기판</h2>${aiSummary(a)}</div>` : ""}
         ${s ? `<div class="panel"><h2 style="margin:0 0 8px">💳 신용 스프레드 <small>${esc(Object.values(s.latest)[0].date)} 기준</small></h2>
-          <div class="sp-head"><span class="stance ${STAGE_CLS[T.stage] || ""}">${esc(T.stage)}</span><span>${esc(T.text)}</span><a href="#" data-go="s">그래프·전체 보기 →</a></div>
-          <div class="sp-mini">${Object.values(s.latest).map(x => `<div><small>${esc(x.short)}</small><b>${x.last.toFixed(2)}%</b><span class="${chgCls(x.chg_1m)}">1달 ${sgn(x.chg_1m)}</span><i>3년 중 ${x.pct_3y}%</i></div>`).join("")}</div></div>` : ""}
+          <div class="sp-head"><span class="stance ${STAGE_CLS[T.stage] || ""}">${esc(T.stage)}</span><span>${esc(T.text)}</span><a href="#" data-go="s">그래프·전체 보기 →</a></div>${s.gap_read ? `<p class="aiw-one">🧭 ${esc(s.gap_read.head)}</p>` : ""}
+          <div class="sp-mini">${Object.values(s.latest).map(x => `<div><small>${esc(x.short)}</small><b>${x.last.toFixed(2)}%</b><span class="${chgCls(x.chg_1m)}">1달 ${sgn(x.chg_1m)}</span><i>3년 중 ${x.pct_3y}%</i></div>`).join("")}</div>
+          ${yldMini(s, ["BB", "B", "CCC"])}${s.yields ? `<div class="chartbox aiw-yc"><h3>💵 BB·B·CCC 실제 금리 — 최근 1년 (%)</h3><div class="cv" style="height:230px"><canvas id="aiw-yc"></canvas></div><div class="src">CCC는 수준이 높아 오른쪽 축 · BBB·하이일드 전체와 더 긴 기간은 신용 스프레드 화면에서</div></div>` : ""}
+          ${ustMini(s)}${s.ust ? `<div class="chartbox aiw-yc"><h3>🇺🇸 미국 국채 2년·10년 — 최근 1년 (%)</h3><div class="cv" style="height:230px"><canvas id="aiw-uc"></canvas></div><div class="src">점선 = 10년 − 2년(오른쪽 축) · 국채가 내리는데 회사채 금리가 오르면 신용 걱정 때문</div></div>` : ""}</div>` : ""}
         ${m ? `<div class="panel"><h2 style="margin:0 0 8px">💾 메모리 가격 <small>현물가 세션 평균</small></h2>
           <div class="sp-head"><span>${m.signals.filter(x => x.key === "mem").map(x => `${(AI_LV[x.level] || ["⚪"])[0]} ${esc(x.name)} ${pc(x.value)}`).join("")}</span><a href="#" data-go="m">그래프·전체 보기 →</a></div>${m.mem.read ? `<p class="aiw-one">🧭 ${esc(m.mem.read.head)}</p>` : ""}
           <div class="sp-mini">${m.mem.items.map(x => `<div><small>${esc(x.short)}</small><b>$${x.last}</b><span>3달 ${pc(x.chg_3m)}</span><i>1년 ${x.chg_1y == null ? "-" : (x.chg_1y > 0 ? "+" : "") + x.chg_1y + "%"}</i></div>`).join("")}</div></div>
@@ -859,10 +970,17 @@
           <div class="sp-mini">${m.cu.items.map(x => `<div><small>🇺🇸 ${esc(x.short)}</small><b>${x.last}%</b><span>6달 ${pc(x.chg_6m, "%p")}</span><i>2000년 이후 평균 ${x.avg_2000}%</i></div>`).join("")}${((m.cu.kr || {}).items || []).filter(x => x.id === "KR_SEMI_IDX" || x.id === "KR_MFG_CU").map(x => `<div><small>🇰🇷 ${esc(x.id === "KR_SEMI_IDX" ? "반도체 지수(3달 평균)" : "제조업")}</small><b>${x.unit === "%" ? x.last + "%" : x.avg3}</b><span>${x.unit === "%" ? "1년 전 같은 달 " + (x.yoy_month > 0 ? "+" : "") + x.yoy_month + "%p" : "직전 3달 " + (x.chg_3m > 0 ? "+" : "") + x.chg_3m + "%"}</span><i>2000년 이후 평균 ${x.avg_2000}${x.unit === "%" ? "%" : ""}</i></div>`).join("")}</div></div>` : ""}
       </div>`;
     addNav(); bindNav();
+    if(a) aiGaugeTl(a);
+    if(s){ yldChart(document.getElementById("aiw-yc"), s, 366); ustChart(document.getElementById("aiw-uc"), s, 366); }
   }
 
   // 🧭 해석 패널 — semis.py의 mem_read/cu_read(규칙) + 고정 '읽는 법'
   const AIW_HOW = {
+    gap: ["BB−BBB = 하이일드 맨 위(BB)와 투자등급 맨 아래(BBB)의 가산금리 차이예요. '투자등급 문턱'을 사이에 둔 두 등급이라, 이 차이가 벌어지면 시장이 하이일드 쪽만 따로 위험하게 본다는 뜻이에요.",
+          "CCC−BB = 하이일드 안에서 가장 약한 회사와 가장 우량한 회사의 차이. 이게 먼저 벌어지고(바닥 스트레스) 다음에 BB−BBB가 벌어지면(위쪽으로 번짐) 신용 스트레스가 위 등급으로 올라오는 순서예요.",
+          "벌어진 이유는 두 다리로 나눠 봐요 — BB가 올라서인지, BBB가 내려서인지. 위험 회피 날엔 BBB는 국채처럼(금리 내림), BB는 주식처럼(금리 오름) 움직여 차이가 확 벌어져요.",
+          "하루 급등은 사건(주가 급락·실적·지표) 영향이 커요. 며칠 안에 되돌아가면 사건성, 계속 쌓이면 추세예요.",
+          "지난 3년 기준점: 2024년 8월 엔캐리 청산 1.12, 2025년 4월 관세 충격 1.58 — 오른쪽 축 눈금이 좁아 그래프에선 작은 움직임도 크게 보이니 숫자(%p)로 확인해요."],
     mem: ["현물가는 그날그날 거래값이라 회사 간 계약가보다 1~2분기 먼저 움직여요. 그래서 메모리 회사 실적의 '예고편'이에요.",
           "주력 DDR5 = AI 서버·최신 PC에 들어가는 D램. 이게 오르면 AI 수요가 아직 뜨겁다는 뜻이에요.",
           "구형 DDR4 = 회사들이 생산을 줄이는 이전 세대. 공급이 줄어 값이 튀기도 해서 수요보다 '공급 사정'이 많이 섞여 있어요.",
