@@ -592,11 +592,15 @@
   .msum-cell{font-size:12.5px;color:var(--muted);display:flex;align-items:baseline;gap:5px}
   .msum-cell b{font-size:16px;font-weight:800;font-variant-numeric:tabular-nums}
   .msum-cell b.approved{color:var(--good)} .msum-cell b.pending{color:var(--warn)} .msum-cell b.kicked{color:#c0455a}
+  .msearch{display:flex;align-items:center;gap:10px;margin:12px 0 8px}
+  .msearch input{flex:1;min-width:0;max-width:320px;border:1px solid var(--line);border-radius:10px;padding:9px 12px;font:inherit;font-size:14px}
+  .msearch span{font-size:13px;white-space:nowrap}
   .mtab{width:100%;border-collapse:collapse;font-size:13px}
   .mtab th{text-align:left;color:var(--muted);font-weight:600;font-size:12px;
     border-bottom:1px solid var(--line);padding:8px 9px;white-space:nowrap}
   .mtab td{border-bottom:1px solid var(--line);padding:9px;vertical-align:middle}
   .mtab tr:hover td{background:#f2f4f7}
+  .mtab td:first-child{white-space:nowrap}
   .badge{font-size:11px;font-weight:700;border-radius:999px;padding:3px 9px;white-space:nowrap}
   .badge.pending{background:#fdf3e0;color:var(--warn)}
   .badge.approved{background:#e3f6ef;color:var(--good)}
@@ -1542,6 +1546,7 @@ const dshort = s => { const d = new Date(s); return (!s || isNaN(d)) ? "-"
   : `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,"0")}.${String(d.getDate()).padStart(2,"0")}`; };
 const daysSince = s => { const d = new Date(s); return (!s || isNaN(d)) ? "-"
   : Math.max(0, Math.floor((Date.now() - d) / 86400000)) + "일"; };
+let ADM_Q = "";   // 회원 검색어(승인·강퇴 뒤 다시 불러와도 유지)
 async function openAdmin(){
   openModal("admin-modal");
   const box = $("#admin-body");
@@ -1563,9 +1568,15 @@ async function openAdmin(){
       </div></div>`;
     if(!mem.length && !ms.length){ box.innerHTML = summary + `<div class="muted" style="padding:16px 0">아직 가입한 회원이 없습니다.</div>`; return; }
     const LBL = {pending:"승인 대기", approved:"이용 중", kicked:"정지됨"};
-    box.innerHTML = summary + `<table class="mtab"><thead><tr>
+    box.innerHTML = summary + `<div class="msearch"><input id="adm-q" type="search" placeholder="🔍 이름·아이디로 찾기" value="${esc(ADM_Q)}" autocomplete="off"><span id="adm-n" class="muted"></span></div>
+      <div id="adm-rows"></div>`;
+    const norm = v => String(v || "").toLowerCase().replace(/\s+/g, "");
+    const rows = () => {
+      const q = norm(ADM_Q), L = q ? ms.filter(m => norm(m.realname).includes(q) || norm(m.username).includes(q)) : ms;
+      $("#adm-n").textContent = q ? `${L.length}명 찾음` : "";
+      $("#adm-rows").innerHTML = L.length ? `<table class="mtab"><thead><tr>
       <th>본명</th><th>아이디</th><th>상태</th><th>가입일</th><th>마지막 사용</th><th>사용 기간</th><th>관리</th>
-      </tr></thead><tbody>` + ms.map(m => `<tr>
+      </tr></thead><tbody>` + L.map(m => `<tr>
       <td><b>${esc(m.realname)}</b>${m.is_admin ? ` <span class="badge admin">관리자</span>` : ""}</td>
       <td class="muted">${esc(m.username)}</td>
       <td><span class="badge ${m.status}">${LBL[m.status] || m.status}</span></td>
@@ -1576,7 +1587,10 @@ async function openAdmin(){
         ${m.status !== "approved" ? `<button class="mbtn ok" data-mact="approve" data-id="${m.id}" data-nm="${esc(m.realname)}">승인</button>` : ""}
         ${m.status !== "kicked"   ? `<button class="mbtn no" data-mact="kick"    data-id="${m.id}" data-nm="${esc(m.realname)}">강퇴</button>` : ""}
         <button class="mbtn no" data-mact="delete" data-id="${m.id}" data-nm="${esc(m.realname)}">삭제</button>`}</td>
-      </tr>`).join("") + `</tbody></table>`;
+      </tr>`).join("") + `</tbody></table>` : `<div class="muted" style="padding:16px 0">'${esc(ADM_Q)}'(으)로 찾은 회원이 없습니다.</div>`;
+    };
+    rows();
+    $("#adm-q").addEventListener("input", e => { ADM_Q = e.target.value; rows(); });
   }catch(err){ box.innerHTML = `<div class="warnbox">불러오기 실패: ${esc(err)}</div>`; }
 }
 
