@@ -1041,6 +1041,8 @@
   .kpi-val{font-weight:800;color:var(--good);font-size:15px}
   .fd-cmp{border:1px solid var(--line);border-radius:12px;padding:8px 12px 6px;background:var(--panel)}
   .fd-cmp h3{font-size:13px;margin:0 0 2px;text-align:center;color:var(--text);font-weight:800}
+#chart-frame.chart-fs{position:fixed;inset:0;width:100vw !important;height:100vh !important;height:100dvh !important;z-index:2147483000;background:#0B0E14 !important}
+html.chart-fs-on,html.chart-fs-on body{overflow:hidden}
 </style>
 </head>
 <body>
@@ -1176,7 +1178,7 @@
   <!-- 차트 분석 탭: 별도 사이트(히르찬 차트)를 화면 안에 띄움. 높이는 그쪽이 알려 주는 값으로 맞춤 -->
   <div id="tab-chart" style="display:none">
     <div class="sub">이동평균선 · 볼린저밴드 · 거래량 · OBV · 볼륨델타 · 매물대 · 자동 추세선과 종합 해석 · 국내 + 미국</div>
-    <iframe id="chart-frame" title="차트 분석" loading="lazy"
+    <iframe id="chart-frame" title="차트 분석" loading="lazy" allow="fullscreen" allowfullscreen
       style="width:100%;height:1400px;border:0;display:block;background:transparent"></iframe>
   </div>
 
@@ -1683,6 +1685,16 @@ window.addEventListener("message", (e) => {
   if(!/^(https:\/\/hee-chart\.onrender\.com|http:\/\/127\.0\.0\.1:8100)$/.test(e.origin)) return;
   const d = e.data || {};
   if(d.type === "hee-chart:height" && d.height > 200) $("#chart-frame").style.height = d.height + "px";
+  if(d.type === "hee-chart:fs") chartFs(!!d.on);
+});
+// 차트 전체화면: 차트 쪽 '전체화면' 버튼을 누르면 iframe을 화면 가득(위치 고정) 키움, '작게 보기'·Esc로 원래대로
+function chartFs(on){
+  $("#chart-frame").classList.toggle("chart-fs", on);
+  document.documentElement.classList.toggle("chart-fs-on", on);
+}
+document.addEventListener("keydown", (e) => {
+  if(e.key === "Escape" && $("#chart-frame").classList.contains("chart-fs"))
+    $("#chart-frame").contentWindow.postMessage({type:"hee-chart:fs-off"}, "*");
 });
 
 // 주소 끝 #dividend(또는 #dividend=종목)로 들어오면 배당주 분석 탭을 바로 연다 — 탭 버튼 연결 뒤에 실행
